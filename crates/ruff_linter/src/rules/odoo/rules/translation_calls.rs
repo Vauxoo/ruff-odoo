@@ -122,28 +122,74 @@ fn is_translation_func(func: &Expr) -> bool {
     }
 }
 
-/// Counts positional printf specifiers (`%s`, `%d`, ... but not `%%` or `%(name)s`) in `text`.
-fn count_positional_printf(text: &str) -> usize {
+/// Byte offsets (right after the `%`) of the positional printf conversions in `text`.
+///
+/// Only sequences that Python's `%` formatting actually accepts are recognized —
+/// `%[flags][width][.precision][length]conversion` — so a stray `%` followed by
+/// punctuation (e.g. `"90%. It"`) is plain text, matching runtime behavior. Escaped `%%`
+/// and named `%(name)s` conversions are skipped.
+fn positional_printf_offsets(text: &str) -> Vec<usize> {
+    const CONVERSIONS: &[u8] = b"diouxXeEfFgGcrsa";
     let bytes = text.as_bytes();
-    let mut count = 0;
+    let mut offsets = Vec::new();
     let mut i = 0;
     while i < bytes.len() {
-        if bytes[i] == b'%' {
-            match bytes.get(i + 1) {
-                Some(b'%') => i += 1, // escaped %%
-                Some(b'(') => {
-                    // named placeholder %(name)s — skip past it
-                    if let Some(close) = text[i..].find(')') {
-                        i += close;
-                    }
-                }
-                Some(_) => count += 1,
-                None => {}
+        if bytes[i] != b'%' {
+            i += 1;
+            continue;
+        }
+        let start = i + 1;
+        let mut j = start;
+        if bytes.get(j) == Some(&b'%') {
+            i = j + 1;
+            continue;
+        }
+        let named = bytes.get(j) == Some(&b'(');
+        if named {
+            let Some(close) = text[j..].find(')') else {
+                i = start;
+                continue;
+            };
+            j += close + 1;
+        }
+        while matches!(bytes.get(j), Some(b'#' | b'0' | b'-' | b' ' | b'+')) {
+            j += 1;
+        }
+        if bytes.get(j) == Some(&b'*') {
+            j += 1;
+        } else {
+            while matches!(bytes.get(j), Some(b'0'..=b'9')) {
+                j += 1;
             }
         }
-        i += 1;
+        if bytes.get(j) == Some(&b'.') {
+            j += 1;
+            if bytes.get(j) == Some(&b'*') {
+                j += 1;
+            } else {
+                while matches!(bytes.get(j), Some(b'0'..=b'9')) {
+                    j += 1;
+                }
+            }
+        }
+        if matches!(bytes.get(j), Some(b'h' | b'l' | b'L')) {
+            j += 1;
+        }
+        if bytes.get(j).is_some_and(|byte| CONVERSIONS.contains(byte)) {
+            if !named {
+                offsets.push(start);
+            }
+            i = j + 1;
+        } else {
+            i = start;
+        }
     }
-    count
+    offsets
+}
+
+/// Counts positional printf conversions (`%s`, `%d`, ... but not `%%` or `%(name)s`).
+fn count_positional_printf(text: &str) -> usize {
+    positional_printf_offsets(text).len()
 }
 
 /// Counts positional `str.format` fields (`{}` or `{0}`, but not `{name}` or `{{`).
@@ -225,21 +271,25 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
 /// underscores (`tier.campaign_id.name` becomes `tier_campaign_id_name`). Expressions
 /// without a direct name borrow the most meaningful identifier inside them:
 ///
-/// - a call is named after its first nameable positional argument, falling back to the
-///   callee itself: `", ".join(fields_string)` becomes `fields_string`, while
+/// - a call is named after its first nameable positional argument, then a string-key
+///   argument, then the callee itself: `", ".join(fields_string)` becomes
+///   `fields_string`, `oracle_leave.get("startDateTime")` becomes `startDateTime`, and
 ///   `sale.mapped("name")` becomes `sale_mapped`. Arguments rooted at `self`/`cls` only
 ///   win when nothing else is nameable, so helpers taking the environment first, like
 ///   `format_date(self.env, record.start_date)`, are named after the value
 ///   (`record_start_date`) instead of `self_env`;
-/// - a subscript is named after its base plus a literal or nameable index:
-///   `values[0]` becomes `values_0`, `vals["name"]` becomes `vals_name`, and an index
-///   that's neither (e.g. a slice) keeps just the base name;
-/// - a conditional expression is named after its branches (`_(" In: %s.", title) if title
-///   else ""` becomes `title`), and a comprehension after its element, falling back to the
-///   iterated source (`["%s: %s" % (p.ref, p.name) for p in partners]` becomes `partners`).
+/// - a subscript is named after its base plus a literal or nameable index, and an
+///   attribute access chains onto whatever its receiver derives: `values[0]` becomes
+///   `values_0`, `vals["name"]` becomes `vals_name`, and `closures[0].name` becomes
+///   `closures_0_name`;
+/// - operators carry over the operand holding the value (`coverage * 100` becomes
+///   `coverage`), an f-string its first nameable interpolation, a conditional expression
+///   its branches (`_(" In: %s.", title) if title else ""` becomes `title`), and a
+///   comprehension its element, falling back to the iterated source
+///   (`["%s: %s" % (p.ref, p.name) for p in partners]` becomes `partners`).
 ///
-/// Anything else (literals, operators, ...) has no obvious name, so the caller skips the
-/// fix for the whole call.
+/// Anything without an identifier anywhere inside (plain literals, ...) has no obvious
+/// name, so the caller skips the fix for the whole call.
 fn placeholder_name(expr: &Expr) -> Option<String> {
     if let Some(dotted) = dotted_name(expr) {
         return Some(dotted.replace('.', "_"));
@@ -257,8 +307,35 @@ fn placeholder_name(expr: &Expr) -> Option<String> {
                 .find(|name| !is_self_rooted(name))
                 .or_else(|| arg_names.first())
                 .cloned()
+                // `.get("startDateTime")`-style: a string key argument works as a name.
+                .or_else(|| {
+                    call.arguments.args.iter().find_map(|arg| match arg {
+                        Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
+                            let key = value.to_str();
+                            ruff_python_stdlib::identifiers::is_identifier(key)
+                                .then(|| key.to_string())
+                        }
+                        _ => None,
+                    })
+                })
                 .or_else(|| placeholder_name(&call.func))
         }
+        // `refundable_closures[0].name` and other attribute accesses whose receiver isn't a
+        // plain name chain (those are already covered by `dotted_name` above).
+        Expr::Attribute(ast::ExprAttribute { value, attr, .. }) => {
+            Some(format!("{}_{attr}", placeholder_name(value)?))
+        }
+        // `coverage * 100`, `-amount`: name the operand carrying the value.
+        Expr::BinOp(ast::ExprBinOp { left, right, .. }) => {
+            placeholder_name(left).or_else(|| placeholder_name(right))
+        }
+        Expr::UnaryOp(ast::ExprUnaryOp { operand, .. }) => placeholder_name(operand),
+        // `f"{entry_amount:,.2f}"`: name the first nameable interpolated expression.
+        Expr::FString(fstring) => fstring
+            .value
+            .elements()
+            .filter_map(ast::InterpolatedStringElement::as_interpolation)
+            .find_map(|interpolation| placeholder_name(&interpolation.expression)),
         Expr::Subscript(subscript) => {
             let base = placeholder_name(&subscript.value)?;
             let index = match subscript.slice.as_ref() {
@@ -333,7 +410,8 @@ fn convert_to_named_placeholders(
         return None;
     }
     let (term, args) = call.arguments.args.split_first()?;
-    if args.is_empty() || args.len() != count_positional_printf(text) {
+    let offsets = positional_printf_offsets(text);
+    if args.is_empty() || args.len() != offsets.len() {
         return None;
     }
 
@@ -358,31 +436,18 @@ fn convert_to_named_placeholders(
         names.push(name);
     }
 
-    // Rebuild the term with `(name)` spliced into each positional placeholder, keeping the
+    // Rebuild the term with `(name)` spliced into each positional conversion, keeping the
     // conversion spec: `%s .. %.2f` becomes `%(count)s .. %(total).2f`.
     let mut new_text = String::with_capacity(text.len() + names.len() * 8);
-    let mut names_iter = names.iter();
-    let mut chars = text.chars().peekable();
-    while let Some(c) = chars.next() {
-        new_text.push(c);
-        if c != '%' {
-            continue;
-        }
-        match chars.peek() {
-            Some('%') => {
-                new_text.push('%');
-                chars.next();
-            }
-            // A trailing lone `%` can't be formatted at runtime; leave the call alone.
-            None => return None,
-            Some(_) => {
-                let name = names_iter.next()?;
-                new_text.push('(');
-                new_text.push_str(name);
-                new_text.push(')');
-            }
-        }
+    let mut last = 0;
+    for (offset, name) in offsets.iter().zip(&names) {
+        new_text.push_str(&text[last..*offset]);
+        new_text.push('(');
+        new_text.push_str(name);
+        new_text.push(')');
+        last = *offset;
     }
+    new_text.push_str(&text[last..]);
 
     let node = ast::StringLiteral {
         value: new_text.into_boxed_str(),
