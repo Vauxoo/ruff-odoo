@@ -27,7 +27,9 @@ concurrency:
 permissions: {}
 
 env:
-  PACKAGE_NAME: ruff
+  # Vauxoo fork: the PyPI distribution is `ruff-odoo` (wheel/sdist filenames use
+  # the normalized `ruff_odoo` form), while the binary/module remain `ruff`.
+  PACKAGE_NAME: ruff_odoo
   MODULE_NAME: ruff
   PYTHON_VERSION: "3.13"
   CARGO_INCREMENTAL: 0

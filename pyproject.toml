@@ -3,10 +3,16 @@ requires = ["maturin>=1.9.3,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "ruff"
-version = "0.16.3"
-description = "An extremely fast Python linter and code formatter, written in Rust."
+# Vauxoo fork: published to PyPI as `ruff-odoo` because the `ruff` name belongs
+# to upstream. The binary and Python module are still named `ruff`, so this
+# package is a drop-in replacement inside an isolated environment (e.g. the one
+# pre-commit creates per hook repo), but it must not be installed alongside the
+# upstream `ruff` package in the same environment.
+name = "ruff-odoo"
+version = "0.16.2"
+description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
 authors = [{ name = "Astral Software Inc.", email = "hey@astral.sh" }]
+maintainers = [{ name = "Vauxoo", email = "info@vauxoo.com" }]
 readme = "README.md"
 requires-python = ">=3.7"
 license = "MIT"
@@ -40,7 +46,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/astral-sh/ruff"
+Repository = "https://github.com/Vauxoo/ruff"
 Documentation = "https://docs.astral.sh/ruff/"
 Changelog = "https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md"
 

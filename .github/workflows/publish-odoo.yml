@@ -1,0 +1,45 @@
+# Vauxoo fork: build and publish the `ruff-odoo` package to PyPI.
+#
+# Upstream publishes releases through the cargo-dist generated `release.yml`,
+# which also pushes Docker images, WASM builds, crates.io releases, etc. This
+# fork only needs PyPI wheels, so this workflow reuses the same reusable
+# subworkflows (`build-binaries.yml` + `publish-pypi.yml`) that upstream's
+# release pipeline calls, without running cargo-dist at all.
+#
+# Trigger: push a tag like `odoo-v0.16.2` (the `odoo-` prefix avoids colliding
+# with upstream `v*` tags fetched from the astral-sh remote).
+#
+# Requirements on the Vauxoo/ruff repository:
+#   - A `release` environment (used by publish-pypi.yml).
+#   - A PyPI "trusted publisher" for the `ruff-odoo` project pointing at this
+#     file (publish-odoo.yml) and the `release` environment.
+name: "[ruff-odoo] Release to PyPI"
+
+on:
+  push:
+    tags:
+      - "odoo-v*"
+
+permissions: {}
+
+jobs:
+  build-binaries:
+    # The `plan` input is only meaningful when called from cargo-dist; the
+    # subworkflow does not read it in any step, so pass an empty string.
+    uses: ./.github/workflows/build-binaries.yml
+    with:
+      plan: ""
+    permissions:
+      contents: read
+      # uraimo/run-on-arch-action caches its cross-arch containers in the
+      # repository's package registry using `github.token`.
+      packages: write
+
+  pypi-publish:
+    needs: build-binaries
+    uses: ./.github/workflows/publish-pypi.yml
+    with:
+      plan: ""
+    permissions:
+      # For PyPI's trusted publishing.
+      id-token: write
