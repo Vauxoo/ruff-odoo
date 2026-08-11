@@ -309,6 +309,7 @@ impl Rule {
             | Rule::UselessSemicolon
             | Rule::UTF8EncodingDeclaration
             | Rule::HeaderComments
+            | Rule::PylintDisableComment
             | Rule::VimComment => LintSource::Tokens,
             Rule::IOError => LintSource::Io,
             Rule::UnsortedImports | Rule::MissingRequiredImport => LintSource::Imports,
