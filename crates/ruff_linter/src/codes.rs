@@ -1060,6 +1060,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "044") => rules::odoo::rules::DeprecatedInselectOperator,
         (Odoo, "045") => rules::odoo::rules::TestFolderImported,
         (Odoo, "046") => rules::odoo::rules::ManifestExternalAssets,
+        (Odoo, "047") => rules::odoo::rules::PylintDisableComment,
 
         // ruff
         (Ruff, "001") => rules::ruff::rules::AmbiguousUnicodeCharacterString,
