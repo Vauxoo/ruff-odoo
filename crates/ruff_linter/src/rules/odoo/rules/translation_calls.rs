@@ -55,9 +55,12 @@ impl Violation for TranslationContainsVariable {
 ///
 /// ## Fix safety
 /// A fix is offered when the values are passed as arguments of the translation call itself
-/// and each one is a plain name or dotted attribute chain, e.g.
+/// and a name can be derived for each one, e.g.
 /// `self.env._("%s of %s", count, tier.name)` becomes
 /// `self.env._("%(count)s of %(tier_name)s", count=count, tier_name=tier.name)`.
+/// Dotted attribute chains join with underscores (`tier.name` becomes `tier_name`), and
+/// calls or subscripts borrow the most meaningful identifier inside them
+/// (`", ".join(fields_string)` becomes `fields_string`, `values[0]` becomes `values_0`).
 ///
 /// The fix is marked unsafe because it changes the source translation term: existing
 /// translations keyed on the old term (in `.po` files) no longer match and must be
@@ -226,9 +229,57 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
 /// tuple and fail to format named placeholders.
 ///
 /// No fix is offered when the term or the arguments can't be converted faithfully: values
-/// interpolated outside the call (`_("%s %s") % (a, b)`), arguments without an obvious name
-/// (calls, literals, subscripts), an argument count that doesn't match the placeholder
+/// interpolated outside the call (`_("%s %s") % (a, b)`), arguments without a derivable
+/// name (see [`placeholder_name`]), an argument count that doesn't match the placeholder
 /// count, or a term already mixing in named/`{}` placeholders.
+/// Derives a placeholder name for an interpolated argument.
+///
+/// A name or dotted attribute chain names the placeholder directly, with dots turned into
+/// underscores (`tier.campaign_id.name` becomes `tier_campaign_id_name`). Expressions
+/// without a direct name borrow the most meaningful identifier inside them:
+///
+/// - a call is named after its first nameable positional argument, falling back to the
+///   callee itself: `", ".join(fields_string)` becomes `fields_string`, while
+///   `sale.mapped("name")` becomes `sale_mapped`;
+/// - a subscript is named after its base plus a literal or nameable index:
+///   `values[0]` becomes `values_0`, `vals["name"]` becomes `vals_name`, and an index
+///   that's neither (e.g. a slice) keeps just the base name.
+///
+/// Anything else (literals, operators, comprehensions, ...) has no obvious name, so the
+/// caller skips the fix for the whole call.
+fn placeholder_name(expr: &Expr) -> Option<String> {
+    if let Some(dotted) = dotted_name(expr) {
+        return Some(dotted.replace('.', "_"));
+    }
+    match expr {
+        Expr::Call(call) => call
+            .arguments
+            .args
+            .iter()
+            .find_map(placeholder_name)
+            .or_else(|| placeholder_name(&call.func)),
+        Expr::Subscript(subscript) => {
+            let base = placeholder_name(&subscript.value)?;
+            let index = match subscript.slice.as_ref() {
+                Expr::NumberLiteral(ast::ExprNumberLiteral {
+                    value: ast::Number::Int(int),
+                    ..
+                }) => Some(int.to_string()),
+                Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
+                    let key = value.to_str();
+                    ruff_python_stdlib::identifiers::is_identifier(key).then(|| key.to_string())
+                }
+                index => placeholder_name(index),
+            };
+            Some(match index {
+                Some(index) => format!("{base}_{index}"),
+                None => base,
+            })
+        }
+        _ => None,
+    }
+}
+
 fn convert_to_named_placeholders(
     checker: &Checker,
     call: &ast::ExprCall,
@@ -259,7 +310,7 @@ fn convert_to_named_placeholders(
     let mut names = Vec::with_capacity(args.len());
     let mut keywords: Vec<(String, &str)> = Vec::with_capacity(args.len());
     for arg in args {
-        let name = dotted_name(arg)?.replace('.', "_");
+        let name = placeholder_name(arg)?;
         // `_lt` (`LazyTranslate`) consumes `_module`/`_default_lang` keywords itself.
         if matches!(name.as_str(), "_module" | "_default_lang") {
             return None;
