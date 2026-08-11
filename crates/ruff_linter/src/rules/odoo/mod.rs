@@ -68,6 +68,7 @@ mod tests {
     #[test_case(Rule::DeprecatedInselectOperator, Path::new("ODOO044.py"))]
     #[test_case(Rule::TestFolderImported, Path::new("ODOO045/__init__.py"))]
     #[test_case(Rule::ManifestExternalAssets, Path::new("ODOO046/__manifest__.py"))]
+    #[test_case(Rule::PylintDisableComment, Path::new("ODOO047.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(

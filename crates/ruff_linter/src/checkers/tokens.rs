@@ -72,6 +72,12 @@ pub(crate) fn check_tokens(
         odoo::rules::header_comments(context, locator, comment_ranges);
     }
 
+    if context.is_rule_enabled(Rule::PylintDisableComment) {
+        for range in comment_ranges {
+            odoo::rules::pylint_disable_comment(context, locator, range);
+        }
+    }
+
     if context.is_rule_enabled(Rule::UTF8EncodingDeclaration) {
         pyupgrade::rules::unnecessary_coding_comment(context, locator, comment_ranges);
     }
