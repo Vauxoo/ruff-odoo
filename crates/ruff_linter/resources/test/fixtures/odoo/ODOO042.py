@@ -18,9 +18,22 @@ self.env._(
     sale.display_name,
 )
 _("%s of %s", get_count(), total)
+self.env._(
+    "%s -> %s (From %s to %s)",
+    record.delegated_from_id.display_name,
+    record.delegated_id.display_name,
+    format_date(self.env, record.start_date),
+    format_date(self.env, record.end_date),
+)
 _("%s and %s", sale.mapped("name"), count)
 _("%s of %s", values[0], values[1])
 _("%s of %s", vals["name"], vals[key])
+_(
+    "Partners:\n - %s\n\n Domain used %s",
+    "\n - ".join(["%s - %s" % (p.ref, p.name) for p in partners_werror]),
+    domain,
+)
+_("date '%s'.%s", date_to_convert, self.env._(" In: %s.", title) if title else "")
 
 # Not fixable: the values are interpolated outside the call.
 _("%s of %s") % (count, total)
