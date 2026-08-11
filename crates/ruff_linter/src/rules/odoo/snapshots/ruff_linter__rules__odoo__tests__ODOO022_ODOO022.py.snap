@@ -1,0 +1,22 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO022 Missing `return` (`super` is used) in method write
+ --> ODOO022.py:4:9
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     def write(self, vals):
+  |         ^^^^^
+5 |         super().write(vals)
+  |
+
+ODOO022 Missing `return` (`super` is used) in method action_do
+  --> ODOO022.py:15:9
+   |
+13 |         return {}
+14 |
+15 |     def action_do(self):
+   |         ^^^^^^^^^
+16 |         super().action_do()
+   |

@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO014 Website "example.com" in manifest key is not a valid URI
+ --> __manifest__.py:3:5
+  |
+1 | {
+2 |     "name": "My Module",
+3 |     "website": "example.com",
+  |     ^^^^^^^^^
+4 | }
+  |

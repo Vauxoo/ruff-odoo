@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO040 Compute method calling `write`. Use `update` instead.
+ --> ODOO040.py:7:9
+  |
+6 |     def _compute_total(self):
+7 |         self.write({"total": 10})
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |
+9 |     def action_do(self):
+  |

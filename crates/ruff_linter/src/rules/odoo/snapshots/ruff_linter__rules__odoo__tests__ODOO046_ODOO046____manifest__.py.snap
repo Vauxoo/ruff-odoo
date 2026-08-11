@@ -1,0 +1,13 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO046 Asset https://cdn.example.com/lib.js should be distributed with module's source code
+ --> __manifest__.py:5:13
+  |
+3 |     "assets": {
+4 |         "web.assets_backend": [
+5 |             "https://cdn.example.com/lib.js",
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |             "my_module/static/src/js/widget.js",
+7 |         ],
+  |

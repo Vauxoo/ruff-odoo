@@ -308,6 +308,7 @@ impl Rule {
             | Rule::LegacyTypeComment
             | Rule::UselessSemicolon
             | Rule::UTF8EncodingDeclaration
+            | Rule::HeaderComments
             | Rule::VimComment => LintSource::Tokens,
             Rule::IOError => LintSource::Io,
             Rule::UnsortedImports | Rule::MissingRequiredImport => LintSource::Imports,

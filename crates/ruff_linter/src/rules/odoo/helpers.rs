@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use ruff_python_ast as ast;
+use ruff_python_ast::{self as ast, Expr};
 use ruff_python_trivia::{SimpleTokenKind, SimpleTokenizer};
 use ruff_text_size::Ranged;
 
@@ -14,6 +14,82 @@ pub(crate) fn is_manifest_file(path: &Path) -> bool {
         path.file_name().and_then(|name| name.to_str()),
         Some("__manifest__.py" | "__openerp__.py")
     )
+}
+
+/// Returns the key and value expressions for `key` in a manifest dict literal, if present.
+///
+/// The key expression is what callers should report diagnostics on, matching pylint-odoo's
+/// convention of pointing at the specific manifest key rather than the whole dict.
+pub(crate) fn manifest_item<'a>(
+    dict: &'a ast::ExprDict,
+    key: &str,
+) -> Option<(&'a Expr, &'a Expr)> {
+    dict.items.iter().find_map(|item| {
+        let key_expr = item.key.as_ref()?;
+        let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = key_expr else {
+            return None;
+        };
+        (value.to_str() == key).then_some((key_expr, &item.value))
+    })
+}
+
+/// Returns the string value of `key` in a manifest dict literal, and the key expression to
+/// report on, if `key` is present and its value is a plain string literal.
+pub(crate) fn manifest_string_item<'a>(
+    dict: &'a ast::ExprDict,
+    key: &str,
+) -> Option<(&'a Expr, &'a str)> {
+    let (key_expr, value) = manifest_item(dict, key)?;
+    let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = value else {
+        return None;
+    };
+    Some((key_expr, value.to_str()))
+}
+
+const ODOO_MODEL_BASES: &[&str] = &["Model", "TransientModel", "AbstractModel"];
+
+/// Returns `true` if `class_def`'s bases include (by unqualified name) an Odoo model base,
+/// e.g. `models.Model` or `Model`.
+pub(crate) fn is_odoo_model_class(class_def: &ast::StmtClassDef) -> bool {
+    let Some(arguments) = class_def.arguments.as_deref() else {
+        return false;
+    };
+    arguments.args.iter().any(|base| {
+        let name = match base {
+            Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
+            Expr::Name(ast::ExprName { id, .. }) => id.as_str(),
+            _ => return false,
+        };
+        ODOO_MODEL_BASES.contains(&name)
+    })
+}
+
+/// Returns the field type (e.g. `"Many2one"`) if `func` is an access on `fields`, as in
+/// `fields.Many2one(...)`.
+pub(crate) fn odoo_field_type(func: &Expr) -> Option<&str> {
+    let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = func else {
+        return None;
+    };
+    matches!(value.as_ref(), Expr::Name(name) if name.id == "fields").then_some(attr.as_str())
+}
+
+/// Returns `true` if the class body defines a function named `name`.
+pub(crate) fn class_defines_method(class_def: &ast::StmtClassDef, name: &str) -> bool {
+    class_def.body.iter().any(|stmt| {
+        matches!(stmt, ast::Stmt::FunctionDef(function_def) if function_def.name.as_str() == name)
+    })
+}
+
+/// Renders `expr` as a dotted name (e.g. `self.env.cr`) if it's a chain of attribute accesses
+/// rooted at a plain name; returns `None` for anything else (calls, subscripts, etc.).
+pub(crate) fn dotted_name(expr: &Expr) -> Option<String> {
+    match expr {
+        Expr::Name(ast::ExprName { id, .. }) => Some(id.to_string()),
+        Expr::Attribute(ast::ExprAttribute { value, attr, .. }) => {
+            Some(format!("{}.{attr}", dotted_name(value)?))
+        }
+        _ => None,
+    }
 }
 
 /// Generate an [`Edit`] to remove `item` (a key-value pair) from `dict`, including its

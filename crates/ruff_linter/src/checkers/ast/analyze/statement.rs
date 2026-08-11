@@ -100,6 +100,13 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::MethodRequiredSuper) {
                 odoo::rules::method_required_super(checker, function_def);
             }
+            if checker.is_rule_enabled(Rule::MissingReturn) {
+                odoo::rules::missing_return(checker, function_def);
+            }
+            if checker.any_rule_enabled(&[Rule::DeprecatedNameGet, Rule::DeprecatedOdooModelMethod])
+            {
+                odoo::rules::deprecated_method_names(checker, function_def);
+            }
             if checker.is_rule_enabled(Rule::InvalidFunctionName) {
                 pep8_naming::rules::invalid_function_name(
                     checker,
@@ -395,6 +402,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::NoClassmethodDecorator) {
                 pylint::rules::no_classmethod_decorator(checker, stmt);
             }
+            if checker.is_rule_enabled(Rule::NoWriteInCompute) {
+                odoo::rules::no_write_in_compute(checker, class_def);
+            }
             if checker.is_rule_enabled(Rule::NoStaticmethodDecorator) {
                 pylint::rules::no_staticmethod_decorator(checker, stmt);
             }
@@ -560,6 +570,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::MultipleImportsOnOneLine) {
                 pycodestyle::rules::multiple_imports_on_one_line(checker, stmt, names);
             }
+            if checker.is_rule_enabled(Rule::TestFolderImported) {
+                odoo::rules::test_folder_imported(checker, stmt, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ModuleImportNotAtTopOfFile) {
                 pycodestyle::rules::module_import_not_at_top_of_file(checker, stmt);
             }
@@ -722,6 +735,15 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
         ) => {
             let level = *level;
             let module = module.as_deref();
+            if checker.is_rule_enabled(Rule::OdooExceptionWarning) {
+                odoo::rules::odoo_exception_warning(checker, import_from);
+            }
+            if checker.is_rule_enabled(Rule::OdooAddonsRelativeImport) {
+                odoo::rules::odoo_addons_relative_import(checker, import_from, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::TestFolderImported) {
+                odoo::rules::test_folder_imported(checker, stmt, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ModuleImportNotAtTopOfFile) {
                 pycodestyle::rules::module_import_not_at_top_of_file(checker, stmt);
             }
@@ -944,6 +966,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
                 if let Some(expr) = exc {
                     pyflakes::rules::raise_not_implemented(checker, expr);
                 }
+            }
+            if checker.is_rule_enabled(Rule::NoRaiseUnlink) {
+                odoo::rules::no_raise_unlink(checker, raise);
             }
             if checker.is_rule_enabled(Rule::RaiseLiteral) {
                 if let Some(exc) = exc {
@@ -1468,6 +1493,20 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             }
             if checker.is_rule_enabled(Rule::FieldStringRedundant) {
                 odoo::rules::field_string_redundant(checker, assign);
+            }
+            if checker.is_rule_enabled(Rule::AttributeDeprecated) {
+                odoo::rules::attribute_deprecated(checker, assign);
+            }
+            if checker.any_rule_enabled(&[
+                Rule::MethodCompute,
+                Rule::MethodSearch,
+                Rule::MethodInverse,
+                Rule::RenamedFieldParameter,
+                Rule::TranslationField,
+                Rule::InheritableMethodString,
+                Rule::InheritableMethodLambda,
+            ]) {
+                odoo::rules::field_attributes(checker, assign);
             }
             if checker.is_rule_enabled(Rule::PandasDfVariableName) {
                 pandas_vet::rules::assignment_to_df(checker, targets);
