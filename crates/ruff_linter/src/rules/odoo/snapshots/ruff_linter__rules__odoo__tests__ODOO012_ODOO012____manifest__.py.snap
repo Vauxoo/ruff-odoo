@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODOO012 Summary in manifest file should be a one-line short description, found newline character
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
  --> __manifest__.py:3:5
   |
 1 | {
@@ -10,3 +10,65 @@ ODOO012 Summary in manifest file should be a one-line short description, found n
   |     ^^^^^^^^^
 4 | }
   |
+help: Collapse the summary into a single line
+  |
+2 |     "name": "My Module",
+  -     "summary": "Does\nthings.",
+3 +     "summary": "Does things.",
+4 | }
+  |
+
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
+  --> __manifest__.py:13:5
+   |
+11 | {
+12 |     "name": "Whitespace Around Newline",
+13 |     "summary": "hola \n  moy",
+   |     ^^^^^^^^^
+14 | }
+   |
+help: Collapse the summary into a single line
+   |
+12 |     "name": "Whitespace Around Newline",
+   -     "summary": "hola \n  moy",
+13 +     "summary": "hola moy",
+14 | }
+   |
+
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
+  --> __manifest__.py:18:5
+   |
+16 | {
+17 |     "name": "Triple Quoted",
+18 |     "summary": """
+   |     ^^^^^^^^^
+19 |         Multi line
+20 |         summary
+   |
+help: Collapse the summary into a single line
+   |
+17 |     "name": "Triple Quoted",
+   -     "summary": """
+   -         Multi line
+   -         summary
+   -     """,
+18 +     "summary": "Multi line summary",
+19 | }
+   |
+
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
+  --> __manifest__.py:26:5
+   |
+24 | {
+25 |     "name": "Implicit Concatenation",
+26 |     "summary": "First line\n" "second line",
+   |     ^^^^^^^^^
+27 | }
+   |
+help: Collapse the summary into a single line
+   |
+25 |     "name": "Implicit Concatenation",
+   -     "summary": "First line\n" "second line",
+26 +     "summary": "First line second line",
+27 | }
+   |
