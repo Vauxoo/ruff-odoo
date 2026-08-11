@@ -9,6 +9,7 @@ ODOO042 Translation method is using positional string printf formatting with mul
 2 | _("%(count)s of %(total)s")
 3 | _("{} and {}")
   |
+help: Convert to named placeholders passed as keyword arguments
 
 ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
  --> ODOO042.py:3:1
@@ -19,3 +20,165 @@ ODOO042 Translation method is using positional string printf formatting with mul
   | ^^^^^^^^^^^^^^
 4 | _("only one %s")
   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+ --> ODOO042.py:7:1
+  |
+6 | # Fixable: values passed to the call as names or dotted attribute chains.
+7 | self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 | _("%s of %s", count, total)
+9 | _lt("%d of %d", count, total)
+  |
+help: Convert to named placeholders passed as keyword arguments
+  |
+6 | # Fixable: values passed to the call as names or dotted attribute chains.
+  - self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+7 + self.env._("Donation (%(tier_name)s) is (%(tier_campaign_id_name)s)", tier_name=tier.name, tier_campaign_id_name=tier.campaign_id.name)
+8 | _("%s of %s", count, total)
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:8:1
+   |
+ 6 | # Fixable: values passed to the call as names or dotted attribute chains.
+ 7 | self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+ 8 | _("%s of %s", count, total)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 | _lt("%d of %d", count, total)
+10 | self.env._("%s discount: %.2f", name, discount)
+   |
+help: Convert to named placeholders passed as keyword arguments
+  |
+7 | self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+  - _("%s of %s", count, total)
+8 + _("%(count)s of %(total)s", count=count, total=total)
+9 | _lt("%d of %d", count, total)
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:9:1
+   |
+ 7 | self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+ 8 | _("%s of %s", count, total)
+ 9 | _lt("%d of %d", count, total)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 | self.env._("%s discount: %.2f", name, discount)
+11 | _("%s and %s", value, value)
+   |
+help: Convert to named placeholders passed as keyword arguments
+   |
+8  | _("%s of %s", count, total)
+   - _lt("%d of %d", count, total)
+9  + _lt("%(count)d of %(total)d", count=count, total=total)
+10 | self.env._("%s discount: %.2f", name, discount)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:10:1
+   |
+ 8 | _("%s of %s", count, total)
+ 9 | _lt("%d of %d", count, total)
+10 | self.env._("%s discount: %.2f", name, discount)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 | _("%s and %s", value, value)
+   |
+help: Convert to named placeholders passed as keyword arguments
+   |
+9  | _lt("%d of %d", count, total)
+   - self.env._("%s discount: %.2f", name, discount)
+10 + self.env._("%(name)s discount: %(discount).2f", name=name, discount=discount)
+11 | _("%s and %s", value, value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:11:1
+   |
+ 9 | _lt("%d of %d", count, total)
+10 | self.env._("%s discount: %.2f", name, discount)
+11 | _("%s and %s", value, value)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 | # Not fixable: the values are interpolated outside the call.
+   |
+help: Convert to named placeholders passed as keyword arguments
+   |
+10 | self.env._("%s discount: %.2f", name, discount)
+   - _("%s and %s", value, value)
+11 + _("%(value)s and %(value)s", value=value)
+12 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:14:1
+   |
+13 | # Not fixable: the values are interpolated outside the call.
+14 | _("%s of %s") % (count, total)
+   | ^^^^^^^^^^^^^
+15 | # Not fixable: an argument has no obvious name (call, literal, subscript).
+16 | _("%s of %s", get_count(), total)
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:16:1
+   |
+14 | _("%s of %s") % (count, total)
+15 | # Not fixable: an argument has no obvious name (call, literal, subscript).
+16 | _("%s of %s", get_count(), total)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | _("%s of %s", count, values[0])
+18 | # Not fixable: argument count doesn't match the placeholder count.
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:17:1
+   |
+15 | # Not fixable: an argument has no obvious name (call, literal, subscript).
+16 | _("%s of %s", get_count(), total)
+17 | _("%s of %s", count, values[0])
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 | # Not fixable: argument count doesn't match the placeholder count.
+19 | _("%s of %s", count)
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:19:1
+   |
+17 | _("%s of %s", count, values[0])
+18 | # Not fixable: argument count doesn't match the placeholder count.
+19 | _("%s of %s", count)
+   | ^^^^^^^^^^^^^^^^^^^^
+20 | # Not fixable: distinct expressions colliding on the same derived name.
+21 | _("%s of %s", a.b, a_b)
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:21:1
+   |
+19 | _("%s of %s", count)
+20 | # Not fixable: distinct expressions colliding on the same derived name.
+21 | _("%s of %s", a.b, a_b)
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+22 | # Not fixable: keyword arguments already present.
+23 | _("%s of %s", count, total=total)
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:23:1
+   |
+21 | _("%s of %s", a.b, a_b)
+22 | # Not fixable: keyword arguments already present.
+23 | _("%s of %s", count, total=total)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Convert to named placeholders passed as keyword arguments

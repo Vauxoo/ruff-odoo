@@ -1,10 +1,11 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast::{self as ast, Expr};
-use ruff_text_size::Ranged;
+use ruff_python_ast::{self as ast, Expr, str_prefix::StringLiteralPrefix};
+use ruff_text_size::{Ranged, TextRange};
 
-use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Rule;
+use crate::rules::odoo::helpers::dotted_name;
+use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
 /// Checks for translation calls whose term already has variables interpolated into it,
@@ -51,16 +52,32 @@ impl Violation for TranslationContainsVariable {
 /// ```python
 /// _("%(count)s of %(total)s") % {"count": count, "total": total}
 /// ```
+///
+/// ## Fix safety
+/// A fix is offered when the values are passed as arguments of the translation call itself
+/// and each one is a plain name or dotted attribute chain, e.g.
+/// `self.env._("%s of %s", count, tier.name)` becomes
+/// `self.env._("%(count)s of %(tier_name)s", count=count, tier_name=tier.name)`.
+///
+/// The fix is marked unsafe because it changes the source translation term: existing
+/// translations keyed on the old term (in `.po` files) no longer match and must be
+/// re-exported and re-translated.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
 pub(crate) struct TranslationPositional;
 
 impl Violation for TranslationPositional {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         "Translation method is using positional string printf formatting with multiple \
          arguments. Use named placeholders instead"
             .to_string()
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        Some("Convert to named placeholders passed as keyword arguments".to_string())
     }
 }
 
@@ -191,7 +208,117 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
     {
         let text = value.to_str();
         if count_positional_printf(text) >= 2 || count_positional_format(text) >= 2 {
-            checker.report_diagnostic(TranslationPositional, call.range());
+            let mut diagnostic = checker.report_diagnostic(TranslationPositional, call.range());
+            if let Some(fix) = convert_to_named_placeholders(checker, call, value, text) {
+                diagnostic.set_fix(fix);
+            }
         }
     }
+}
+
+/// Builds a fix rewriting `_("%s of %s", count, tier.name)` into
+/// `_("%(count)s of %(tier_name)s", count=count, tier_name=tier.name)`.
+///
+/// Each placeholder is named after the argument it interpolates, with dots turned into
+/// underscores (`tier.campaign_id.name` becomes `tier_campaign_id_name`). The values are
+/// passed as keyword arguments because Odoo's translation helpers format with
+/// `translation % (args or kwargs)` — a dict passed positionally would arrive wrapped in a
+/// tuple and fail to format named placeholders.
+///
+/// No fix is offered when the term or the arguments can't be converted faithfully: values
+/// interpolated outside the call (`_("%s %s") % (a, b)`), arguments without an obvious name
+/// (calls, literals, subscripts), an argument count that doesn't match the placeholder
+/// count, or a term already mixing in named/`{}` placeholders.
+fn convert_to_named_placeholders(
+    checker: &Checker,
+    call: &ast::ExprCall,
+    value: &ast::StringLiteralValue,
+    text: &str,
+) -> Option<Fix> {
+    // Odoo's translation helpers only apply printf-style formatting, so a `{}`-style term
+    // with in-call arguments is broken beyond what this fix can repair.
+    if count_positional_format(text) >= 2 {
+        return None;
+    }
+    // A term mixing named and positional placeholders is already broken; don't touch it.
+    if text.contains("%(") {
+        return None;
+    }
+    if !call.arguments.keywords.is_empty() {
+        return None;
+    }
+    let (term, args) = call.arguments.args.split_first()?;
+    if args.is_empty() || args.len() != count_positional_printf(text) {
+        return None;
+    }
+
+    // Derive a placeholder name from each argument. The same expression interpolated twice
+    // can share a single keyword argument; distinct expressions colliding on a name (e.g.
+    // `a.b` and `a_b`) can't be merged, so no fix is offered.
+    let locator = checker.locator();
+    let mut names = Vec::with_capacity(args.len());
+    let mut keywords: Vec<(String, &str)> = Vec::with_capacity(args.len());
+    for arg in args {
+        let name = dotted_name(arg)?.replace('.', "_");
+        // `_lt` (`LazyTranslate`) consumes `_module`/`_default_lang` keywords itself.
+        if matches!(name.as_str(), "_module" | "_default_lang") {
+            return None;
+        }
+        let source = locator.slice(arg.range());
+        match keywords.iter().find(|(existing, _)| *existing == name) {
+            Some((_, existing_source)) if *existing_source == source => {}
+            Some(_) => return None,
+            None => keywords.push((name.clone(), source)),
+        }
+        names.push(name);
+    }
+
+    // Rebuild the term with `(name)` spliced into each positional placeholder, keeping the
+    // conversion spec: `%s .. %.2f` becomes `%(count)s .. %(total).2f`.
+    let mut new_text = String::with_capacity(text.len() + names.len() * 8);
+    let mut names_iter = names.iter();
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        new_text.push(c);
+        if c != '%' {
+            continue;
+        }
+        match chars.peek() {
+            Some('%') => {
+                new_text.push('%');
+                chars.next();
+            }
+            // A trailing lone `%` can't be formatted at runtime; leave the call alone.
+            None => return None,
+            Some(_) => {
+                let name = names_iter.next()?;
+                new_text.push('(');
+                new_text.push_str(name);
+                new_text.push(')');
+            }
+        }
+    }
+
+    let node = ast::StringLiteral {
+        value: new_text.into_boxed_str(),
+        flags: checker.default_string_flags().with_prefix({
+            if value.is_unicode() {
+                StringLiteralPrefix::Unicode
+            } else {
+                StringLiteralPrefix::Empty
+            }
+        }),
+        range: TextRange::default(),
+        node_index: ruff_python_ast::AtomicNodeIndex::NONE,
+    };
+    let keywords = keywords
+        .iter()
+        .map(|(name, source)| format!("{name}={source}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let replacement = format!("{}, {keywords}", checker.generator().expr(&node.into()));
+    Some(Fix::unsafe_edit(Edit::range_replacement(
+        replacement,
+        TextRange::new(term.start(), args.last()?.end()),
+    )))
 }
