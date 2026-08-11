@@ -9,7 +9,7 @@ build-backend = "maturin"
 # pre-commit creates per hook repo), but it must not be installed alongside the
 # upstream `ruff` package in the same environment.
 name = "ruff-odoo"
-version = "0.16.2.0"
+version = "0.16.2.1"
 description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
 authors = [{ name = "Astral Software Inc.", email = "hey@astral.sh" }]
 maintainers = [{ name = "Vauxoo", email = "info@vauxoo.com" }]
