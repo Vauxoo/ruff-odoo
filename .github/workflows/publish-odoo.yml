@@ -13,10 +13,14 @@
 # dot-separated components, the `*.*.*.*` pattern can never match one of
 # upstream's 3-component tags, so no extra prefix is needed to disambiguate.
 #
-# Requirements on the Vauxoo/ruff repository:
+# Requirements on the Vauxoo/ruff-odoo repository:
 #   - A `release` environment (used by publish-pypi.yml).
-#   - A PyPI "trusted publisher" for the `ruff-odoo` project pointing at this
-#     file (publish-odoo.yml) and the `release` environment.
+#   - A PyPI "trusted publisher" for the `ruff-odoo` project configured as:
+#     owner `Vauxoo`, repository `ruff-odoo`, workflow `publish-pypi.yml`,
+#     environment `release`. The workflow filename must be the *reusable*
+#     workflow that runs the upload (publish-pypi.yml), NOT this caller file:
+#     PyPI matches the OIDC token's `job_workflow_ref` claim, which GitHub
+#     stamps with the called workflow when a job runs via `uses:`.
 name: "[ruff-odoo] Release to PyPI"
 
 on:
