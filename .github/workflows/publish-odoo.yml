@@ -6,8 +6,12 @@
 # subworkflows (`build-binaries.yml` + `publish-pypi.yml`) that upstream's
 # release pipeline calls, without running cargo-dist at all.
 #
-# Trigger: push a tag like `odoo-v0.16.2` (the `odoo-` prefix avoids colliding
-# with upstream `v*` tags fetched from the astral-sh remote).
+# Trigger: push a 4-component tag like `0.16.2.1` (x.y.z tracks upstream, w is
+# Vauxoo's own release counter — see .bumpversion.cfg). No "v" or "odoo-"
+# prefix: matches upstream astral-sh/ruff's current bare-version tag style
+# (e.g. `0.16.2`, not `v0.16.2`), and since our tags always have 4
+# dot-separated components, the `*.*.*.*` pattern can never match one of
+# upstream's 3-component tags, so no extra prefix is needed to disambiguate.
 #
 # Requirements on the Vauxoo/ruff repository:
 #   - A `release` environment (used by publish-pypi.yml).
@@ -18,7 +22,7 @@ name: "[ruff-odoo] Release to PyPI"
 on:
   push:
     tags:
-      - "odoo-v*"
+      - "*.*.*.*"
 
 permissions: {}
 
