@@ -46,6 +46,40 @@ pub(crate) fn manifest_string_item<'a>(
     Some((key_expr, value.to_str()))
 }
 
+const ODOO_MODEL_BASES: &[&str] = &["Model", "TransientModel", "AbstractModel"];
+
+/// Returns `true` if `class_def`'s bases include (by unqualified name) an Odoo model base,
+/// e.g. `models.Model` or `Model`.
+pub(crate) fn is_odoo_model_class(class_def: &ast::StmtClassDef) -> bool {
+    let Some(arguments) = class_def.arguments.as_deref() else {
+        return false;
+    };
+    arguments.args.iter().any(|base| {
+        let name = match base {
+            Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
+            Expr::Name(ast::ExprName { id, .. }) => id.as_str(),
+            _ => return false,
+        };
+        ODOO_MODEL_BASES.contains(&name)
+    })
+}
+
+/// Returns the field type (e.g. `"Many2one"`) if `func` is an access on `fields`, as in
+/// `fields.Many2one(...)`.
+pub(crate) fn odoo_field_type(func: &Expr) -> Option<&str> {
+    let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = func else {
+        return None;
+    };
+    matches!(value.as_ref(), Expr::Name(name) if name.id == "fields").then_some(attr.as_str())
+}
+
+/// Returns `true` if the class body defines a function named `name`.
+pub(crate) fn class_defines_method(class_def: &ast::StmtClassDef, name: &str) -> bool {
+    class_def.body.iter().any(|stmt| {
+        matches!(stmt, ast::Stmt::FunctionDef(function_def) if function_def.name.as_str() == name)
+    })
+}
+
 /// Renders `expr` as a dotted name (e.g. `self.env.cr`) if it's a chain of attribute accesses
 /// rooted at a plain name; returns `None` for anything else (calls, subscripts, etc.).
 pub(crate) fn dotted_name(expr: &Expr) -> Option<String> {

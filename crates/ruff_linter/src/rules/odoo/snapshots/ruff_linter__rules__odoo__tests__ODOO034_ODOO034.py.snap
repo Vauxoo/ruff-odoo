@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO034 'name_get' is deprecated. Use '_compute_display_name' instead
+ --> ODOO034.py:4:9
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     def name_get(self):
+  |         ^^^^^^^^
+5 |         return []
+  |

@@ -5,7 +5,9 @@ use ruff_macros::CacheKey;
 
 use crate::registry::Rule;
 
-const RULESET_SIZE: usize = 16;
+// Vauxoo fork: bumped from 16 to 17 — the ODOO rule group pushed the total rule count
+// past the 1024 (16 * 64) bits the upstream size allows.
+const RULESET_SIZE: usize = 17;
 
 /// A set of [`Rule`]s.
 ///

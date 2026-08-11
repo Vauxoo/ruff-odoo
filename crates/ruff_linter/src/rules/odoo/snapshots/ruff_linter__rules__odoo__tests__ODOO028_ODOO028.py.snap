@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO028 Name of search method should start with "_search_"
+ --> ODOO028.py:4:33
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     total = fields.Float(search="_find_total")
+  |                                 ^^^^^^^^^^^^^
+5 |     subtotal = fields.Float(search="_search_subtotal")
+  |

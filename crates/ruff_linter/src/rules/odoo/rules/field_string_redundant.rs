@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
 use crate::fix::edits::{Parentheses, remove_argument};
+use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 use crate::{Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -46,33 +47,6 @@ impl Violation for FieldStringRedundant {
     fn fix_title(&self) -> Option<String> {
         Some("Remove redundant `string` attribute".to_string())
     }
-}
-
-const ODOO_MODEL_BASES: &[&str] = &["Model", "TransientModel", "AbstractModel"];
-
-/// Returns `true` if `class_def`'s bases include (by unqualified name) an Odoo model base,
-/// e.g. `models.Model` or `Model`.
-fn is_odoo_model_class(class_def: &ast::StmtClassDef) -> bool {
-    let Some(arguments) = class_def.arguments.as_deref() else {
-        return false;
-    };
-    arguments.args.iter().any(|base| {
-        let name = match base {
-            Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
-            Expr::Name(ast::ExprName { id, .. }) => id.as_str(),
-            _ => return false,
-        };
-        ODOO_MODEL_BASES.contains(&name)
-    })
-}
-
-/// Returns the field type (e.g. `"Many2one"`) if `func` is an access on `fields`, as in
-/// `fields.Many2one(...)`.
-fn odoo_field_type(func: &Expr) -> Option<&str> {
-    let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = func else {
-        return None;
-    };
-    matches!(value.as_ref(), Expr::Name(name) if name.id == "fields").then_some(attr.as_str())
 }
 
 /// The positional index of the `string` argument for field types where it isn't the first

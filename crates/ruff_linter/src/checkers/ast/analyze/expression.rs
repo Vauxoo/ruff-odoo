@@ -401,6 +401,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
         }
         Expr::Attribute(attribute) => {
+            if checker.is_rule_enabled(Rule::DeprecatedSelfCr) {
+                odoo::rules::deprecated_self_cr(checker, attribute);
+            }
             if attribute.ctx == ExprContext::Load {
                 if checker.any_rule_enabled(&[
                     Rule::SuspiciousPickleUsage,
@@ -1390,6 +1393,19 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::DirectTranslationCall) {
                 odoo::rules::direct_translation_call(checker, call);
             }
+            if checker.is_rule_enabled(Rule::SuperMethodMismatch) {
+                odoo::rules::super_method_mismatch(checker, call);
+            }
+            if checker.is_rule_enabled(Rule::NoSearchAll) {
+                odoo::rules::no_search_all(checker, call);
+            }
+            if checker.any_rule_enabled(&[
+                Rule::TranslationContainsVariable,
+                Rule::TranslationPositional,
+                Rule::TranslationInjection,
+            ]) {
+                odoo::rules::translation_calls(checker, call);
+            }
         }
         Expr::Dict(dict) => {
             if checker.any_rule_enabled(&[
@@ -1436,6 +1452,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::ManifestSuperfluousKey) {
                 odoo::rules::manifest_superfluous_key(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ManifestExternalAssets) {
+                odoo::rules::manifest_external_assets(checker, dict, checker.path);
             }
         }
         Expr::Set(set) => {
@@ -1799,6 +1818,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::HardcodedStringCharset) {
                 refurb::rules::hardcoded_string_charset_literal(checker, string_like);
+            }
+            if checker.is_rule_enabled(Rule::DeprecatedInselectOperator) {
+                odoo::rules::deprecated_inselect_operator(checker, string_like);
             }
         }
         Expr::If(
