@@ -1,0 +1,18 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO035 [*] Use "self.env.cr" instead of "self._cr" (deprecated since 19.0)
+ --> ODOO035.py:5:9
+  |
+4 |     def action_do(self):
+5 |         self._cr.execute("SELECT 1")
+  |         ^^^^^^^^
+6 |         self.env.cr.execute("SELECT 2")
+  |
+help: Replace with `self.env.cr`
+  |
+4 |     def action_do(self):
+  -         self._cr.execute("SELECT 1")
+5 +         self.env.cr.execute("SELECT 1")
+6 |         self.env.cr.execute("SELECT 2")
+  |

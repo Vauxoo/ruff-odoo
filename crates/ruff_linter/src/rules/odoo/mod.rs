@@ -22,6 +22,52 @@ mod tests {
     #[test_case(Rule::UnusedLogger, Path::new("ODOO006_0.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("ODOO006_1.py"))]
     #[test_case(Rule::FieldStringRedundant, Path::new("ODOO007.py"))]
+    #[test_case(Rule::ManifestRequiredAuthor, Path::new("ODOO008/__manifest__.py"))]
+    #[test_case(Rule::ManifestAuthorString, Path::new("ODOO009/__manifest__.py"))]
+    #[test_case(Rule::LicenseAllowed, Path::new("ODOO010/__manifest__.py"))]
+    #[test_case(Rule::ManifestMaintainersList, Path::new("ODOO011/__manifest__.py"))]
+    #[test_case(Rule::ManifestSummaryMultiline, Path::new("ODOO012/__manifest__.py"))]
+    #[test_case(Rule::DevelopmentStatusAllowed, Path::new("ODOO013/__manifest__.py"))]
+    #[test_case(
+        Rule::WebsiteManifestKeyNotValidUri,
+        Path::new("ODOO014/__manifest__.py")
+    )]
+    #[test_case(Rule::InvalidEmail, Path::new("ODOO015/__manifest__.py"))]
+    #[test_case(Rule::MissingReadme, Path::new("ODOO016/missing/__manifest__.py"))]
+    #[test_case(Rule::MissingReadme, Path::new("ODOO016/present/__manifest__.py"))]
+    #[test_case(Rule::InvalidCommit, Path::new("ODOO017.py"))]
+    #[test_case(Rule::ContextOverridden, Path::new("ODOO018.py"))]
+    #[test_case(Rule::BadBuiltinGroupby, Path::new("ODOO019.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("ODOO020.py"))]
+    #[test_case(Rule::AttributeDeprecated, Path::new("ODOO021.py"))]
+    #[test_case(Rule::MissingReturn, Path::new("ODOO022.py"))]
+    #[test_case(
+        Rule::OdooAddonsRelativeImport,
+        Path::new("ODOO023/my_module/models/foo.py")
+    )]
+    #[test_case(Rule::DirectTranslationCall, Path::new("ODOO024.py"))]
+    #[test_case(Rule::ManifestSuperfluousKey, Path::new("ODOO025/__manifest__.py"))]
+    #[test_case(Rule::HeaderComments, Path::new("ODOO026.py"))]
+    #[test_case(Rule::MethodCompute, Path::new("ODOO027.py"))]
+    #[test_case(Rule::MethodSearch, Path::new("ODOO028.py"))]
+    #[test_case(Rule::MethodInverse, Path::new("ODOO029.py"))]
+    #[test_case(Rule::RenamedFieldParameter, Path::new("ODOO030.py"))]
+    #[test_case(Rule::TranslationField, Path::new("ODOO031.py"))]
+    #[test_case(Rule::InheritableMethodString, Path::new("ODOO032.py"))]
+    #[test_case(Rule::InheritableMethodLambda, Path::new("ODOO033.py"))]
+    #[test_case(Rule::DeprecatedNameGet, Path::new("ODOO034.py"))]
+    #[test_case(Rule::DeprecatedSelfCr, Path::new("ODOO035.py"))]
+    #[test_case(Rule::SuperMethodMismatch, Path::new("ODOO036.py"))]
+    #[test_case(Rule::DeprecatedOdooModelMethod, Path::new("ODOO037.py"))]
+    #[test_case(Rule::NoSearchAll, Path::new("ODOO038.py"))]
+    #[test_case(Rule::NoRaiseUnlink, Path::new("ODOO039.py"))]
+    #[test_case(Rule::NoWriteInCompute, Path::new("ODOO040.py"))]
+    #[test_case(Rule::TranslationContainsVariable, Path::new("ODOO041.py"))]
+    #[test_case(Rule::TranslationPositional, Path::new("ODOO042.py"))]
+    #[test_case(Rule::TranslationInjection, Path::new("ODOO043.py"))]
+    #[test_case(Rule::DeprecatedInselectOperator, Path::new("ODOO044.py"))]
+    #[test_case(Rule::TestFolderImported, Path::new("ODOO045/__init__.py"))]
+    #[test_case(Rule::ManifestExternalAssets, Path::new("ODOO046/__manifest__.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(

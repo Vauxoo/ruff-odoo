@@ -68,6 +68,10 @@ pub(crate) fn check_tokens(
         }
     }
 
+    if context.is_rule_enabled(Rule::HeaderComments) {
+        odoo::rules::header_comments(context, locator, comment_ranges);
+    }
+
     if context.is_rule_enabled(Rule::UTF8EncodingDeclaration) {
         pyupgrade::rules::unnecessary_coding_comment(context, locator, comment_ranges);
     }

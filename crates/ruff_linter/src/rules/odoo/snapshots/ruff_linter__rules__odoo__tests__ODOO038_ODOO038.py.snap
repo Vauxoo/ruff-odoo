@@ -1,0 +1,22 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO038 Using an empty domain `search([])` without a `limit` will load all records, may impact performance.
+ --> ODOO038.py:5:24
+  |
+4 |     def action_all(self):
+5 |         all_partners = self.env["res.partner"].search([])
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |         limited = self.env["res.partner"].search([], limit=100)
+7 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+  |
+
+ODOO038 Using an empty domain `search_read([])` without a `limit` will load all records, may impact performance.
+  --> ODOO038.py:9:20
+   |
+ 7 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+ 8 |         counted = self.env["res.partner"].search([], count=True)
+ 9 |         read_all = self.env["res.partner"].search_read([])
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |         return all_partners, limited, filtered, counted, read_all
+   |

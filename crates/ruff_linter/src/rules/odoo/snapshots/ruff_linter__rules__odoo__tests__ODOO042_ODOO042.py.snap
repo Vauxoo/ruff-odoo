@@ -1,0 +1,21 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+ --> ODOO042.py:1:1
+  |
+1 | _("%s of %s")
+  | ^^^^^^^^^^^^^
+2 | _("%(count)s of %(total)s")
+3 | _("{} and {}")
+  |
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+ --> ODOO042.py:3:1
+  |
+1 | _("%s of %s")
+2 | _("%(count)s of %(total)s")
+3 | _("{} and {}")
+  | ^^^^^^^^^^^^^^
+4 | _("only one %s")
+  |

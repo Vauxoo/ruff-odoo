@@ -136,18 +136,32 @@ cross-module inference (see Scope discipline above).
 3. `cargo dev generate-all` — regenerates `ruff.schema.json` and `docs/rules/<name>.md` (the
    latter is gitignored, generated on demand — its successful generation without errors is itself
    a useful smoke test that the doc comment sections are well-formed).
-4. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
-5. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
+4. **Doc-example formatting** — CI's mkdocs job runs every ```` ```python ```` example in the rule
+   docs through `ruff format` and fails on any diff (`scripts/check_docs_formatted.py`). Common
+   traps: a "Use instead" empty dict must be `{}` (not a multi-line `{\n}`), stub bodies must
+   collapse to `def f(): ...` (not `...` on its own indented line), and lines over the format
+   width must be wrapped the way `ruff format` would wrap them. Validate locally after
+   `generate-all` — the script checks the *generated* `docs/rules/*.md`, not the `.rs` files, so
+   regenerate first — and put the freshly built binary on `PATH` (the script shells out to
+   whatever `ruff` it finds):
+   ```
+   PATH="$PWD/target/debug:$PATH" python3 scripts/check_docs_formatted.py
+   ```
+   Expect "All docs are formatted correctly." On failure it prints the exact `///` rewrite to
+   paste into the rule file. It takes a few minutes (one `ruff format` subprocess per snippet
+   across all ~900 rules), so run it in the background.
+5. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
+6. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
    --files ...` if this checkout has no `uv.lock` for `--locked` to resolve against — batch the
    file list in groups of ~5-10; a single `--files` call with 30+ paths has failed here with
    "File name too long").
-6. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
+7. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
    don't rely on unit tests alone to validate the CLI-level experience:
    ```
    cargo build --bin ruff
    target/debug/ruff check --select ODOO --preview --no-cache --fix <path>
    ```
-7. Coverage (optional but useful when adding a non-trivial rule):
+8. Coverage (optional but useful when adding a non-trivial rule):
    `cargo llvm-cov -p ruff_linter --lib --summary-only -- rules::odoo` (install once with `cargo
    install cargo-llvm-cov --locked` + `rustup component add llvm-tools-preview`), then grep the
    `rules/odoo/` lines from the output.
