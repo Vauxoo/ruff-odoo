@@ -197,8 +197,11 @@ impl Violation for InheritableMethodString {
 /// ```
 ///
 /// Use instead:
+///
 /// ```python
-/// company_id = fields.Many2one("res.company", default=lambda self: self._default_company())
+/// company_id = fields.Many2one(
+///     "res.company", default=lambda self: self._default_company()
+/// )
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]

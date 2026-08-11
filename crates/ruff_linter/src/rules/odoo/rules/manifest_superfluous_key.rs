@@ -21,9 +21,9 @@ use crate::{Fix, FixAvailability, Violation};
 /// ```
 ///
 /// Use instead:
+///
 /// ```python
-/// {
-/// }
+/// {}
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]

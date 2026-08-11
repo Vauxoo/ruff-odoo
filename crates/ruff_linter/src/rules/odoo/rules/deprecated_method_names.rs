@@ -16,15 +16,15 @@ use crate::rules::odoo::helpers::is_odoo_model_class;
 /// `_compute_display_name` instead.
 ///
 /// ## Example
+///
 /// ```python
-/// def name_get(self):
-///     ...
+/// def name_get(self): ...
 /// ```
 ///
 /// Use instead:
+///
 /// ```python
-/// def _compute_display_name(self):
-///     ...
+/// def _compute_display_name(self): ...
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
@@ -45,9 +45,9 @@ impl Violation for DeprecatedNameGet {
 /// Overriding a method the ORM no longer calls means the override silently never runs.
 ///
 /// ## Example
+///
 /// ```python
-/// def fields_view_get(self, view_id=None, view_type="form", **kwargs):
-///     ...
+/// def fields_view_get(self, view_id=None, view_type="form", **kwargs): ...
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
