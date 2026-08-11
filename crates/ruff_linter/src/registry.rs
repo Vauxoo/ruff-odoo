@@ -168,6 +168,9 @@ pub enum Linter {
     /// NumPy-specific rules
     #[prefix = "NPY"]
     Numpy,
+    /// [odoo](https://pypi.org/project/pylint-odoo/)
+    #[prefix = "ODOO"]
+    Odoo,
     /// [pandas-vet](https://pypi.org/project/pandas-vet/)
     #[prefix = "PD"]
     PandasVet,
@@ -304,7 +307,8 @@ impl Rule {
             | Rule::TrailingCommaOnBareTuple
             | Rule::LegacyTypeComment
             | Rule::UselessSemicolon
-            | Rule::UTF8EncodingDeclaration => LintSource::Tokens,
+            | Rule::UTF8EncodingDeclaration
+            | Rule::VimComment => LintSource::Tokens,
             Rule::IOError => LintSource::Io,
             Rule::UnsortedImports | Rule::MissingRequiredImport => LintSource::Imports,
             Rule::ImplicitNamespacePackage

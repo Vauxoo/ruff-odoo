@@ -17,7 +17,7 @@ use crate::rules::{
     flake8_future_annotations, flake8_gettext, flake8_implicit_str_concat, flake8_logging,
     flake8_logging_format, flake8_pie, flake8_print, flake8_pyi, flake8_pytest_style, flake8_self,
     flake8_simplify, flake8_tidy_imports, flake8_type_checking, flake8_use_pathlib, flynt, numpy,
-    pandas_vet, pep8_naming, pycodestyle, pyflakes, pylint, pyupgrade, refurb, ruff,
+    odoo, pandas_vet, pep8_naming, pycodestyle, pyflakes, pylint, pyupgrade, refurb, ruff,
 };
 use ruff_python_ast::PythonVersion;
 
@@ -1388,6 +1388,12 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::UnnecessarySpread) {
                 flake8_pie::rules::unnecessary_spread(checker, dict);
+            }
+            if checker.is_rule_enabled(Rule::ManifestRequiredKey) {
+                odoo::rules::manifest_required_key(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ManifestDeprecatedKey) {
+                odoo::rules::manifest_deprecated_key(checker, dict, checker.path);
             }
         }
         Expr::Set(set) => {
