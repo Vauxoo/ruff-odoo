@@ -1012,6 +1012,15 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Pydoclint, "501") => rules::pydoclint::rules::DocstringMissingException,
         (Pydoclint, "502") => rules::pydoclint::rules::DocstringExtraneousException,
 
+        // odoo
+        (Odoo, "001") => rules::odoo::rules::ManifestRequiredKey,
+        (Odoo, "002") => rules::odoo::rules::ManifestDeprecatedKey,
+        (Odoo, "003") => rules::odoo::rules::VimComment,
+        (Odoo, "004") => rules::odoo::rules::ExceptPass,
+        (Odoo, "005") => rules::odoo::rules::MethodRequiredSuper,
+        (Odoo, "006") => rules::odoo::rules::UnusedLogger,
+        (Odoo, "007") => rules::odoo::rules::FieldStringRedundant,
+
         // ruff
         (Ruff, "001") => rules::ruff::rules::AmbiguousUnicodeCharacterString,
         (Ruff, "002") => rules::ruff::rules::AmbiguousUnicodeCharacterDocstring,

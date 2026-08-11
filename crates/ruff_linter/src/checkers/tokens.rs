@@ -14,7 +14,7 @@ use crate::registry::Rule;
 use crate::rules::pycodestyle::rules::BlankLinesChecker;
 use crate::rules::{
     eradicate, flake8_commas, flake8_executable, flake8_fixme, flake8_implicit_str_concat,
-    flake8_pyi, flake8_todos, pycodestyle, pygrep_hooks, pylint, pyupgrade, ruff,
+    flake8_pyi, flake8_todos, odoo, pycodestyle, pygrep_hooks, pylint, pyupgrade, ruff,
 };
 
 use super::ast::LintContext;
@@ -60,6 +60,12 @@ pub(crate) fn check_tokens(
 
     if context.is_rule_enabled(Rule::CommentedOutCode) {
         eradicate::rules::commented_out_code(context, locator, comment_ranges);
+    }
+
+    if context.is_rule_enabled(Rule::VimComment) {
+        for range in comment_ranges {
+            odoo::rules::use_vim_comment(context, locator, range);
+        }
     }
 
     if context.is_rule_enabled(Rule::UTF8EncodingDeclaration) {

@@ -10,7 +10,7 @@ use crate::rules::{
     airflow, fastapi, flake8_async, flake8_bandit, flake8_boolean_trap, flake8_bugbear,
     flake8_builtins, flake8_debugger, flake8_django, flake8_errmsg, flake8_import_conventions,
     flake8_pie, flake8_pyi, flake8_pytest_style, flake8_raise, flake8_return, flake8_simplify,
-    flake8_slots, flake8_tidy_imports, flake8_type_checking, mccabe, pandas_vet, pep8_naming,
+    flake8_slots, flake8_tidy_imports, flake8_type_checking, mccabe, odoo, pandas_vet, pep8_naming,
     perflint, pycodestyle, pyflakes, pygrep_hooks, pylint, pyupgrade, refurb, ruff, tryceratops,
 };
 use ruff_python_ast::PythonVersion;
@@ -96,6 +96,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             }
             if checker.is_rule_enabled(Rule::InvalidStrReturnType) {
                 pylint::rules::invalid_str_return(checker, function_def);
+            }
+            if checker.is_rule_enabled(Rule::MethodRequiredSuper) {
+                odoo::rules::method_required_super(checker, function_def);
             }
             if checker.is_rule_enabled(Rule::InvalidFunctionName) {
                 pep8_naming::rules::invalid_function_name(
@@ -1398,6 +1401,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::VerboseRaise) {
                 tryceratops::rules::verbose_raise(checker, handlers);
             }
+            if checker.is_rule_enabled(Rule::ExceptPass) {
+                odoo::rules::except_pass(checker, handlers);
+            }
             if checker.is_rule_enabled(Rule::VerboseLogMessage) {
                 tryceratops::rules::verbose_log_message(checker, handlers);
             }
@@ -1456,6 +1462,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
                 pyupgrade::rules::convert_named_tuple_functional_to_class(
                     checker, stmt, targets, value,
                 );
+            }
+            if checker.is_rule_enabled(Rule::FieldStringRedundant) {
+                odoo::rules::field_string_redundant(checker, assign);
             }
             if checker.is_rule_enabled(Rule::PandasDfVariableName) {
                 pandas_vet::rules::assignment_to_df(checker, targets);

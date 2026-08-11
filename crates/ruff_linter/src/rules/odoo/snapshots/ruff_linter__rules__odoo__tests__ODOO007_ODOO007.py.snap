@@ -1,0 +1,56 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO007 [*] The `string` attribute is redundant and should be removed
+ --> ODOO007.py:7:5
+  |
+5 |     _inherit = "my.model"
+6 |
+7 |     name = fields.Char("Name")
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |
+9 |     user_id = fields.Many2one("res.users", string="User")
+  |
+help: Remove redundant `string` attribute
+  |
+6 |
+  -     name = fields.Char("Name")
+7 +     name = fields.Char()
+8 |
+  |
+
+ODOO007 [*] The `string` attribute is redundant and should be removed
+  --> ODOO007.py:9:5
+   |
+ 7 |     name = fields.Char("Name")
+ 8 |
+ 9 |     user_id = fields.Many2one("res.users", string="User")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |
+11 |     state = fields.Selection([("a", "A")], "State")
+   |
+help: Remove redundant `string` attribute
+   |
+8  |
+   -     user_id = fields.Many2one("res.users", string="User")
+9  +     user_id = fields.Many2one("res.users")
+10 |
+   |
+
+ODOO007 [*] The `string` attribute is redundant and should be removed
+  --> ODOO007.py:11:5
+   |
+ 9 |     user_id = fields.Many2one("res.users", string="User")
+10 |
+11 |     state = fields.Selection([("a", "A")], "State")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 |     other = fields.Char(string="Different Label")
+   |
+help: Remove redundant `string` attribute
+   |
+10 |
+   -     state = fields.Selection([("a", "A")], "State")
+11 +     state = fields.Selection([("a", "A")])
+12 |
+   |
