@@ -1,0 +1,10 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO023 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:1:1
+  |
+1 | from odoo.addons.my_module import models as _models
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 | from odoo.addons.other_module import models as _other
+  |

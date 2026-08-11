@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO019 Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
+ --> ODOO019.py:5:1
+  |
+3 | from odoo.tools import groupby
+4 |
+5 | itertools.groupby(records, key=lambda r: r.partner_id)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 | groupby(records, key=lambda r: r.partner_id)
+  |

@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO009 The author key in the manifest file must be a string (with comma separated values)
+ --> __manifest__.py:3:5
+  |
+1 | {
+2 |     "name": "My Module",
+3 |     "author": ["Someone"],
+  |     ^^^^^^^^
+4 | }
+  |

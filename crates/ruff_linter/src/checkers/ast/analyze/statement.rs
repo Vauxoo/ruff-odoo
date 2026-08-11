@@ -100,6 +100,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::MethodRequiredSuper) {
                 odoo::rules::method_required_super(checker, function_def);
             }
+            if checker.is_rule_enabled(Rule::MissingReturn) {
+                odoo::rules::missing_return(checker, function_def);
+            }
             if checker.is_rule_enabled(Rule::InvalidFunctionName) {
                 pep8_naming::rules::invalid_function_name(
                     checker,
@@ -722,6 +725,12 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
         ) => {
             let level = *level;
             let module = module.as_deref();
+            if checker.is_rule_enabled(Rule::OdooExceptionWarning) {
+                odoo::rules::odoo_exception_warning(checker, import_from);
+            }
+            if checker.is_rule_enabled(Rule::OdooAddonsRelativeImport) {
+                odoo::rules::odoo_addons_relative_import(checker, import_from, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ModuleImportNotAtTopOfFile) {
                 pycodestyle::rules::module_import_not_at_top_of_file(checker, stmt);
             }
@@ -1465,6 +1474,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             }
             if checker.is_rule_enabled(Rule::FieldStringRedundant) {
                 odoo::rules::field_string_redundant(checker, assign);
+            }
+            if checker.is_rule_enabled(Rule::AttributeDeprecated) {
+                odoo::rules::attribute_deprecated(checker, assign);
             }
             if checker.is_rule_enabled(Rule::PandasDfVariableName) {
                 pandas_vet::rules::assignment_to_df(checker, targets);
