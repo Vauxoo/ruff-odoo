@@ -32,12 +32,16 @@ ODOO042 [*] Translation method is using positional string printf formatting with
 9 | _lt("%d of %d", count, total)
   |
 help: Convert to named placeholders passed as keyword arguments
-  |
-6 | # Fixable: values passed to the call as names or dotted attribute chains.
-  - self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
-7 + self.env._("Donation (%(tier_name)s) is (%(tier_campaign_id_name)s)", tier_name=tier.name, tier_campaign_id_name=tier.campaign_id.name)
-8 | _("%s of %s", count, total)
-  |
+   |
+6  | # Fixable: values passed to the call as names or dotted attribute chains.
+   - self.env._("Donation (%s) is (%s)", tier.name, tier.campaign_id.name)
+7  + self.env._(
+8  +     "Donation (%(tier_name)s) is (%(tier_campaign_id_name)s)",
+9  +     tier_name=tier.name,
+10 +     tier_campaign_id_name=tier.campaign_id.name,
+11 + )
+12 | _("%s of %s", count, total)
+   |
 note: This is an unsafe fix and may change runtime behavior
 
 ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
@@ -135,8 +139,11 @@ help: Convert to named placeholders passed as keyword arguments
    -     "The following fields are required:\n - %s\nFor the record %s",
    -     "\n - ".join(fields_string),
    -     sale.display_name,
-16 +     "The following fields are required:\n - %(fields_string)s\nFor the record %(sale_display_name)s", fields_string="\n - ".join(fields_string), sale_display_name=sale.display_name,
-17 | )
+16 +     "The following fields are required:\n - %(fields_string)s\nFor the record "
+17 +     "%(sale_display_name)s",
+18 +     fields_string="\n - ".join(fields_string),
+19 +     sale_display_name=sale.display_name,
+20 | )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -183,8 +190,13 @@ help: Convert to named placeholders passed as keyword arguments
    -     record.delegated_id.display_name,
    -     format_date(self.env, record.start_date),
    -     format_date(self.env, record.end_date),
-22 +     "%(record_delegated_from_id_display_name)s -> %(record_delegated_id_display_name)s (From %(record_start_date)s to %(record_end_date)s)", record_delegated_from_id_display_name=record.delegated_from_id.display_name, record_delegated_id_display_name=record.delegated_id.display_name, record_start_date=format_date(self.env, record.start_date), record_end_date=format_date(self.env, record.end_date),
-23 | )
+22 +     "%(record_delegated_from_id_display_name)s -> %(record_delegated_id_display_name)s "
+23 +     "(From %(record_start_date)s to %(record_end_date)s)",
+24 +     record_delegated_from_id_display_name=record.delegated_from_id.display_name,
+25 +     record_delegated_id_display_name=record.delegated_id.display_name,
+26 +     record_start_date=format_date(self.env, record.start_date),
+27 +     record_end_date=format_date(self.env, record.end_date),
+28 | )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -265,8 +277,10 @@ help: Convert to named placeholders passed as keyword arguments
    -     "Partners:\n - %s\n\n Domain used %s",
    -     "\n - ".join(["%s - %s" % (p.ref, p.name) for p in partners_werror]),
    -     domain,
-32 +     "Partners:\n - %(partners_werror)s\n\n Domain used %(domain)s", partners_werror="\n - ".join(["%s - %s" % (p.ref, p.name) for p in partners_werror]), domain=domain,
-33 | )
+32 +     "Partners:\n - %(partners_werror)s\n\n Domain used %(domain)s",
+33 +     partners_werror="\n - ".join(["%s - %s" % (p.ref, p.name) for p in partners_werror]),
+34 +     domain=domain,
+35 | )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -284,8 +298,12 @@ help: Convert to named placeholders passed as keyword arguments
    |
 35 | )
    - _("date '%s'.%s", date_to_convert, self.env._(" In: %s.", title) if title else "")
-36 + _("date '%(date_to_convert)s'.%(title)s", date_to_convert=date_to_convert, title=self.env._(" In: %s.", title) if title else "")
-37 | _("closure %s already exists for %s", refundable_closures[0].name, operation.name)
+36 + _(
+37 +     "date '%(date_to_convert)s'.%(title)s",
+38 +     date_to_convert=date_to_convert,
+39 +     title=self.env._(" In: %s.", title) if title else "",
+40 + )
+41 | _("closure %s already exists for %s", refundable_closures[0].name, operation.name)
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -303,8 +321,12 @@ help: Convert to named placeholders passed as keyword arguments
    |
 36 | _("date '%s'.%s", date_to_convert, self.env._(" In: %s.", title) if title else "")
    - _("closure %s already exists for %s", refundable_closures[0].name, operation.name)
-37 + _("closure %(refundable_closures_0_name)s already exists for %(operation_name)s", refundable_closures_0_name=refundable_closures[0].name, operation_name=operation.name)
-38 | _("%s must have a coverage greater than 0%% and up to %s%%", line.name, line.program_id.coverage * 100)
+37 + _(
+38 +     "closure %(refundable_closures_0_name)s already exists for %(operation_name)s",
+39 +     refundable_closures_0_name=refundable_closures[0].name,
+40 +     operation_name=operation.name,
+41 + )
+42 | _("%s must have a coverage greater than 0%% and up to %s%%", line.name, line.program_id.coverage * 100)
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -322,8 +344,13 @@ help: Convert to named placeholders passed as keyword arguments
    |
 37 | _("closure %s already exists for %s", refundable_closures[0].name, operation.name)
    - _("%s must have a coverage greater than 0%% and up to %s%%", line.name, line.program_id.coverage * 100)
-38 + _("%(line_name)s must have a coverage greater than 0%% and up to %(line_program_id_coverage)s%%", line_name=line.name, line_program_id_coverage=line.program_id.coverage * 100)
-39 | _("%s of %s", count + 1, total)
+38 + _(
+39 +     "%(line_name)s must have a coverage greater than 0%% and up to "
+40 +     "%(line_program_id_coverage)s%%",
+41 +     line_name=line.name,
+42 +     line_program_id_coverage=line.program_id.coverage * 100,
+43 + )
+44 | _("%s of %s", count + 1, total)
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -368,8 +395,12 @@ help: Convert to named placeholders passed as keyword arguments
    -     hcm_id_leave,
    -     oracle_leave.get("startDateTime"),
    -     oracle_leave.get("endDateTime"),
-41 +     "Failed to parse dates for absence %(hcm_id_leave)s (Start: %(startDateTime)s, End: %(endDateTime)s)", hcm_id_leave=hcm_id_leave, startDateTime=oracle_leave.get("startDateTime"), endDateTime=oracle_leave.get("endDateTime"),
-42 | )
+41 +     "Failed to parse dates for absence %(hcm_id_leave)s (Start: %(startDateTime)s, "
+42 +     "End: %(endDateTime)s)",
+43 +     hcm_id_leave=hcm_id_leave,
+44 +     startDateTime=oracle_leave.get("startDateTime"),
+45 +     endDateTime=oracle_leave.get("endDateTime"),
+46 | )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -386,8 +417,12 @@ help: Convert to named placeholders passed as keyword arguments
    |
 45 | )
    - _("Replacement of %s: %s", record.name, datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-46 + _("Replacement of %(record_name)s: %(datetime_now_strftime)s", record_name=record.name, datetime_now_strftime=datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-47 | _("adjustment of %s by %s", line.name, f"{entry_amount:,.2f}")
+46 + _(
+47 +     "Replacement of %(record_name)s: %(datetime_now_strftime)s",
+48 +     record_name=record.name,
+49 +     datetime_now_strftime=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+50 + )
+51 | _("adjustment of %s by %s", line.name, f"{entry_amount:,.2f}")
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -405,8 +440,12 @@ help: Convert to named placeholders passed as keyword arguments
    |
 46 | _("Replacement of %s: %s", record.name, datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
    - _("adjustment of %s by %s", line.name, f"{entry_amount:,.2f}")
-47 + _("adjustment of %(line_name)s by %(entry_amount)s", line_name=line.name, entry_amount=f"{entry_amount:,.2f}")
-48 |
+47 + _(
+48 +     "adjustment of %(line_name)s by %(entry_amount)s",
+49 +     line_name=line.name,
+50 +     entry_amount=f"{entry_amount:,.2f}",
+51 + )
+52 |
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -464,4 +503,54 @@ ODOO042 Translation method is using positional string printf formatting with mul
 60 | # Not fixable: keyword arguments already present.
 61 | _("%s of %s", count, total=total)
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+62 |
+63 | # One-line rewrite would exceed the line length: expand the call, one argument per line.
+   |
 help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:66:31
+   |
+64 | …
+65 | …
+66 | …rror(_("Automated activity creation failed for stage %s on opportunity %s", self.stage_id.display_name, self.opportunity_id.display_name))
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+67 | …
+68 | …m alone still exceeds the line length: wrap it into pieces too.
+   |
+help: Convert to named placeholders passed as keyword arguments
+   |
+65 |     if failed:
+   -         raise ValidationError(_("Automated activity creation failed for stage %s on opportunity %s", self.stage_id.display_name, self.opportunity_id.display_name))
+66 +         raise ValidationError(_(
+67 +             "Automated activity creation failed for stage "
+68 +             "%(self_stage_id_display_name)s on opportunity "
+69 +             "%(self_opportunity_id_display_name)s",
+70 +             self_stage_id_display_name=self.stage_id.display_name,
+71 +             self_opportunity_id_display_name=self.opportunity_id.display_name,
+72 +         ))
+73 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:70:21
+   |
+68 | … whose term alone still exceeds the line length: wrap it into pieces too.
+69 | …(self):
+70 | …rror(_("The configured quota %s for the salesperson team %s was exceeded by the current invoiced amount and the remaining allowance %s cannot cover it", quota.name, team.display_name, remaining.amount))
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Convert to named placeholders passed as keyword arguments
+   |
+69 | def check_quota(self):
+   -     raise UserError(_("The configured quota %s for the salesperson team %s was exceeded by the current invoiced amount and the remaining allowance %s cannot cover it", quota.name, team.display_name, remaining.amount))
+70 +     raise UserError(_(
+71 +         "The configured quota %(quota_name)s for the salesperson team "
+72 +         "%(team_display_name)s was exceeded by the current invoiced amount and the "
+73 +         "remaining allowance %(remaining_amount)s cannot cover it",
+74 +         quota_name=quota.name,
+75 +         team_display_name=team.display_name,
+76 +         remaining_amount=remaining.amount,
+77 +     ))
+   |
+note: This is an unsafe fix and may change runtime behavior

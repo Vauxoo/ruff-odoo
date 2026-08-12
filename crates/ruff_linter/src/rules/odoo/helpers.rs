@@ -3,9 +3,55 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ruff_python_ast::{self as ast, Expr};
 use ruff_python_trivia::{SimpleTokenKind, SimpleTokenizer};
-use ruff_text_size::Ranged;
+use ruff_text_size::{Ranged, TextRange};
 
 use crate::Edit;
+use crate::checkers::ast::Checker;
+use crate::line_width::LineWidthBuilder;
+
+/// Renders `content` as string-literal pieces for a parenthesized implicit concatenation.
+///
+/// Pieces split only right after spaces, so concatenating them reproduces `content`
+/// exactly (the word separator stays at the end of each non-final piece). Each piece fits
+/// within `max_line_length` when written at `indent`, whenever a space to break at exists;
+/// a single word longer than the limit stays on its own overlong line.
+pub(crate) fn wrap_string_literal(
+    checker: &Checker,
+    flags: ast::StringLiteralFlags,
+    content: &str,
+    indent: &str,
+    max_line_length: usize,
+) -> Vec<String> {
+    let tab_size = checker.settings().tab_size;
+    let render = |chunk: &str| {
+        checker.generator().expr(
+            &ast::StringLiteral {
+                value: chunk.into(),
+                flags,
+                range: TextRange::default(),
+                node_index: ast::AtomicNodeIndex::NONE,
+            }
+            .into(),
+        )
+    };
+    let mut pieces = Vec::new();
+    let mut current = String::new();
+    for word in content.split_inclusive(' ') {
+        if !current.is_empty() {
+            let width = LineWidthBuilder::new(tab_size)
+                .add_str(indent)
+                .add_str(&render(&format!("{current}{word}")))
+                .get();
+            if width > max_line_length {
+                pieces.push(render(&current));
+                current.clear();
+            }
+        }
+        current.push_str(word);
+    }
+    pieces.push(render(&current));
+    pieces
+}
 
 /// Returns `true` if `path` is an Odoo module manifest file (`__manifest__.py`, or the
 /// legacy `__openerp__.py` name).
