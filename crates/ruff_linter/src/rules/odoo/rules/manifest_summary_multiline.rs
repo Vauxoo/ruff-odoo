@@ -144,5 +144,8 @@ pub(crate) fn manifest_summary_multiline(
     wrapped.push_str(indent);
     wrapped.push(')');
 
-    diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(wrapped, value.range())));
+    diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
+        wrapped,
+        value.range(),
+    )));
 }
