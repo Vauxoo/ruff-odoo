@@ -1,10 +1,13 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr, str_prefix::StringLiteralPrefix};
+use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
 use crate::codes::Rule;
-use crate::rules::odoo::helpers::dotted_name;
+use crate::fix::edits::fits;
+use crate::line_width::LineWidthBuilder;
+use crate::rules::odoo::helpers::{dotted_name, wrap_string_literal};
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -61,6 +64,10 @@ impl Violation for TranslationContainsVariable {
 /// Dotted attribute chains join with underscores (`tier.name` becomes `tier_name`), and
 /// calls or subscripts borrow the most meaningful identifier inside them
 /// (`", ".join(fields_string)` becomes `fields_string`, `values[0]` becomes `values_0`).
+///
+/// When the rewritten call no longer fits within the configured line length, the fix
+/// expands it with one argument per line, wrapping the term itself into a parenthesized
+/// implicit string concatenation if needed.
 ///
 /// The fix is marked unsafe because it changes the source translation term: existing
 /// translations keyed on the old term (in `.po` files) no longer match and must be
@@ -449,26 +456,96 @@ fn convert_to_named_placeholders(
     }
     new_text.push_str(&text[last..]);
 
-    let node = ast::StringLiteral {
-        value: new_text.into_boxed_str(),
-        flags: checker.default_string_flags().with_prefix({
-            if value.is_unicode() {
-                StringLiteralPrefix::Unicode
-            } else {
-                StringLiteralPrefix::Empty
-            }
-        }),
-        range: TextRange::default(),
-        node_index: ruff_python_ast::AtomicNodeIndex::NONE,
+    let flags = checker.default_string_flags().with_prefix({
+        if value.is_unicode() {
+            StringLiteralPrefix::Unicode
+        } else {
+            StringLiteralPrefix::Empty
+        }
+    });
+    let term_repr = checker.generator().expr(
+        &ast::StringLiteral {
+            value: new_text.clone().into_boxed_str(),
+            flags,
+            range: TextRange::default(),
+            node_index: ruff_python_ast::AtomicNodeIndex::NONE,
+        }
+        .into(),
+    );
+    let replacement = format!(
+        "{term_repr}, {}",
+        keywords
+            .iter()
+            .map(|(name, source)| format!("{name}={source}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+
+    // Prefer the in-place rewrite when the resulting line still fits, measuring with the
+    // rest of the line that follows the replaced range (closing parens, commas, ...).
+    let replaced_range = TextRange::new(term.start(), args.last()?.end());
+    let suffix = locator.slice(TextRange::new(
+        replaced_range.end(),
+        locator.line_end(replaced_range.end()),
+    ));
+    if fits(
+        &format!("{replacement}{suffix}"),
+        term.into(),
+        locator,
+        checker.settings().pycodestyle.max_line_length,
+        checker.settings().tab_size,
+    ) {
+        return Some(Fix::unsafe_edit(Edit::range_replacement(
+            replacement,
+            replaced_range,
+        )));
+    }
+
+    // The one-line rewrite exceeds the line length: expand the translation call instead,
+    // one argument per line, wrapping the term itself into a parenthesized implicit
+    // concatenation when it doesn't fit on its own line either. The trailing comma keeps
+    // formatters from collapsing the call back into one line.
+    let max_line_length = checker.settings().pycodestyle.max_line_length.value() as usize;
+    let line_start = locator.line_start(call.start());
+    let indent: String = locator
+        .slice(TextRange::new(line_start, call.start()))
+        .chars()
+        .take_while(|c| c.is_whitespace())
+        .collect();
+    let inner_indent = format!("{indent}{}", checker.stylist().indentation().as_str());
+    let line_ending = checker.stylist().line_ending().as_str();
+
+    let term_width = LineWidthBuilder::new(checker.settings().tab_size)
+        .add_str(&inner_indent)
+        .add_str(&term_repr)
+        .get();
+    // `< max_line_length` (not `<=`): the trailing comma takes one more column.
+    let term_pieces = if term_width < max_line_length {
+        vec![term_repr]
+    } else {
+        wrap_string_literal(checker, flags, &new_text, &inner_indent, max_line_length)
     };
-    let keywords = keywords
-        .iter()
-        .map(|(name, source)| format!("{name}={source}"))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let replacement = format!("{}, {keywords}", checker.generator().expr(&node.into()));
+
+    let mut expanded = String::from("(");
+    for piece in &term_pieces {
+        expanded.push_str(line_ending);
+        expanded.push_str(&inner_indent);
+        expanded.push_str(piece);
+    }
+    expanded.push(',');
+    for (name, source) in &keywords {
+        expanded.push_str(line_ending);
+        expanded.push_str(&inner_indent);
+        expanded.push_str(name);
+        expanded.push('=');
+        expanded.push_str(source);
+        expanded.push(',');
+    }
+    expanded.push_str(line_ending);
+    expanded.push_str(&indent);
+    expanded.push(')');
     Some(Fix::unsafe_edit(Edit::range_replacement(
-        replacement,
-        TextRange::new(term.start(), args.last()?.end()),
+        expanded,
+        call.arguments.range(),
     )))
 }

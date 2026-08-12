@@ -1,9 +1,11 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr, str_prefix::StringLiteralPrefix};
+use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_item};
+use crate::fix::edits::fits;
+use crate::rules::odoo::helpers::{is_manifest_file, manifest_item, wrap_string_literal};
 use crate::{AlwaysFixableViolation, Edit, Fix};
 
 /// ## What it does
@@ -24,6 +26,17 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// ```python
 /// {
 ///     "summary": "Does things.",
+/// }
+/// ```
+///
+/// When the collapsed summary would exceed the configured line length, the fix wraps it
+/// into a parenthesized implicit string concatenation instead:
+/// ```python
+/// {
+///     "summary": (
+///         "A collapsed summary too long for one line, wrapped into pieces "
+///         "that each fit within the line length."
+///     ),
 /// }
 /// ```
 #[derive(ViolationMetadata)]
@@ -75,20 +88,61 @@ pub(crate) fn manifest_summary_multiline(
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ");
-    let node = ast::StringLiteral {
-        value: single_line.into_boxed_str(),
-        flags: checker.default_string_flags().with_prefix({
-            if summary.is_unicode() {
-                StringLiteralPrefix::Unicode
-            } else {
-                StringLiteralPrefix::Empty
-            }
-        }),
-        range: TextRange::default(),
-        node_index: ruff_python_ast::AtomicNodeIndex::NONE,
-    };
-    diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
-        checker.generator().expr(&node.into()),
-        value.range(),
-    )));
+    let flags = checker.default_string_flags().with_prefix({
+        if summary.is_unicode() {
+            StringLiteralPrefix::Unicode
+        } else {
+            StringLiteralPrefix::Empty
+        }
+    });
+    let single_repr = checker.generator().expr(
+        &ast::StringLiteral {
+            value: single_line.clone().into_boxed_str(),
+            flags,
+            range: TextRange::default(),
+            node_index: ruff_python_ast::AtomicNodeIndex::NONE,
+        }
+        .into(),
+    );
+    let locator = checker.locator();
+    let line_start = locator.line_start(key.range().start());
+    let indent = locator.slice(TextRange::new(line_start, key.range().start()));
+
+    // Measure with the trailing comma included so a fix landing exactly on the limit
+    // doesn't overflow once applied. Wrapping also needs the key to start its own line
+    // (pure-whitespace indentation); otherwise fall back to the single-line fix.
+    if fits(
+        &format!("{single_repr},"),
+        value.into(),
+        locator,
+        checker.settings().pycodestyle.max_line_length,
+        checker.settings().tab_size,
+    ) || !indent.chars().all(char::is_whitespace)
+    {
+        diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
+            single_repr,
+            value.range(),
+        )));
+        return;
+    }
+
+    // The collapsed summary exceeds the line length: wrap it into a parenthesized implicit
+    // concatenation, one piece per line, keeping the word separator at the end of each piece
+    // so the concatenated value stays identical to the single-line form.
+    let max_line_length = checker.settings().pycodestyle.max_line_length.value() as usize;
+    let inner_indent = format!("{}{}", indent, checker.stylist().indentation().as_str());
+    let pieces = wrap_string_literal(checker, flags, &single_line, &inner_indent, max_line_length);
+
+    let line_ending = checker.stylist().line_ending().as_str();
+    let mut wrapped = String::from("(");
+    for piece in &pieces {
+        wrapped.push_str(line_ending);
+        wrapped.push_str(&inner_indent);
+        wrapped.push_str(piece);
+    }
+    wrapped.push_str(line_ending);
+    wrapped.push_str(indent);
+    wrapped.push(')');
+
+    diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(wrapped, value.range())));
 }
