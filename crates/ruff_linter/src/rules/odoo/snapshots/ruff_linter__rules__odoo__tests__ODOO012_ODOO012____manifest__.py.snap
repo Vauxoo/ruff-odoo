@@ -72,3 +72,43 @@ help: Collapse the summary into a single line
 26 +     "summary": "First line second line",
 27 | }
    |
+
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
+  --> __manifest__.py:31:5
+   |
+29 | {
+30 |     "name": "CRM Activity Automation",
+31 |     "summary": """
+   |     ^^^^^^^^^
+32 |     Stage-triggered activity automation for CRM. When an opportunity
+33 |     moves to a configured stage, activities (calls, emails, meetings)
+   |
+help: Collapse the summary into a single line
+   |
+30 |     "name": "CRM Activity Automation",
+   -     "summary": """
+   -     Stage-triggered activity automation for CRM. When an opportunity
+   -     moves to a configured stage, activities (calls, emails, meetings)
+   -     are automatically created and assigned.
+   -     """,
+31 +     "summary": (
+32 +         "Stage-triggered activity automation for CRM. When an opportunity moves to a "
+33 +         "configured stage, activities (calls, emails, meetings) are automatically "
+34 +         "created and assigned."
+35 +     ),
+36 | }
+   |
+
+ODOO012 [*] Summary in manifest file should be a one-line short description, found newline character
+  --> __manifest__.py:38:25
+   |
+36 | }
+37 |
+38 | {"name": "Inline Dict", "summary": "Inline dict where the collapsed summary is way too long to fit\nwithin the configured maximum line…
+   |                         ^^^^^^^^^
+help: Collapse the summary into a single line
+   |
+37 |
+   - {"name": "Inline Dict", "summary": "Inline dict where the collapsed summary is way too long to fit\nwithin the configured maximum line length so it stays single-line anyway",}
+38 + {"name": "Inline Dict", "summary": "Inline dict where the collapsed summary is way too long to fit within the configured maximum line length so it stays single-line anyway",}
+   |

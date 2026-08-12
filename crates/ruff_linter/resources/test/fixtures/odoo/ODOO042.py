@@ -59,3 +59,12 @@ _("%s of %s", count)
 _("%s of %s", a.b, a_b)
 # Not fixable: keyword arguments already present.
 _("%s of %s", count, total=total)
+
+# One-line rewrite would exceed the line length: expand the call, one argument per line.
+def check_stage(self):
+    if failed:
+        raise ValidationError(_("Automated activity creation failed for stage %s on opportunity %s", self.stage_id.display_name, self.opportunity_id.display_name))
+
+# Expanded call whose term alone still exceeds the line length: wrap it into pieces too.
+def check_quota(self):
+    raise UserError(_("The configured quota %s for the salesperson team %s was exceeded by the current invoiced amount and the remaining allowance %s cannot cover it", quota.name, team.display_name, remaining.amount))

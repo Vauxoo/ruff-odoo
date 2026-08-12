@@ -66,6 +66,26 @@ cross-module inference (see Scope discipline above).
        `crates/ruff_linter/src/rules/odoo/helpers.rs::remove_dict_item` for a worked
        comma-aware implementation to copy the pattern from (handles "not last item", "last item",
        and "only item — also eat a trailing comma if present" as three distinct cases).
+   - **Autofixes must respect the configured line length.** A fix that rewrites/lengthens source
+     (collapsing a multiline string, splicing `%(name)s` placeholders, adding keyword args) can
+     leave a line over `line-length`, so the "fixed" code immediately trips E501/B950 downstream.
+     Measure the rewritten line first with `crate::fix::edits::fits` — including what surrounds
+     the replaced range on its line (prefix is measured by `fits`; append the suffix up to
+     `locator.line_end(range.end())` yourself, plus any trailing comma the context adds) — and
+     keep the simple in-place rewrite when it fits. When it doesn't:
+     - a long string value wraps into a parenthesized implicit concatenation via
+       `rules/odoo/helpers.rs::wrap_string_literal` (splits only right after spaces so the
+       concatenated pieces reproduce the content *exactly*, `\n` escapes included; each non-final
+       piece keeps its trailing space — dropping it glues words together);
+     - a long call rewrite expands over `call.arguments.range()` with one argument per line and a
+       **trailing comma** (magic trailing comma keeps `ruff format` from re-collapsing it),
+       closing paren at the indentation of the call's line.
+     Worked examples: `manifest_summary_multiline.rs` (ODOO012) and
+     `translation_calls.rs::convert_to_named_placeholders` (ODOO042). Indentation comes from
+     `locator.line_start` + leading whitespace and `checker.stylist().indentation()`; when
+     there's no usable indentation (inline dict, key not starting its own line), fall back to
+     the single-line fix rather than guessing. Add fixture cases for both the fits-in-one-line
+     and the must-wrap paths (test default line length is 88).
 2. **`rules/odoo/rules/mod.rs`** — add `pub(crate) use <rule_name>::*;` and `mod <rule_name>;`
    (both lists are alphabetically ordered by convention).
 3. **Dispatch site** — wire the call behind `checker.is_rule_enabled(Rule::RuleName)`, in whichever
@@ -150,18 +170,22 @@ cross-module inference (see Scope discipline above).
    Expect "All docs are formatted correctly." On failure it prints the exact `///` rewrite to
    paste into the rule file. It takes a few minutes (one `ruff format` subprocess per snippet
    across all ~900 rules), so run it in the background.
-5. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
-6. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
+5. `cargo fmt` (verify with `cargo fmt --check`) — CI has a dedicated formatting job that fails
+   on any diff, and hand-written fix-building code (long `Edit::range_replacement(...)` calls,
+   nested builders) frequently comes out slightly off rustfmt style. Run it before every push,
+   not just before the first one.
+6. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
+7. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
    --files ...` if this checkout has no `uv.lock` for `--locked` to resolve against — batch the
    file list in groups of ~5-10; a single `--files` call with 30+ paths has failed here with
    "File name too long").
-7. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
+8. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
    don't rely on unit tests alone to validate the CLI-level experience:
    ```
    cargo build --bin ruff
    target/debug/ruff check --select ODOO --preview --no-cache --fix <path>
    ```
-8. Coverage (optional but useful when adding a non-trivial rule):
+9. Coverage (optional but useful when adding a non-trivial rule):
    `cargo llvm-cov -p ruff_linter --lib --summary-only -- rules::odoo` (install once with `cargo
    install cargo-llvm-cov --locked` + `rustup component add llvm-tools-preview`), then grep the
    `rules/odoo/` lines from the output.
