@@ -105,20 +105,6 @@ mod tests {
     #[test_case(Rule::TranslationTooFewArgs, Path::new("ODOO060.py"))]
     #[test_case(Rule::TranslationTooManyArgs, Path::new("ODOO061.py"))]
     #[test_case(Rule::TranslationUnsupportedFormat, Path::new("ODOO062.py"))]
-    #[test_case(Rule::CategoryAllowedApp, Path::new("ODOOAPP001/__manifest__.py"))]
-    #[test_case(
-        Rule::MissingOdooFileApp,
-        Path::new("ODOOAPP002/missing/__manifest__.py")
-    )]
-    #[test_case(
-        Rule::MissingOdooFileApp,
-        Path::new("ODOOAPP002/present/__manifest__.py")
-    )]
-    #[test_case(
-        Rule::MissingOdooFileApp,
-        Path::new("ODOOAPP002/no_price/__manifest__.py")
-    )]
-    #[test_case(Rule::ManifestRequiredKeyApp, Path::new("ODOOAPP003/__manifest__.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(

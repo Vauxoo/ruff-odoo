@@ -17,7 +17,8 @@ use crate::rules::{
     flake8_future_annotations, flake8_gettext, flake8_implicit_str_concat, flake8_logging,
     flake8_logging_format, flake8_pie, flake8_print, flake8_pyi, flake8_pytest_style, flake8_self,
     flake8_simplify, flake8_tidy_imports, flake8_type_checking, flake8_use_pathlib, flynt, numpy,
-    odoo, pandas_vet, pep8_naming, pycodestyle, pyflakes, pylint, pyupgrade, refurb, ruff,
+    odoo, odoo_app, pandas_vet, pep8_naming, pycodestyle, pyflakes, pylint, pyupgrade, refurb,
+    ruff,
 };
 use ruff_python_ast::PythonVersion;
 
@@ -1486,13 +1487,13 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                 odoo::rules::manifest_behind_migrations(checker, dict, checker.path);
             }
             if checker.is_rule_enabled(Rule::CategoryAllowedApp) {
-                odoo::rules::category_allowed_app(checker, dict, checker.path);
+                odoo_app::rules::category_allowed_app(checker, dict, checker.path);
             }
             if checker.is_rule_enabled(Rule::MissingOdooFileApp) {
-                odoo::rules::missing_odoo_file_app(checker, dict, checker.path);
+                odoo_app::rules::missing_odoo_file_app(checker, dict, checker.path);
             }
             if checker.is_rule_enabled(Rule::ManifestRequiredKeyApp) {
-                odoo::rules::manifest_required_key_app(checker, dict, checker.path);
+                odoo_app::rules::manifest_required_key_app(checker, dict, checker.path);
             }
         }
         Expr::Set(set) => {
