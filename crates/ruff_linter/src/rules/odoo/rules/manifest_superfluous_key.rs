@@ -82,7 +82,9 @@ pub(crate) fn manifest_superfluous_key(
     }
 
     for item in &dict.items {
-        let Some(Expr::StringLiteral(ast::ExprStringLiteral { value: key, .. })) = &item.key else {
+        let Some(key_expr @ Expr::StringLiteral(ast::ExprStringLiteral { value: key, .. })) =
+            &item.key
+        else {
             continue;
         };
         let key = key.to_str();
@@ -90,11 +92,13 @@ pub(crate) fn manifest_superfluous_key(
             continue;
         }
 
+        // Report on the key: the superfluous value can span several lines (lists, dicts)
+        // and highlighting all of it drowns the editor.
         let mut diagnostic = checker.report_diagnostic(
             ManifestSuperfluousKey {
                 key: key.to_string(),
             },
-            item.range(),
+            key_expr.range(),
         );
         diagnostic.try_set_fix(|| {
             remove_dict_item(dict, item, checker.locator().contents()).map(Fix::safe_edit)

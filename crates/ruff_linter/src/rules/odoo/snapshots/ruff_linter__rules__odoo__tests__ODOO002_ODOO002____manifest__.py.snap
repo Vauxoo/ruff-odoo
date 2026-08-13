@@ -6,7 +6,7 @@ ODOO002 [*] Deprecated key "description" in manifest file
   |
 1 | {
 2 |     "description": "Does things.",
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |     ^^^^^^^^^^^^^
 3 |     "name": "First",
 4 | }
   |
@@ -23,7 +23,7 @@ ODOO002 [*] Deprecated key "description" in manifest file
 6 | {
 7 |     "name": "Second",
 8 |     "description": "Does things.",
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |     ^^^^^^^^^^^^^
 9 | }
   |
 help: Remove deprecated key "description"
@@ -38,7 +38,7 @@ ODOO002 [*] Deprecated key "description" in manifest file
    |
 11 | {
 12 |     "description": "Does things.",
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |     ^^^^^^^^^^^^^
 13 | }
    |
 help: Remove deprecated key "description"
@@ -47,4 +47,25 @@ help: Remove deprecated key "description"
    -     "description": "Does things.",
 12 +     
 13 | }
+   |
+
+ODOO002 [*] Deprecated key "description" in manifest file
+  --> __manifest__.py:21:5
+   |
+19 | {
+20 |     "name": "Multiline Description",
+21 |     "description": """
+   |     ^^^^^^^^^^^^^
+22 |         A long legacy description spanning
+23 |         several lines: the diagnostic must point at the key,
+   |
+help: Remove deprecated key "description"
+   |
+20 |     "name": "Multiline Description",
+   -     "description": """
+   -         A long legacy description spanning
+   -         several lines: the diagnostic must point at the key,
+   -         not highlight this whole block.
+   -     """,
+21 | }
    |

@@ -60,15 +60,21 @@ pub(crate) fn manifest_deprecated_key(checker: &Checker, dict: &ast::ExprDict, p
     }
 
     for item in &dict.items {
-        let Some(ast::Expr::StringLiteral(ast::ExprStringLiteral { value, .. })) = &item.key else {
+        let Some(key_expr @ ast::Expr::StringLiteral(ast::ExprStringLiteral { value, .. })) =
+            &item.key
+        else {
             continue;
         };
         if value.to_str() != "description" {
             continue;
         }
 
-        let mut diagnostic =
-            checker.report_diagnostic(ManifestDeprecatedKey { key: "description" }, item.range());
+        // Report on the key: the deprecated `description` value is typically a large
+        // multi-line string and highlighting all of it drowns the editor.
+        let mut diagnostic = checker.report_diagnostic(
+            ManifestDeprecatedKey { key: "description" },
+            key_expr.range(),
+        );
         diagnostic.try_set_fix(|| {
             remove_dict_item(dict, item, checker.locator().contents()).map(Fix::safe_edit)
         });
