@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOOAPP001 Category "Tools" not allowed in manifest file for modules with price
+ --> __manifest__.py:5:5
+  |
+3 |     "name": "Bad category app",
+4 |     "price": 100,
+5 |     "category": "Tools",
+  |     ^^^^^^^^^^
+6 | }
+  |

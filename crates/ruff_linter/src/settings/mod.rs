@@ -19,7 +19,7 @@ use crate::rules::{
     flake8_comprehensions, flake8_copyright, flake8_errmsg, flake8_gettext,
     flake8_implicit_str_concat, flake8_import_conventions, flake8_pytest_style, flake8_quotes,
     flake8_self, flake8_tidy_imports, flake8_type_checking, flake8_unused_arguments, isort, mccabe,
-    pep8_naming, pycodestyle, pydoclint, pydocstyle, pyflakes, pylint, pyupgrade, ruff,
+    odoo, pep8_naming, pycodestyle, pydoclint, pydocstyle, pyflakes, pylint, pyupgrade, ruff,
 };
 use crate::settings::types::{CompiledPerFileIgnoreList, ExtensionMapping, FilePatternSet};
 use crate::{RuleSelector, fs};
@@ -273,6 +273,7 @@ pub struct LinterSettings {
     pub flake8_unused_arguments: flake8_unused_arguments::settings::Settings,
     pub isort: isort::settings::Settings,
     pub mccabe: mccabe::settings::Settings,
+    pub odoo: odoo::settings::Settings,
     pub pep8_naming: pep8_naming::settings::Settings,
     pub pycodestyle: pycodestyle::settings::Settings,
     pub pydoclint: pydoclint::settings::Settings,
@@ -341,6 +342,7 @@ impl Display for LinterSettings {
                 self.flake8_unused_arguments | nested,
                 self.isort | nested,
                 self.mccabe | nested,
+                self.odoo | nested,
                 self.pep8_naming | nested,
                 self.pycodestyle | nested,
                 self.pyflakes | nested,
@@ -842,6 +844,7 @@ impl LinterSettings {
             flake8_unused_arguments: flake8_unused_arguments::settings::Settings::default(),
             isort: isort::settings::Settings::default(),
             mccabe: mccabe::settings::Settings::default(),
+            odoo: odoo::settings::Settings::default(),
             pep8_naming: pep8_naming::settings::Settings::default(),
             pycodestyle: pycodestyle::settings::Settings::default(),
             pydoclint: pydoclint::settings::Settings::default(),

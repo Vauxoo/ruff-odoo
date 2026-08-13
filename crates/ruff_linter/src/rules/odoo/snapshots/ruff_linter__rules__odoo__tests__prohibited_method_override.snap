@@ -1,0 +1,22 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO055 Prohibited override of "action_post" method
+ --> ODOO055.py:5:9
+  |
+4 | class AccountMove:
+5 |     def action_post(self):  # ODOO055
+  |         ^^^^^^^^^^^
+6 |         return super().action_post()
+  |
+
+ODOO055 Prohibited override of "unlink" method
+  --> ODOO055.py:8:9
+   |
+ 6 |         return super().action_post()
+ 7 |
+ 8 |     def unlink(self):  # ODOO055
+   |         ^^^^^^
+ 9 |         res = super().unlink()
+10 |         return res
+   |
