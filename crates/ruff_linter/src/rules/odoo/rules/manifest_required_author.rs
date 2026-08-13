@@ -4,7 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_item};
+use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range, manifest_item};
 
 /// ## What it does
 /// Checks that an Odoo module's `__manifest__.py` declares one of the required authors.
@@ -52,7 +52,7 @@ pub(crate) fn manifest_required_author(
             (key.range(), value.to_str())
         }
         Some(_) => return, // Non-string author; `manifest-author-string` handles that case.
-        None => (dict.range(), ""),
+        None => (manifest_anchor_range(dict), ""),
     };
 
     let authors: std::collections::HashSet<&str> = author.split(',').map(str::trim).collect();

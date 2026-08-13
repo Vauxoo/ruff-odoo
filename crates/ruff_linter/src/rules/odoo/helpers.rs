@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ruff_python_ast::{self as ast, Expr};
 use ruff_python_trivia::{SimpleTokenKind, SimpleTokenizer};
-use ruff_text_size::{Ranged, TextRange};
+use ruff_text_size::{Ranged, TextLen, TextRange};
 
 use crate::Edit;
 use crate::checkers::ast::Checker;
@@ -90,6 +90,16 @@ pub(crate) fn manifest_string_item<'a>(
         return None;
     };
     Some((key_expr, value.to_str()))
+}
+
+/// Anchor range for diagnostics about something missing from the manifest (a required key,
+/// a README next to it): the `"name"` key when present, else the opening `{`. Reporting on
+/// the whole dict would span every line of the manifest in editors.
+pub(crate) fn manifest_anchor_range(dict: &ast::ExprDict) -> TextRange {
+    manifest_item(dict, "name").map_or_else(
+        || TextRange::at(dict.start(), '{'.text_len()),
+        |(key, _value)| key.range(),
+    )
 }
 
 const ODOO_MODEL_BASES: &[&str] = &["Model", "TransientModel", "AbstractModel"];
