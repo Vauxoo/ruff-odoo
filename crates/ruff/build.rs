@@ -12,6 +12,7 @@ fn main() {
         .join("..");
 
     commit_info(&workspace_root);
+    ruff_odoo_version(&workspace_root);
 
     let target = std::env::var("TARGET").unwrap();
     println!("cargo::rustc-env=RUST_HOST_TARGET={target}");
@@ -74,6 +75,37 @@ fn commit_info(workspace_root: &Path) {
             "cargo::rustc-env=RUFF_LAST_TAG_DISTANCE={}",
             describe_parts.next().unwrap_or("0")
         );
+    }
+}
+
+/// Vauxoo fork: the user-facing release version has four components (e.g.
+/// "0.16.2.6", where x.y.z tracks upstream and w counts fork-only releases).
+/// Cargo rejects four-component versions in `Cargo.toml`, so the full version
+/// lives in the root `pyproject.toml` (`[project] version`, kept current by
+/// bump2version). Read it here and expose it so `ruff --version` can report it.
+///
+/// If the file is missing (e.g. the crate is built outside the repository),
+/// nothing is emitted and `version.rs` falls back to `CARGO_PKG_VERSION`.
+fn ruff_odoo_version(workspace_root: &Path) {
+    let pyproject = workspace_root.join("pyproject.toml");
+    let Ok(contents) = fs::read_to_string(&pyproject) else {
+        return;
+    };
+    println!("cargo:rerun-if-changed={}", pyproject.display());
+
+    let mut in_project_section = false;
+    for line in contents.lines() {
+        let line = line.trim();
+        if let Some(section) = line.strip_prefix('[') {
+            in_project_section = section.trim_end_matches(']').trim() == "project";
+        } else if in_project_section
+            && let Some(value) = line.strip_prefix("version")
+            && let Some(value) = value.trim_start().strip_prefix('=')
+        {
+            let version = value.trim().trim_matches('"');
+            println!("cargo::rustc-env=RUFF_ODOO_VERSION={version}");
+            return;
+        }
     }
 }
 
