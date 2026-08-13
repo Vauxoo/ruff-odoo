@@ -138,6 +138,10 @@ pub(crate) fn dotted_name(expr: &Expr) -> Option<String> {
     }
 }
 
+/// Manifest keys whose values are lists of module data file paths.
+pub(crate) const MANIFEST_DATA_KEYS: &[&str] =
+    &["data", "demo", "demo_xml", "init_xml", "test", "update_xml"];
+
 /// Generate an [`Edit`] to remove `item` (a key-value pair) from `dict`, including its
 /// surrounding comma, leaving the rest of the dictionary display intact.
 pub(crate) fn remove_dict_item(
@@ -145,17 +149,34 @@ pub(crate) fn remove_dict_item(
     item: &ast::DictItem,
     source: &str,
 ) -> Result<Edit> {
-    let (before, after): (Vec<_>, Vec<_>) = dict
-        .items
+    let ranges: Vec<_> = dict.items.iter().map(Ranged::range).collect();
+    remove_sequence_element(&ranges, item.range(), source)
+}
+
+/// Generate an [`Edit`] to remove `element` from a list display, including its surrounding
+/// comma, leaving the rest of the list intact.
+pub(crate) fn remove_list_element(
+    list: &ast::ExprList,
+    element: &Expr,
+    source: &str,
+) -> Result<Edit> {
+    let ranges: Vec<_> = list.elts.iter().map(Ranged::range).collect();
+    remove_sequence_element(&ranges, element.range(), source)
+}
+
+/// Generate an [`Edit`] to remove the element spanning `target` from the comma-separated
+/// sequence whose element ranges are `ranges`, including its surrounding comma.
+fn remove_sequence_element(ranges: &[TextRange], target: TextRange, source: &str) -> Result<Edit> {
+    let (before, after): (Vec<_>, Vec<_>) = ranges
         .iter()
-        .map(Ranged::range)
-        .filter(|range| *range != item.range())
-        .partition(|range| range.start() < item.start());
+        .copied()
+        .filter(|range| *range != target)
+        .partition(|range| range.start() < target.start());
 
     if !after.is_empty() {
-        // The item is not the last one, so delete from its start to the start of the next
+        // The element is not the last one, so delete from its start to the start of the next
         // non-trivia token following its trailing comma.
-        let mut tokenizer = SimpleTokenizer::starts_at(item.end(), source);
+        let mut tokenizer = SimpleTokenizer::starts_at(target.end(), source);
         tokenizer
             .find(|token| token.kind == SimpleTokenKind::Comma)
             .context("Unable to find trailing comma")?;
@@ -164,25 +185,25 @@ pub(crate) fn remove_dict_item(
                 token.kind != SimpleTokenKind::Whitespace && token.kind != SimpleTokenKind::Newline
             })
             .context("Unable to find next token")?;
-        Ok(Edit::deletion(item.start(), next.start()))
+        Ok(Edit::deletion(target.start(), next.start()))
     } else if let Some(previous) = before.iter().map(Ranged::end).max() {
-        // The item is the last one, so delete from the start of the preceding comma to the
-        // end of the item.
+        // The element is the last one, so delete from the start of the preceding comma to
+        // the end of the element.
         let mut tokenizer = SimpleTokenizer::starts_at(previous, source);
         let comma = tokenizer
             .find(|token| token.kind == SimpleTokenKind::Comma)
             .context("Unable to find trailing comma")?;
-        Ok(Edit::deletion(comma.start(), item.end()))
+        Ok(Edit::deletion(comma.start(), target.end()))
     } else {
-        // The item is the only one in the dictionary. Dict literals allow a trailing comma
-        // after the last item, so remove that too if present.
-        let mut tokenizer = SimpleTokenizer::starts_at(item.end(), source);
+        // The element is the only one in the sequence. Displays allow a trailing comma
+        // after the last element, so remove that too if present.
+        let mut tokenizer = SimpleTokenizer::starts_at(target.end(), source);
         let end = tokenizer
             .find(|token| {
                 token.kind != SimpleTokenKind::Whitespace && token.kind != SimpleTokenKind::Newline
             })
             .filter(|token| token.kind == SimpleTokenKind::Comma)
-            .map_or(item.end(), |token| token.end());
-        Ok(Edit::deletion(item.start(), end))
+            .map_or(target.end(), |token| token.end());
+        Ok(Edit::deletion(target.start(), end))
     }
 }

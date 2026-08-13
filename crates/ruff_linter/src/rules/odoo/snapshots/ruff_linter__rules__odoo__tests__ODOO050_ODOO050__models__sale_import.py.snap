@@ -1,0 +1,11 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO050 No wizard class for model directory. See the complete structure https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst#complete-structure
+ --> sale_import.py:4:18
+  |
+4 | class SaleImport(models.TransientModel):
+  |                  ^^^^^^^^^^^^^^^^^^^^^
+5 |     # Flagged: a wizard defined in the models/ directory.
+6 |     _name = "sale.import"
+  |

@@ -69,6 +69,17 @@ mod tests {
     #[test_case(Rule::TestFolderImported, Path::new("ODOO045/__init__.py"))]
     #[test_case(Rule::ManifestExternalAssets, Path::new("ODOO046/__manifest__.py"))]
     #[test_case(Rule::PylintDisableComment, Path::new("ODOO047.py"))]
+    #[test_case(Rule::ManifestDataDuplicated, Path::new("ODOO048/__manifest__.py"))]
+    #[test_case(Rule::TranslationRequired, Path::new("ODOO049.py"))]
+    #[test_case(
+        Rule::TranslationRequired,
+        Path::new("ODOO049/tests/test_translation.py")
+    )]
+    #[test_case(Rule::NoWizardInModels, Path::new("ODOO050/models/sale_import.py"))]
+    #[test_case(Rule::NoWizardInModels, Path::new("ODOO050/wizards/sale_import.py"))]
+    #[test_case(Rule::ExternalRequestTimeout, Path::new("ODOO051.py"))]
+    #[test_case(Rule::SqlInjection, Path::new("ODOO052.py"))]
+    #[test_case(Rule::ResourceNotExist, Path::new("ODOO053/__manifest__.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(

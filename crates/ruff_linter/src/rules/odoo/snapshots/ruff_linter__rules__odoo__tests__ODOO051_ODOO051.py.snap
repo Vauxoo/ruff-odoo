@@ -1,0 +1,77 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO051 Use of external request method `requests.get` without timeout. It could wait for a long time
+  --> ODOO051.py:10:1
+   |
+ 9 | # Flagged: no timeout.
+10 | requests.get("https://example.com")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 | requests.request("GET", "https://example.com")
+12 | post("https://example.com", data={})
+   |
+
+ODOO051 Use of external request method `requests.request` without timeout. It could wait for a long time
+  --> ODOO051.py:11:1
+   |
+ 9 | # Flagged: no timeout.
+10 | requests.get("https://example.com")
+11 | requests.request("GET", "https://example.com")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 | post("https://example.com", data={})
+13 | urllib.request.urlopen("https://example.com")
+   |
+
+ODOO051 Use of external request method `requests.post` without timeout. It could wait for a long time
+  --> ODOO051.py:12:1
+   |
+10 | requests.get("https://example.com")
+11 | requests.request("GET", "https://example.com")
+12 | post("https://example.com", data={})
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 | urllib.request.urlopen("https://example.com")
+14 | smtplib.SMTP("localhost")
+   |
+
+ODOO051 Use of external request method `urllib.request.urlopen` without timeout. It could wait for a long time
+  --> ODOO051.py:13:1
+   |
+11 | requests.request("GET", "https://example.com")
+12 | post("https://example.com", data={})
+13 | urllib.request.urlopen("https://example.com")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 | smtplib.SMTP("localhost")
+15 | ftplib.FTP("ftp.example.com")
+   |
+
+ODOO051 Use of external request method `smtplib.SMTP` without timeout. It could wait for a long time
+  --> ODOO051.py:14:1
+   |
+12 | post("https://example.com", data={})
+13 | urllib.request.urlopen("https://example.com")
+14 | smtplib.SMTP("localhost")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | ftplib.FTP("ftp.example.com")
+16 | Serial("/dev/ttyS0")
+   |
+
+ODOO051 Use of external request method `ftplib.FTP` without timeout. It could wait for a long time
+  --> ODOO051.py:15:1
+   |
+13 | urllib.request.urlopen("https://example.com")
+14 | smtplib.SMTP("localhost")
+15 | ftplib.FTP("ftp.example.com")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 | Serial("/dev/ttyS0")
+   |
+
+ODOO051 Use of external request method `serial.Serial` without timeout. It could wait for a long time
+  --> ODOO051.py:16:1
+   |
+14 | smtplib.SMTP("localhost")
+15 | ftplib.FTP("ftp.example.com")
+16 | Serial("/dev/ttyS0")
+   | ^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | # Not flagged: timeout given.
+   |
