@@ -1,0 +1,4 @@
+---
+source: crates/ruff/src/commands/check.rs
+---
+/home/ferris/project/my_module/models/partner_a.py:6:5: ODOO063 Consider merging classes inherited to "res.partner" from /home/ferris/project/my_module/models/partner_b.py:6:5.

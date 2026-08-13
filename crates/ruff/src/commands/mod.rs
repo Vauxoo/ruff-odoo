@@ -9,6 +9,7 @@ pub(crate) mod config;
 pub(crate) mod format;
 pub(crate) mod format_stdin;
 pub(crate) mod linter;
+pub(crate) mod odoo;
 pub(crate) mod rule;
 pub(crate) mod server;
 pub(crate) mod show_files;
