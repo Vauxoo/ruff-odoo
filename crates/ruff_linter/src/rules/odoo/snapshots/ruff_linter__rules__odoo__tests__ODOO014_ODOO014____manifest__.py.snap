@@ -10,3 +10,13 @@ ODOO014 Website "example.com" in manifest key is not a valid URI
   |     ^^^^^^^^^
 4 | }
   |
+
+ODOO014 Website "https://odoo-community.org,https://odoo.com" in manifest key is not a valid URI
+  --> __manifest__.py:13:5
+   |
+11 | {
+12 |     "name": "My Third Module",
+13 |     "website": "https://odoo-community.org,https://odoo.com",
+   |     ^^^^^^^^^
+14 | }
+   |
