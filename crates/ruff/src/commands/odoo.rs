@@ -73,12 +73,12 @@ fn check_module(
     resolver: &Resolver<'_>,
     noqa: flags::Noqa,
 ) -> Result<Vec<Diagnostic>> {
-    let target_models = checked_inherited_models(checked_paths, resolver, noqa)?;
-    if target_models.is_empty() {
+    let target_signatures = checked_inherited_models(checked_paths, resolver, noqa)?;
+    if target_signatures.is_empty() {
         return Ok(Vec::new());
     }
 
-    let mut inherited: FxHashMap<String, Vec<InheritLocation>> = FxHashMap::default();
+    let mut inherited: FxHashMap<Vec<String>, Vec<InheritLocation>> = FxHashMap::default();
 
     let mut builder = WalkBuilder::new(root);
     if let Ok(cwd) = std::env::current_dir() {
@@ -103,14 +103,14 @@ fn check_module(
         if is_excluded(path, resolver) {
             continue;
         }
-        collect_selected_inherits(path, &target_models, &mut inherited)?;
+        collect_selected_inherits(path, &target_signatures, &mut inherited)?;
     }
 
     let mut inherited = inherited.into_iter().collect::<Vec<_>>();
     inherited.sort_by(|(left, _), (right, _)| left.cmp(right));
 
     let mut diagnostics = Vec::new();
-    for (model, mut locations) in inherited {
+    for (signature, mut locations) in inherited {
         locations.retain(|location| !location_suppressed(location, resolver, noqa));
         if locations.len() <= 1 {
             continue;
@@ -138,7 +138,11 @@ fn check_module(
             .map(format_location)
             .collect::<Vec<_>>()
             .join(", ");
-        diagnostics.push(create_diagnostic(primary, &model, &locations));
+        diagnostics.push(create_diagnostic(
+            primary,
+            &signature.join(", "),
+            &locations,
+        ));
     }
 
     Ok(diagnostics)
@@ -148,8 +152,8 @@ fn checked_inherited_models(
     checked_paths: &FxHashSet<PathBuf>,
     resolver: &Resolver<'_>,
     noqa: flags::Noqa,
-) -> Result<FxHashSet<String>> {
-    let mut inherited: FxHashMap<String, Vec<InheritLocation>> = FxHashMap::default();
+) -> Result<FxHashSet<Vec<String>>> {
+    let mut inherited: FxHashMap<Vec<String>, Vec<InheritLocation>> = FxHashMap::default();
     for path in checked_paths.iter().sorted() {
         collect_inherits(path, &mut inherited)?;
     }
@@ -160,22 +164,22 @@ fn checked_inherited_models(
                 .iter()
                 .any(|location| !location_suppressed(location, resolver, noqa))
         })
-        .map(|(model, _)| model)
+        .map(|(signature, _)| signature)
         .collect())
 }
 
 fn collect_inherits(
     path: &Path,
-    inherited: &mut FxHashMap<String, Vec<InheritLocation>>,
+    inherited: &mut FxHashMap<Vec<String>, Vec<InheritLocation>>,
 ) -> Result<()> {
-    let target_models = FxHashSet::default();
-    collect_selected_inherits(path, &target_models, inherited)
+    let target_signatures = FxHashSet::default();
+    collect_selected_inherits(path, &target_signatures, inherited)
 }
 
 fn collect_selected_inherits(
     path: &Path,
-    target_models: &FxHashSet<String>,
-    inherited: &mut FxHashMap<String, Vec<InheritLocation>>,
+    target_signatures: &FxHashSet<Vec<String>>,
+    inherited: &mut FxHashMap<Vec<String>, Vec<InheritLocation>>,
 ) -> Result<()> {
     let bytes = fs::read(path)?;
     if !bytes
@@ -191,7 +195,7 @@ fn collect_selected_inherits(
         return Ok(());
     };
 
-    collect_inherits_from_suite(path, source, parsed.suite(), target_models, inherited);
+    collect_inherits_from_suite(path, source, parsed.suite(), target_signatures, inherited);
     Ok(())
 }
 
@@ -199,27 +203,30 @@ fn collect_inherits_from_suite(
     path: &Path,
     source: &str,
     suite: &[Stmt],
-    target_models: &FxHashSet<String>,
-    inherited: &mut FxHashMap<String, Vec<InheritLocation>>,
+    target_signatures: &FxHashSet<Vec<String>>,
+    inherited: &mut FxHashMap<Vec<String>, Vec<InheritLocation>>,
 ) {
     for stmt in suite {
         match stmt {
             Stmt::ClassDef(class_def) => {
-                for (model, range) in inherited_models(class_def) {
-                    if !target_models.is_empty() && !target_models.contains(&model) {
-                        continue;
+                if let Some((models, range)) = inherited_models(class_def) {
+                    let signature = inherit_signature(models);
+                    if target_signatures.is_empty() || target_signatures.contains(&signature) {
+                        inherited
+                            .entry(signature)
+                            .or_default()
+                            .push(InheritLocation {
+                                path: path.to_path_buf(),
+                                range,
+                                source: source.to_string(),
+                            });
                     }
-                    inherited.entry(model).or_default().push(InheritLocation {
-                        path: path.to_path_buf(),
-                        range,
-                        source: source.to_string(),
-                    });
                 }
                 collect_inherits_from_suite(
                     path,
                     source,
                     &class_def.body,
-                    target_models,
+                    target_signatures,
                     inherited,
                 );
             }
@@ -228,7 +235,7 @@ fn collect_inherits_from_suite(
                     path,
                     source,
                     &function_def.body,
-                    target_models,
+                    target_signatures,
                     inherited,
                 );
             }
@@ -237,8 +244,13 @@ fn collect_inherits_from_suite(
     }
 }
 
-fn inherited_models(class_def: &ast::StmtClassDef) -> Vec<(String, TextRange)> {
-    let mut models = Vec::new();
+/// Returns the model names a class's `_inherit` assigns, in source order, and the range of
+/// that assignment. Two classes are only considered duplicates when their full `_inherit`
+/// signature — the complete set of models, whether declared as a single string or a
+/// list/tuple — matches exactly; a class extending several models is not a duplicate of one
+/// that extends only one of them.
+fn inherited_models(class_def: &ast::StmtClassDef) -> Option<(Vec<String>, TextRange)> {
+    let mut result = None;
     let mut has_name = false;
 
     for stmt in &class_def.body {
@@ -260,16 +272,21 @@ fn inherited_models(class_def: &ast::StmtClassDef) -> Vec<(String, TextRange)> {
                 continue;
             };
             match name.id.as_str() {
-                "_inherit" => {
-                    models = values.iter().map(|value| (value.clone(), *range)).collect();
-                }
+                "_inherit" => result = Some((values.clone(), *range)),
                 "_name" => has_name = true,
                 _ => {}
             }
         }
     }
 
-    if has_name { Vec::new() } else { models }
+    if has_name { None } else { result }
+}
+
+/// Canonicalizes a class's `_inherit` models into an order-independent signature, so
+/// `_inherit = ["a", "b"]` and `_inherit = ["b", "a"]` are recognized as the same set.
+fn inherit_signature(mut models: Vec<String>) -> Vec<String> {
+    models.sort();
+    models
 }
 
 /// Extract the model names assigned to `_inherit`, which pylint-odoo's `_inherit` convention

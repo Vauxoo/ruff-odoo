@@ -50,7 +50,7 @@ impl Violation for ResourceNotExist {
 
 /// ODOO053
 pub(crate) fn resource_not_exist(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     let Some(dir) = path.parent() else {

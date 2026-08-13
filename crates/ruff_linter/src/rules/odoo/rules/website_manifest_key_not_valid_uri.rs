@@ -73,7 +73,7 @@ pub(crate) fn website_manifest_key_not_valid_uri(
     dict: &ast::ExprDict,
     path: &std::path::Path,
 ) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

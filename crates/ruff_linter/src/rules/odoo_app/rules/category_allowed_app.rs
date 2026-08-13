@@ -72,7 +72,7 @@ const CATEGORY_ALLOWED_APP: &[&str] = &[
 
 /// OAPP001
 pub(crate) fn category_allowed_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {
