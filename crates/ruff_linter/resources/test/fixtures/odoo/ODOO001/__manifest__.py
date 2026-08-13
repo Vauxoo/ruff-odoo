@@ -21,3 +21,8 @@
         ],
     },
 }
+
+{
+    "name": "Module With Non-Literal Value",
+    "key": "" or "",
+}

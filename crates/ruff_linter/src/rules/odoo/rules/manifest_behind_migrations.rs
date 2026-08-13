@@ -57,7 +57,7 @@ fn version_tuple(version: &str) -> Option<Vec<u64>> {
 
 /// ODOO054
 pub(crate) fn manifest_behind_migrations(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     let Some((key, version)) = manifest_string_item(dict, "version") else {

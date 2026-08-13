@@ -29,7 +29,7 @@ const README_FILES: &[&str] = &["README.rst", "README.md", "README.txt"];
 
 /// ODOO016
 pub(crate) fn missing_readme(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     let Some(dir) = path.parent() else {

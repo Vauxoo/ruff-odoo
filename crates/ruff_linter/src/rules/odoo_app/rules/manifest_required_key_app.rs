@@ -54,7 +54,7 @@ const REQUIRED_KEYS_APP: &[&str] = &["currency", "images", "support"];
 
 /// OAPP003
 pub(crate) fn manifest_required_key_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {

@@ -579,3 +579,70 @@ help: Convert to named placeholders passed as keyword arguments
 82 |         )
    |
 note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:83:1
+   |
+82 | # Not fixable: the interpolation happens inside the call itself.
+83 | _("Variables not translatable: %s, %s" % (variable1, variable2))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+84 | self.env._("Variables not translatable: %s, %s" % (variable1, variable2))
+85 | _lt("Variables not translatable: %s, %s" % (variable1, variable2))
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:84:1
+   |
+82 | # Not fixable: the interpolation happens inside the call itself.
+83 | _("Variables not translatable: %s, %s" % (variable1, variable2))
+84 | self.env._("Variables not translatable: %s, %s" % (variable1, variable2))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+85 | _lt("Variables not translatable: %s, %s" % (variable1, variable2))
+86 | _("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:85:1
+   |
+83 | _("Variables not translatable: %s, %s" % (variable1, variable2))
+84 | self.env._("Variables not translatable: %s, %s" % (variable1, variable2))
+85 | _lt("Variables not translatable: %s, %s" % (variable1, variable2))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+86 | _("multi-positional args without placeholders {} {}".format("param1", "param2"))
+87 | self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:86:1
+   |
+84 | self.env._("Variables not translatable: %s, %s" % (variable1, variable2))
+85 | _lt("Variables not translatable: %s, %s" % (variable1, variable2))
+86 | _("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+87 | self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
+88 | _lt("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:87:1
+   |
+85 | _lt("Variables not translatable: %s, %s" % (variable1, variable2))
+86 | _("multi-positional args without placeholders {} {}".format("param1", "param2"))
+87 | self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+88 | _lt("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   |
+help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:88:1
+   |
+86 | _("multi-positional args without placeholders {} {}".format("param1", "param2"))
+87 | self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
+88 | _lt("multi-positional args without placeholders {} {}".format("param1", "param2"))
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Convert to named placeholders passed as keyword arguments

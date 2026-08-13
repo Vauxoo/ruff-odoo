@@ -4,7 +4,6 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::dotted_name;
 
 /// ## What it does
 /// Checks for use of `itertools.groupby`.
@@ -40,7 +39,11 @@ impl Violation for BadBuiltinGroupby {
 
 /// ODOO019
 pub(crate) fn bad_builtin_groupby(checker: &Checker, call: &ast::ExprCall) {
-    if dotted_name(&call.func).as_deref() == Some("itertools.groupby") {
+    if checker
+        .semantic()
+        .resolve_qualified_name(&call.func)
+        .is_some_and(|name| matches!(name.segments(), ["itertools", "groupby"]))
+    {
         checker.report_diagnostic(BadBuiltinGroupby, call.range());
     }
 }

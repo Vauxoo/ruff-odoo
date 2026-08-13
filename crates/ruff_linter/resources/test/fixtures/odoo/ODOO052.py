@@ -21,6 +21,12 @@ class TestModel:
         query = "SELECT id FROM res_partner WHERE name = '%s'" % name
         cr.execute(query)
 
+    def injection_subscript_variable(self, cr, name, queries):
+        # Flagged: same as injection_variable, but the query is stored in a subscript
+        # target rather than a plain name.
+        queries[0] = "SELECT id FROM res_partner WHERE name = '%s'" % name
+        cr.execute(queries[0])
+
     def no_injection_parameters(self, cr, name):
         # Not flagged: values passed as query parameters.
         cr.execute("SELECT id FROM res_partner WHERE name = %s", (name,))
@@ -38,6 +44,11 @@ class TestModel:
         cr.execute("SELECT id FROM res_partner WHERE name = '%s'" % "admin")
         query = "SELECT id FROM " + "res_partner"
         cr.execute(query)
+
+    def no_injection_subscript_constant(self, cr, queries):
+        # Not flagged: subscript target assigned a query built from constants.
+        queries[0] = "SELECT id FROM " + "res_partner"
+        cr.execute(queries[0])
 
     def no_injection_psycopg2(self, cr, name):
         # Not flagged: psycopg2.sql composes identifiers safely.

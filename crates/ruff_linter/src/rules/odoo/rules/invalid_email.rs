@@ -57,7 +57,7 @@ fn is_valid_email(email: &str) -> bool {
 
 /// ODOO015
 pub(crate) fn invalid_email(checker: &Checker, dict: &ast::ExprDict, path: &std::path::Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

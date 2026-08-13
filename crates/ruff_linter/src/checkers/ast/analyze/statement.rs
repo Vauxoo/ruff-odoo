@@ -579,6 +579,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::TestFolderImported) {
                 odoo::rules::test_folder_imported(checker, stmt, checker.path);
             }
+            if checker.is_rule_enabled(Rule::OdooAddonsRelativeImport) {
+                odoo::rules::odoo_addons_relative_import_stmt(checker, stmt, names, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ModuleImportNotAtTopOfFile) {
                 pycodestyle::rules::module_import_not_at_top_of_file(checker, stmt);
             }

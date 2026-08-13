@@ -11,3 +11,8 @@
 {
     "name": "Module Missing Author",
 }
+
+{
+    "name": "Module With Non-Literal Value",
+    "key": "" or "",
+}

@@ -3,3 +3,5 @@ class MyModel(models.Model):
 
     total = fields.Float(inverse="_set_total")
     subtotal = fields.Float(inverse="_inverse_subtotal")
+    grand_total = fields.Float(inverse=f"_set_grand_total")
+    net_total = fields.Float(inverse=f"_inverse_net_total")

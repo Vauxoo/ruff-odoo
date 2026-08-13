@@ -33,7 +33,7 @@ const REQUIRED_FILES_APP: &[&str] = &["static/description/index.html"];
 
 /// OAPP002
 pub(crate) fn missing_odoo_file_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {
