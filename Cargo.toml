@@ -22,7 +22,7 @@ ruff_diagnostics = { version = "0.0.9", path = "crates/ruff_diagnostics" }
 ruff_formatter = { version = "0.0.9", path = "crates/ruff_formatter" }
 ruff_graph = { version = "0.0.9", path = "crates/ruff_graph" }
 ruff_index = { version = "0.0.9", path = "crates/ruff_index" }
-ruff_linter = { version = "0.16.3", path = "crates/ruff_linter" }
+ruff_linter = { version = "=0.16.3", path = "crates/ruff_linter" }
 ruff_macros = { version = "0.0.9", path = "crates/ruff_macros" }
 ruff_markdown = { version = "0.0.9", path = "crates/ruff_markdown" }
 ruff_memory_usage = { version = "0.0.9", path = "crates/ruff_memory_usage" }
