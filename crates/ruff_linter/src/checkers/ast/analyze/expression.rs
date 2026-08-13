@@ -1406,6 +1406,17 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             ]) {
                 odoo::rules::translation_calls(checker, call);
             }
+            if checker.any_rule_enabled(&[
+                Rule::TranslationFormatInterpolation,
+                Rule::TranslationFormatTruncated,
+                Rule::TranslationFstringInterpolation,
+                Rule::TranslationNotLazy,
+                Rule::TranslationTooFewArgs,
+                Rule::TranslationTooManyArgs,
+                Rule::TranslationUnsupportedFormat,
+            ]) {
+                odoo::rules::translation_format(checker, call);
+            }
             if checker.is_rule_enabled(Rule::TranslationRequired) {
                 odoo::rules::translation_required(checker, call, checker.path);
             }
@@ -1644,6 +1655,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::FStringPercentFormat) {
                 ruff::rules::fstring_percent_format(checker, bin_op);
+            }
+            if checker.is_rule_enabled(Rule::TranslationNotLazy) {
+                odoo::rules::translation_not_lazy_binop(checker, bin_op);
             }
         }
         Expr::BinOp(ast::ExprBinOp {

@@ -1,0 +1,45 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO057 odoo._ format string ends in middle of conversion specifier
+ --> ODOO057.py:6:9
+  |
+4 | class Model:
+5 |     def method(self, var):
+6 |         _("Hello %", var)  # ODOO057
+  |         ^^^^^^^^^^^^^^^^^
+7 |         self.env._("Hello %", var)  # ODOO057
+8 |         _("%s %", var)  # ODOO057
+  |
+
+ODOO057 odoo._ format string ends in middle of conversion specifier
+ --> ODOO057.py:7:9
+  |
+5 |     def method(self, var):
+6 |         _("Hello %", var)  # ODOO057
+7 |         self.env._("Hello %", var)  # ODOO057
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |         _("%s %", var)  # ODOO057
+9 |         _("100%", var)  # ODOO057
+  |
+
+ODOO057 odoo._ format string ends in middle of conversion specifier
+ --> ODOO057.py:8:9
+  |
+6 |         _("Hello %", var)  # ODOO057
+7 |         self.env._("Hello %", var)  # ODOO057
+8 |         _("%s %", var)  # ODOO057
+  |         ^^^^^^^^^^^^^^
+9 |         _("100%", var)  # ODOO057
+  |
+
+ODOO057 odoo._ format string ends in middle of conversion specifier
+  --> ODOO057.py:9:9
+   |
+ 7 |         self.env._("Hello %", var)  # ODOO057
+ 8 |         _("%s %", var)  # ODOO057
+ 9 |         _("100%", var)  # ODOO057
+   |         ^^^^^^^^^^^^^^
+10 |
+11 |         # No diagnostic: without supplied values the term is used verbatim.
+   |

@@ -1069,6 +1069,13 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "053") => rules::odoo::rules::ResourceNotExist,
         (Odoo, "054") => rules::odoo::rules::ManifestBehindMigrations,
         (Odoo, "055") => rules::odoo::rules::ProhibitedMethodOverride,
+        (Odoo, "056") => rules::odoo::rules::TranslationFormatInterpolation,
+        (Odoo, "057") => rules::odoo::rules::TranslationFormatTruncated,
+        (Odoo, "058") => rules::odoo::rules::TranslationFstringInterpolation,
+        (Odoo, "059") => rules::odoo::rules::TranslationNotLazy,
+        (Odoo, "060") => rules::odoo::rules::TranslationTooFewArgs,
+        (Odoo, "061") => rules::odoo::rules::TranslationTooManyArgs,
+        (Odoo, "062") => rules::odoo::rules::TranslationUnsupportedFormat,
         // Rules that only apply to paid apps (manifests with a "price" key), published on
         // the Odoo Apps store: selectable as a group via the "ODOOAPP" prefix.
         (Odoo, "APP001") => rules::odoo::rules::CategoryAllowedApp,
