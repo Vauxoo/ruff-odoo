@@ -519,11 +519,18 @@ fn convert_to_named_placeholders(
         .add_str(&inner_indent)
         .add_str(&term_repr)
         .get();
-    // `< max_line_length` (not `<=`): the trailing comma takes one more column.
+    // `< max_line_length` (not `<=`): the trailing comma takes one more column. The
+    // wrapped pieces reserve that column too, since the last piece also carries the comma.
     let term_pieces = if term_width < max_line_length {
         vec![term_repr]
     } else {
-        wrap_string_literal(checker, flags, &new_text, &inner_indent, max_line_length)
+        wrap_string_literal(
+            checker,
+            flags,
+            &new_text,
+            &inner_indent,
+            max_line_length.saturating_sub(1),
+        )
     };
 
     let mut expanded = String::from("(");
