@@ -31,7 +31,7 @@ impl Violation for MissingOdooFileApp {
 
 const REQUIRED_FILES_APP: &[&str] = &["static/description/index.html"];
 
-/// ODOOAPP002
+/// OAPP002
 pub(crate) fn missing_odoo_file_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, path) {
         return;

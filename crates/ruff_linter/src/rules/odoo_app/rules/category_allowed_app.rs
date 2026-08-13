@@ -70,7 +70,7 @@ const CATEGORY_ALLOWED_APP: &[&str] = &[
     "Website",
 ];
 
-/// ODOOAPP001
+/// OAPP001
 pub(crate) fn category_allowed_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, path) {
         return;

@@ -155,7 +155,17 @@ cross-module inference (see Scope discipline above).
    `registry::tests::rule_naming_convention` and `registry::tests::linter_sorting` specifically.
 3. `cargo dev generate-all` — regenerates `ruff.schema.json` and `docs/rules/<name>.md` (the
    latter is gitignored, generated on demand — its successful generation without errors is itself
-   a useful smoke test that the doc comment sections are well-formed).
+   a useful smoke test that the doc comment sections are well-formed). **If you touched a
+   `Linter` enum variant's doc comment** (adding a new sub-linter like `OdooApp`/`OAPP`, or editing
+   `Linter::Odoo`'s own doc link) — `generate-all` runs `cargo dev generate-rules-table`, which
+   panics if that variant's `/// [name](url)` doc comment doesn't resolve to a `pypi.org` or
+   `github.com` host (`crates/ruff_dev/src/generate_rules_table.rs`'s `linter.url()` check). This
+   is exactly the mkdocs CI job's "Generate docs" step, so a URL pointing anywhere else (e.g. a
+   vendor site like `apps.odoo.com`) passes `cargo check`/tests locally but only fails in that CI
+   job — run `cargo dev generate-rules-table` locally after any `Linter` doc-comment change to
+   catch it before pushing. If there's no natural pypi.org package to link, point at the rule
+   group's own source directory on GitHub instead (e.g.
+   `https://github.com/Vauxoo/ruff-odoo/tree/main/crates/ruff_linter/src/rules/<group>`).
 4. **Doc-example formatting** — CI's mkdocs job runs every ```` ```python ```` example in the rule
    docs through `ruff format` and fails on any diff (`scripts/check_docs_formatted.py`). Common
    traps: a "Use instead" empty dict must be `{}` (not a multi-line `{\n}`), stub bodies must

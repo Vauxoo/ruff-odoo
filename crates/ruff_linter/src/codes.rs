@@ -1076,11 +1076,12 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "060") => rules::odoo::rules::TranslationTooFewArgs,
         (Odoo, "061") => rules::odoo::rules::TranslationTooManyArgs,
         (Odoo, "062") => rules::odoo::rules::TranslationUnsupportedFormat,
-        // Rules that only apply to paid apps (manifests with a "price" key), published on
-        // the Odoo Apps store: selectable as a group via the "ODOOAPP" prefix.
-        (Odoo, "APP001") => rules::odoo::rules::CategoryAllowedApp,
-        (Odoo, "APP002") => rules::odoo::rules::MissingOdooFileApp,
-        (Odoo, "APP003") => rules::odoo::rules::ManifestRequiredKeyApp,
+        // odoo app: rules that only apply to paid apps (manifests with a "price" key),
+        // published on the Odoo Apps store. Kept as a separate linter (rather than nested
+        // under "ODOO") so that selecting "ODOO" doesn't also select these.
+        (OdooApp, "001") => rules::odoo_app::rules::CategoryAllowedApp,
+        (OdooApp, "002") => rules::odoo_app::rules::MissingOdooFileApp,
+        (OdooApp, "003") => rules::odoo_app::rules::ManifestRequiredKeyApp,
 
         // ruff
         (Ruff, "001") => rules::ruff::rules::AmbiguousUnicodeCharacterString,
