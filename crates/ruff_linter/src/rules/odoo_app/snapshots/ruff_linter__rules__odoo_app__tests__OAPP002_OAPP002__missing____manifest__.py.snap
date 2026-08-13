@@ -1,7 +1,7 @@
 ---
-source: crates/ruff_linter/src/rules/odoo/mod.rs
+source: crates/ruff_linter/src/rules/odoo_app/mod.rs
 ---
-ODOOAPP002 Missing missing/static/description/index.html file for modules with price
+OAPP002 Missing missing/static/description/index.html file for modules with price
  --> __manifest__.py:3:5
   |
 1 | # Paid app without static/description/index.html: flagged.

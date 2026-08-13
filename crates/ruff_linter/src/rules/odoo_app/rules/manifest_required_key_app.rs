@@ -52,7 +52,7 @@ impl Violation for ManifestRequiredKeyApp {
 // `license` is also required for apps, but ODOO001 already requires it for every module.
 const REQUIRED_KEYS_APP: &[&str] = &["currency", "images", "support"];
 
-/// ODOOAPP003
+/// OAPP003
 pub(crate) fn manifest_required_key_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, path) {
         return;
