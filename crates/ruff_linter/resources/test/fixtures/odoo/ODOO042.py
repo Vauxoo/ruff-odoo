@@ -68,3 +68,13 @@ def check_stage(self):
 # Expanded call whose term alone still exceeds the line length: wrap it into pieces too.
 def check_quota(self):
     raise UserError(_("The configured quota %s for the salesperson team %s was exceeded by the current invoiced amount and the remaining allowance %s cannot cover it", quota.name, team.display_name, remaining.amount))
+
+
+# The wrapped term reserves the trailing comma column: a piece landing exactly on the
+# line-length limit must wrap, not overflow by one once the comma is appended.
+def unmerge(self):
+    _logger.info(
+        self.env._(
+            "Unmerged partnerx %s into %s", self.dst_partner_id.id, self.partner_ids.ids
+        )
+    )
