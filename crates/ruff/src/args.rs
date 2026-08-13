@@ -19,6 +19,7 @@ use ruff_graph::Direction;
 use ruff_linter::line_width::LineLength;
 use ruff_linter::logging::LogLevel;
 use ruff_linter::registry::Rule;
+use ruff_linter::rules::odoo::settings::OdooVersion;
 use ruff_linter::settings::types::{
     ExtensionPair, FilePattern, OutputFormat, PatternPrefixPair, PerFileIgnore, PreviewMode,
     PythonVersion, UnsafeFixes,
@@ -30,7 +31,7 @@ use ruff_ranged_value::{ValueSource, ValueSourceGuard};
 use ruff_source_file::{LineIndex, OneIndexed, PositionEncoding};
 use ruff_text_size::TextRange;
 use ruff_workspace::configuration::{Configuration, RuleSelection};
-use ruff_workspace::options::{Options, PycodestyleOptions};
+use ruff_workspace::options::{OdooOptions, Options, PycodestyleOptions};
 use ruff_workspace::resolver::ConfigurationTransformer;
 use rustc_hash::FxHashMap;
 use toml;
@@ -280,6 +281,10 @@ pub struct CheckCommand {
     /// The minimum Python version that should be supported.
     #[arg(long, value_enum)]
     target_version: Option<PythonVersion>,
+    /// The targeted Odoo version, used to suppress lint rules that only apply to a specific
+    /// range of Odoo versions (e.g. `deprecated-self-cr` only applies since Odoo 19.0).
+    #[arg(long, help_heading = "Rule configuration")]
+    odoo_version: Option<OdooVersion>,
     /// Enable preview mode; checks will include unstable rules and fixes.
     /// Use `--no-preview` to disable.
     #[arg(long, overrides_with("no_preview"))]
@@ -826,6 +831,7 @@ impl CheckCommand {
             respect_gitignore: resolve_bool_arg(self.respect_gitignore, self.no_respect_gitignore),
             select: self.select,
             target_version: self.target_version.map(ast::PythonVersion::from),
+            odoo_version: self.odoo_version,
             unfixable: self.unfixable,
             // TODO(charlie): Included in `pyproject.toml`, but not inherited.
             cache_dir: self.cache_dir,
@@ -1394,6 +1400,7 @@ struct ExplicitConfigOverrides {
     respect_gitignore: Option<bool>,
     select: Option<Vec<UnresolvedRuleSelector>>,
     target_version: Option<ast::PythonVersion>,
+    odoo_version: Option<OdooVersion>,
     unfixable: Option<Vec<UnresolvedRuleSelector>>,
     // TODO(charlie): Captured in pyproject.toml as a default, but not part of `Settings`.
     cache_dir: Option<PathBuf>,
@@ -1487,6 +1494,12 @@ impl ConfigurationTransformer for ExplicitConfigOverrides {
         }
         if let Some(target_version) = &self.target_version {
             config.target_version = Some(*target_version);
+        }
+        if let Some(odoo_version) = self.odoo_version {
+            config.lint.odoo = Some(OdooOptions {
+                odoo_version: Some(odoo_version),
+                ..config.lint.odoo.unwrap_or_default()
+            });
         }
         if let Some(extension) = &self.extension {
             config.extension = Some(extension.iter().cloned().collect());

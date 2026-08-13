@@ -6,7 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_item, manifest_string_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_item, manifest_string_item};
 
 /// ## What it does
 /// Checks that the `category` in the `__manifest__.py` of an Odoo module with a `price`
@@ -72,10 +72,7 @@ const CATEGORY_ALLOWED_APP: &[&str] = &[
 
 /// ODOOAPP001
 pub(crate) fn category_allowed_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {

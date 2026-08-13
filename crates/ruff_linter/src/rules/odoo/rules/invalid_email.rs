@@ -4,7 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_string_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// ## What it does
 /// Checks that the `support` key in an Odoo module's `__manifest__.py`, if present, is a
@@ -57,10 +57,7 @@ fn is_valid_email(email: &str) -> bool {
 
 /// ODOO015
 pub(crate) fn invalid_email(checker: &Checker, dict: &ast::ExprDict, path: &std::path::Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
 

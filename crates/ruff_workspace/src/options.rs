@@ -24,6 +24,7 @@ use ruff_linter::rules::flake8_tidy_imports::settings::{
 };
 use ruff_linter::rules::isort::settings::RelativeImportsOrder;
 use ruff_linter::rules::isort::{ImportSection, ImportType};
+use ruff_linter::rules::odoo::settings::OdooVersion;
 use ruff_linter::rules::pep8_naming::settings::IgnoreNames;
 use ruff_linter::rules::pydocstyle::settings::Convention;
 use ruff_linter::rules::pylint::settings::ConstantType;
@@ -3195,12 +3196,24 @@ pub struct OdooOptions {
         "#
     )]
     pub prohibited_override_methods: Option<Vec<String>>,
+    /// The targeted Odoo version, used to suppress rules that only apply to a specific
+    /// range of Odoo versions (e.g. `deprecated-self-cr` only applies since 19.0).
+    #[option(
+        default = "null",
+        value_type = "str",
+        example = r#"
+            # Target Odoo 17.0.
+            odoo-version = "17.0"
+        "#
+    )]
+    pub odoo_version: Option<OdooVersion>,
 }
 
 impl OdooOptions {
     pub(crate) fn into_settings(self) -> odoo::settings::Settings {
         odoo::settings::Settings {
             prohibited_override_methods: self.prohibited_override_methods.unwrap_or_default(),
+            odoo_version: self.odoo_version,
         }
     }
 }

@@ -5,7 +5,7 @@ use ruff_python_ast as ast;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 
 /// ## What it does
 /// Checks that an Odoo module's `__manifest__.py` declares a `license` key.
@@ -45,10 +45,7 @@ impl Violation for ManifestRequiredKey {
 
 /// ODOO001
 pub(crate) fn manifest_required_key(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
 

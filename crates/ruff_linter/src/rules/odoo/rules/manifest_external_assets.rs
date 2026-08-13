@@ -4,7 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_item};
 
 /// ## What it does
 /// Checks for external URLs in the `assets` key of an Odoo module's `__manifest__.py`.
@@ -56,10 +56,7 @@ pub(crate) fn manifest_external_assets(
     dict: &ast::ExprDict,
     path: &std::path::Path,
 ) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
 
@@ -71,9 +68,17 @@ pub(crate) fn manifest_external_assets(
             continue;
         };
         for elt in elts {
-            let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = elt else {
-                continue;
-            };
+            check_asset_element(checker, elt);
+        }
+    }
+}
+
+/// Checks a single element of an assets-key list for an external URL. Directive-style
+/// entries (e.g. `("replace", "old/path.js", "https://cdn.example.com/lib.js")`) nest the
+/// paths inside a tuple or list, so those are recursed into as well.
+fn check_asset_element(checker: &Checker, elt: &Expr) {
+    match elt {
+        Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
             let url = value.to_str();
             if has_url_scheme(url) {
                 checker.report_diagnostic(
@@ -84,5 +89,11 @@ pub(crate) fn manifest_external_assets(
                 );
             }
         }
+        Expr::Tuple(ast::ExprTuple { elts, .. }) | Expr::List(ast::ExprList { elts, .. }) => {
+            for nested in elts {
+                check_asset_element(checker, nested);
+            }
+        }
+        _ => {}
     }
 }

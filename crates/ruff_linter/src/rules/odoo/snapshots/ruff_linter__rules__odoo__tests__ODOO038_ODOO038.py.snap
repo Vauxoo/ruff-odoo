@@ -2,21 +2,32 @@
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
 ODOO038 Using an empty domain `search([])` without a `limit` will load all records, may impact performance.
- --> ODOO038.py:5:24
-  |
-4 |     def action_all(self):
-5 |         all_partners = self.env["res.partner"].search([])
-  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-6 |         limited = self.env["res.partner"].search([], limit=100)
-7 |         filtered = self.env["res.partner"].search([("active", "=", True)])
-  |
+  --> ODOO038.py:8:24
+   |
+ 7 |     def action_all(self):
+ 8 |         all_partners = self.env["res.partner"].search([])
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |         limited = self.env["res.partner"].search([], limit=100)
+10 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+   |
 
 ODOO038 Using an empty domain `search_read([])` without a `limit` will load all records, may impact performance.
-  --> ODOO038.py:9:20
+  --> ODOO038.py:12:20
    |
- 7 |         filtered = self.env["res.partner"].search([("active", "=", True)])
- 8 |         counted = self.env["res.partner"].search([], count=True)
- 9 |         read_all = self.env["res.partner"].search_read([])
+10 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+11 |         counted = self.env["res.partner"].search([], count=True)
+12 |         read_all = self.env["res.partner"].search_read([])
    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-10 |         return all_partners, limited, filtered, counted, read_all
+13 |         return all_partners, limited, filtered, counted, read_all
+   |
+
+ODOO038 Using an empty domain `search([])` without a `limit` will load all records, may impact performance.
+  --> ODOO038.py:17:24
+   |
+15 |     def action_domain_variable(self):
+16 |         domain = []
+17 |         all_partners = self.env["res.partner"].search(domain)
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |
+19 |         built_domain = []
    |

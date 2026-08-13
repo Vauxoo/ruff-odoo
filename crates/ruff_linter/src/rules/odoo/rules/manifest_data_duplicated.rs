@@ -7,7 +7,7 @@ use rustc_hash::FxHashSet;
 
 use crate::checkers::ast::Checker;
 use crate::rules::odoo::helpers::{
-    MANIFEST_DATA_KEYS, is_manifest_file, manifest_item, remove_list_element,
+    MANIFEST_DATA_KEYS, is_manifest_root_dict, manifest_item, remove_list_element,
 };
 use crate::{AlwaysFixableViolation, Fix};
 
@@ -58,10 +58,7 @@ impl AlwaysFixableViolation for ManifestDataDuplicated {
 
 /// ODOO048
 pub(crate) fn manifest_data_duplicated(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
 

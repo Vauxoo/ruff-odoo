@@ -6,5 +6,15 @@ ODOO023 Same Odoo module absolute import. You should use relative import with ".
   |
 1 | from odoo.addons.my_module import models as _models
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2 | from odoo.addons.other_module import models as _other
+2 | from odoo.addons.my_module.models import foo as _foo
+3 | from odoo.addons.other_module import models as _other
+  |
+
+ODOO023 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:2:1
+  |
+1 | from odoo.addons.my_module import models as _models
+2 | from odoo.addons.my_module.models import foo as _foo
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 | from odoo.addons.other_module import models as _other
   |

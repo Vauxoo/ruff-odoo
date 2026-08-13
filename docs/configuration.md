@@ -654,6 +654,12 @@ Options:
   -h, --help
           Print help (see more with '--help')
 
+Rule configuration:
+      --odoo-version <ODOO_VERSION>
+          The targeted Odoo version, used to suppress lint rules that only
+          apply to a specific range of Odoo versions (e.g. `deprecated-self-cr`
+          only applies since Odoo 19.0)
+
 Rule selection:
       --select <RULE_CODE>
           Comma-separated list of rule codes to enable (or ALL, to enable all

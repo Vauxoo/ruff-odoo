@@ -5,7 +5,7 @@ use ruff_python_ast as ast;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range, manifest_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, manifest_item};
 
 /// ## What it does
 /// Checks that an Odoo module whose `__manifest__.py` has a `price` key (a paid app) ships
@@ -33,10 +33,7 @@ const REQUIRED_FILES_APP: &[&str] = &["static/description/index.html"];
 
 /// ODOOAPP002
 pub(crate) fn missing_odoo_file_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {

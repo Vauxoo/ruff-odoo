@@ -2,11 +2,33 @@
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
 ODOO040 Compute method calling `write`. Use `update` instead.
- --> ODOO040.py:7:9
-  |
-6 |     def _compute_total(self):
-7 |         self.write({"total": 10})
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
-8 |
-9 |     def action_do(self):
-  |
+  --> ODOO040.py:11:9
+   |
+10 |     def _compute_total(self):
+11 |         self.write({"total": 10})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 |     def _compute_count(self):
+   |
+
+ODOO040 Compute method calling `write`. Use `update` instead.
+  --> ODOO040.py:15:13
+   |
+13 |     def _compute_count(self):
+14 |         for record in self.search([]):
+15 |             record.write({"count": 1})
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |         browsed = self.browse(self.ids)
+17 |         browsed.write({"count": 2})
+   |
+
+ODOO040 Compute method calling `write`. Use `update` instead.
+  --> ODOO040.py:17:9
+   |
+15 |             record.write({"count": 1})
+16 |         browsed = self.browse(self.ids)
+17 |         browsed.write({"count": 2})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |
+19 |     def action_do(self):
+   |

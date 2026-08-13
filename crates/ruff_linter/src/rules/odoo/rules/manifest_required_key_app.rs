@@ -5,7 +5,7 @@ use ruff_python_ast as ast;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range, manifest_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, manifest_item};
 
 /// ## What it does
 /// Checks that the `__manifest__.py` of an Odoo module with a `price` key (a paid app)
@@ -54,10 +54,7 @@ const REQUIRED_KEYS_APP: &[&str] = &["currency", "images", "support"];
 
 /// ODOOAPP003
 pub(crate) fn manifest_required_key_app(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     if manifest_item(dict, "price").is_none() {

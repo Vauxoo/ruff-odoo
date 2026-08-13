@@ -43,17 +43,34 @@ impl Violation for OdooAddonsRelativeImport {
 }
 
 /// Walks up from `path` looking for the nearest ancestor directory containing an Odoo
-/// manifest file, and returns that directory's name (the Odoo module name), if found.
-fn enclosing_odoo_module_name(path: &Path) -> Option<String> {
+/// manifest file, and returns that directory (the Odoo module's directory), if found.
+fn enclosing_odoo_module_dir(path: &Path) -> Option<&Path> {
     let mut dir = path.parent()?;
     loop {
         if std::fs::read_dir(dir).is_ok_and(|mut entries| {
             entries.any(|entry| entry.is_ok_and(|entry| is_manifest_file(&entry.path())))
         }) {
-            return dir.file_name()?.to_str().map(str::to_string);
+            return Some(dir);
         }
         dir = dir.parent()?;
     }
+}
+
+/// Returns `true` for files pylint-odoo's `check_odoo_relative_import` exempted: test files
+/// (loaded only when the module and its dependencies are already installed) and migration
+/// scripts (versioned, expected to reference the module by its absolute import path).
+fn is_exempt_from_relative_import(path: &Path, module_dir: &Path) -> bool {
+    let in_tests_dir = path
+        .strip_prefix(module_dir)
+        .ok()
+        .and_then(Path::parent)
+        .is_some_and(|parent| parent == Path::new("tests"));
+    let in_migrations_dir = path
+        .parent()
+        .and_then(Path::parent)
+        .and_then(Path::file_name)
+        .is_some_and(|name| name == "migrations");
+    in_tests_dir || in_migrations_dir
 }
 
 /// ODOO023
@@ -66,17 +83,26 @@ pub(crate) fn odoo_addons_relative_import(
         .module
         .as_deref()
         .and_then(|module| module.strip_prefix("odoo.addons."))
+        // `from odoo.addons.my_module.models import x` imports a submodule of my_module;
+        // only the leading segment identifies the Odoo module being imported from.
+        .map(|module_name| module_name.split('.').next().unwrap_or(module_name))
     else {
         return;
     };
 
-    let Some(enclosing_module) = enclosing_odoo_module_name(path) else {
+    let Some(module_dir) = enclosing_odoo_module_dir(path) else {
+        return;
+    };
+    if is_exempt_from_relative_import(path, module_dir) {
+        return;
+    }
+    let Some(enclosing_module) = module_dir.file_name().and_then(|name| name.to_str()) else {
         return;
     };
     if module_name == enclosing_module {
         checker.report_diagnostic(
             OdooAddonsRelativeImport {
-                module: enclosing_module,
+                module: enclosing_module.to_string(),
             },
             import_from.range(),
         );

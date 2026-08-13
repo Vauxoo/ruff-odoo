@@ -2703,6 +2703,17 @@
       "description": "Options for the `odoo` plugin.",
       "type": "object",
       "properties": {
+        "odoo-version": {
+          "description": "The targeted Odoo version, used to suppress rules that only apply to a specific\nrange of Odoo versions (e.g. `deprecated-self-cr` only applies since 19.0).",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OdooVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "prohibited-override-methods": {
           "description": "A list of method names whose override is prohibited (`ODOO055`). A method\ncounts as an override when its body delegates to `super().<method>(...)`.",
           "type": [
@@ -2715,6 +2726,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "OdooVersion": {
+      "description": "The Odoo version being targeted (e.g. `17.0`).\n\nUsed to gate rules that only apply to a specific range of Odoo versions, mirroring\npylint-odoo's `checks_maxmin_odoo_version` (e.g. `self._cr` was only deprecated in 19.0,\nso `deprecated-self-cr` shouldn't fire against a module targeting an older version).",
+      "type": "string"
     },
     "OutputFormat": {
       "type": "string",
