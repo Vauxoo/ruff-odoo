@@ -428,7 +428,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
     needs: determine_changes
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-test') && (needs.determine_changes.outputs.code == 'true' || github.ref == 'refs/heads/main') }}
-    timeout-minutes: 20
+    # Forks run on standard 2-core windows-latest/macos-latest runners (see the matrix
+    # above) instead of astral-sh's 16-core namespace profiles, and PR runs never save
+    # caches (rust-cache's save-if is restricted to main), so give forks more headroom.
+    timeout-minutes: ${{ github.repository == 'astral-sh/ruff' && 20 || 35 }}
     env:
       # Line-tables-only debug info: faster builds, backtraces still work.
       CARGO_PROFILE_DEV_DEBUG: line-tables-only
