@@ -95,70 +95,100 @@ help: Replace with `# noqa: ODOO042`
 29 |     return True
    |
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:32:37
+ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO063`
+  --> ODOO047.py:32:41
    |
-32 | def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
-   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 | def renamed_odoo_project_message(env):  # pylint: disable=consider-merging-classes-inherited
+   |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 33 |     return True
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODOO063`
    |
 31 |
-   - def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
-32 + def duplicated_name_and_code(env):  # noqa: ODOO017
+   - def renamed_odoo_project_message(env):  # pylint: disable=consider-merging-classes-inherited
+32 + def renamed_odoo_project_message(env):  # noqa: ODOO063
 33 |     return True
    |
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:36:29
+ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO063`
+  --> ODOO047.py:36:38
    |
-36 | def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
-   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 | def renamed_odoo_project_code(env):  # pylint: disable=R8180
+   |                                      ^^^^^^^^^^^^^^^^^^^^^^^
 37 |     return True
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODOO063`
    |
 35 |
-   - def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
-36 + def partially_mapped(env):  # pylint: disable=some-custom-check  # noqa: ODOO017
+   - def renamed_odoo_project_code(env):  # pylint: disable=R8180
+36 + def renamed_odoo_project_code(env):  # noqa: ODOO063
 37 |     return True
    |
 
-ODOO047 `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:48:46
+ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
+  --> ODOO047.py:40:37
    |
-48 | def already_migrated(env):  # noqa: ODOO017  # pylint: disable=invalid-commit
+40 | def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |     return True
+   |
+help: Replace with `# noqa: ODOO017`
+   |
+39 |
+   - def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
+40 + def duplicated_name_and_code(env):  # noqa: ODOO017
+41 |     return True
+   |
+
+ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
+  --> ODOO047.py:44:29
+   |
+44 | def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+45 |     return True
+   |
+help: Replace with `# noqa: ODOO017`
+   |
+43 |
+   - def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
+44 + def partially_mapped(env):  # pylint: disable=some-custom-check  # noqa: ODOO017
+45 |     return True
+   |
+
+ODOO047 `pylint: disable` comment should be migrated to `# noqa: ODOO017`
+  --> ODOO047.py:56:46
+   |
+56 | def already_migrated(env):  # noqa: ODOO017  # pylint: disable=invalid-commit
    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-49 |     return True
+57 |     return True
    |
 help: Replace with `# noqa: ODOO017`
 
 ODOO047 `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:52:26
+  --> ODOO047.py:60:26
    |
-52 | def trailing_text(env):  # pylint: disable=invalid-commit  # avoid partial writes
+60 | def trailing_text(env):  # pylint: disable=invalid-commit  # avoid partial writes
    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-53 |     return True
+61 |     return True
    |
 help: Replace with `# noqa: ODOO017`
 
 ODOO047 `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:64:1
+  --> ODOO047.py:72:1
    |
-64 | # pylint: disable=invalid-commit
+72 | # pylint: disable=invalid-commit
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-65 | def standalone_comment(env):
-66 |     return True
+73 | def standalone_comment(env):
+74 |     return True
    |
 help: Replace with `# noqa: ODOO017`
 
 ODOO047 `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047.py:69:1
+  --> ODOO047.py:77:1
    |
-69 | # pylint: disable-next=invalid-commit
+77 | # pylint: disable-next=invalid-commit
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-70 | def disable_next(env):
-71 |     return True
+78 | def disable_next(env):
+79 |     return True
    |
 help: Replace with `# noqa: ODOO017`

@@ -74,6 +74,10 @@ impl Violation for PylintDisableComment {
 /// interchangeably with names.
 const MESSAGE_ALIASES: &[(&str, &str)] = &[
     ("attribute-string-redundant", "field-string-redundant"),
+    (
+        "consider-merging-classes-inherited",
+        "duplicate-inherited-model-extension",
+    ),
     ("prefer-env-translation", "direct-translation-call"),
     ("print-used", "print"),
     ("too-complex", "complex-structure"),
@@ -103,6 +107,7 @@ const MESSAGE_ALIASES: &[(&str, &str)] = &[
     ("E8149", "deprecated-inselect-operator"),
     ("E8151", "translation-injection"),
     ("R8101", "odoo-exception-warning"),
+    ("R8180", "duplicate-inherited-model-extension"),
     ("R8181", "invalid-email"),
     ("W8103", "translation-field"),
     ("W8105", "attribute-deprecated"),

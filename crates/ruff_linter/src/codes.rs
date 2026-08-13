@@ -1076,6 +1076,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "060") => rules::odoo::rules::TranslationTooFewArgs,
         (Odoo, "061") => rules::odoo::rules::TranslationTooManyArgs,
         (Odoo, "062") => rules::odoo::rules::TranslationUnsupportedFormat,
+        (Odoo, "063") => rules::odoo::rules::DuplicateInheritedModelExtension,
         // odoo app: rules that only apply to paid apps (manifests with a "price" key),
         // published on the Odoo Apps store. Kept as a separate linter (rather than nested
         // under "ODOO") so that selecting "ODOO" doesn't also select these.

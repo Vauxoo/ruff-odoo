@@ -47,10 +47,10 @@ impl OsSystem {
         );
 
         Self {
-            // Spreading `..Default` because it isn't possible to feature gate the initializer of a single field.
             inner: Arc::new(OsSystemInner {
                 cwd: cwd.to_path_buf(),
-                ..Default::default()
+                #[cfg(feature = "testing")]
+                user_config_directory_override: Default::default(),
             }),
         }
     }
