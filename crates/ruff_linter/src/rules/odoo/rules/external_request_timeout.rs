@@ -22,6 +22,13 @@ use crate::checkers::ast::Checker;
 /// ```python
 /// response = requests.get(url, timeout=10)
 /// ```
+///
+/// ## Overlap with S113
+/// `S113` (`request-without-timeout`) detects the `requests.*`/`httpx.*` subset of this
+/// rule. This rule additionally covers `ftplib`, `http.client`, `smtplib`, `serial`,
+/// `suds`, `urllib.request.urlopen` and Odoo's IAP `jsonrpc`, matching pylint-odoo's
+/// `external-request-timeout` default list — enable one of the two, not both, to avoid
+/// duplicated reports on `requests` calls.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
 pub(crate) struct ExternalRequestTimeout {
