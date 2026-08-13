@@ -1,11 +1,11 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast::visitor::{Visitor, walk_expr};
+use ruff_python_ast::visitor::{Visitor, walk_expr, walk_stmt};
 use ruff_python_ast::{self as ast, Expr, Stmt};
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
+use crate::rules::odoo::helpers::{dotted_name, is_odoo_model_class, odoo_field_type};
 
 /// ## What it does
 /// Checks for `self.write(...)` calls inside compute methods.
@@ -38,17 +38,99 @@ impl Violation for NoWriteInCompute {
     }
 }
 
-/// Collects the ranges of `self.write(...)` calls in a method body.
-struct WriteCallCollector {
+/// Root receivers (besides bare `self`) whose `.write(...)` call is flagged, mirroring
+/// pylint-odoo's `check_no_write_compute`: every `self.<method>` that returns a recordset,
+/// plus any `self.with_*` (e.g. `self.with_context`, `self.with_company`).
+const RECORDSET_ROOT_METHODS: &[&str] = &[
+    "self.browse",
+    "self.copy",
+    "self.env",
+    "self.filtered",
+    "self.filtered_domain",
+    "self.mapped",
+    "self.search",
+    "self.sorted",
+];
+
+/// Traces `expr` back to a dotted "root" describing what produced the record it's called on,
+/// resolving through local assignments and for-loop targets within `function_body` (e.g.
+/// `record = self.browse(...)` and `for record in self.search(...):` both resolve to
+/// `"self.browse"` / `"self.search"`). `depth` bounds the number of names traced through, to
+/// avoid looping on self-referential assignments like `records = records.filtered(...)`.
+fn resolve_receiver_root(function_body: &[Stmt], expr: &Expr, depth: u8) -> Option<String> {
+    if depth == 0 {
+        return None;
+    }
+    match expr {
+        Expr::Name(name) if name.id == "self" => Some("self".to_string()),
+        Expr::Name(name) => {
+            let mut finder = NameBindingFinder {
+                name: name.id.as_str(),
+                value: None,
+            };
+            for stmt in function_body {
+                finder.visit_stmt(stmt);
+                if finder.value.is_some() {
+                    break;
+                }
+            }
+            resolve_receiver_root(function_body, finder.value?, depth - 1)
+        }
+        Expr::Call(call) => resolve_receiver_root(function_body, &call.func, depth - 1),
+        Expr::Subscript(subscript) => {
+            resolve_receiver_root(function_body, &subscript.value, depth - 1)
+        }
+        Expr::Attribute(_) => dotted_name(expr),
+        _ => None,
+    }
+}
+
+/// Finds the first assignment (`name = value`) or for-loop target (`for name in value:`) for
+/// `name` anywhere in a method body, including nested blocks (`if`, `for`, `try`, ...).
+struct NameBindingFinder<'a> {
+    name: &'a str,
+    value: Option<&'a Expr>,
+}
+
+impl<'a> Visitor<'a> for NameBindingFinder<'a> {
+    fn visit_stmt(&mut self, stmt: &'a Stmt) {
+        if self.value.is_some() {
+            return;
+        }
+        match stmt {
+            Stmt::Assign(assign)
+                if assign
+                    .targets
+                    .iter()
+                    .any(|target| matches!(target, Expr::Name(n) if n.id == self.name)) =>
+            {
+                self.value = Some(&assign.value);
+            }
+            Stmt::For(for_stmt) if matches!(for_stmt.target.as_ref(), Expr::Name(n) if n.id == self.name) =>
+            {
+                self.value = Some(&for_stmt.iter);
+            }
+            _ => walk_stmt(self, stmt),
+        }
+    }
+}
+
+/// Collects the ranges of `.write(...)` calls, on `self` or on a recordset derived from it
+/// (see [`RECORDSET_ROOT_METHODS`]), in a method body.
+struct WriteCallCollector<'a> {
+    function_body: &'a [Stmt],
     ranges: Vec<TextRange>,
 }
 
-impl<'a> Visitor<'a> for WriteCallCollector {
+impl<'a> Visitor<'a> for WriteCallCollector<'a> {
     fn visit_expr(&mut self, expr: &'a Expr) {
         if let Expr::Call(call) = expr
             && let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref()
             && attr == "write"
-            && matches!(value.as_ref(), Expr::Name(name) if name.id == "self")
+            && let Some(root) = resolve_receiver_root(self.function_body, value, 8)
+            && (root == "self"
+                || RECORDSET_ROOT_METHODS.contains(&root.as_str())
+                || root.starts_with("self.with_"))
         {
             self.ranges.push(call.range());
         }
@@ -58,7 +140,7 @@ impl<'a> Visitor<'a> for WriteCallCollector {
 
 /// ODOO040
 pub(crate) fn no_write_in_compute(checker: &Checker, class_def: &ast::StmtClassDef) {
-    if !is_odoo_model_class(class_def) {
+    if !is_odoo_model_class(checker.semantic(), class_def) {
         return;
     }
 
@@ -98,7 +180,10 @@ pub(crate) fn no_write_in_compute(checker: &Checker, class_def: &ast::StmtClassD
         if !compute_methods.contains(&function_def.name.as_str()) {
             continue;
         }
-        let mut collector = WriteCallCollector { ranges: Vec::new() };
+        let mut collector = WriteCallCollector {
+            function_body: &function_def.body,
+            ranges: Vec::new(),
+        };
         for stmt in &function_def.body {
             collector.visit_stmt(stmt);
         }

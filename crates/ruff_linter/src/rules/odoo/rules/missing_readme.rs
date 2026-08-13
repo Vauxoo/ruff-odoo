@@ -5,7 +5,7 @@ use ruff_python_ast as ast;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 
 /// ## What it does
 /// Checks that an Odoo module has a `README.rst`, `README.md`, or `README.txt` file next to
@@ -29,10 +29,7 @@ const README_FILES: &[&str] = &["README.rst", "README.md", "README.txt"];
 
 /// ODOO016
 pub(crate) fn missing_readme(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     let Some(dir) = path.parent() else {

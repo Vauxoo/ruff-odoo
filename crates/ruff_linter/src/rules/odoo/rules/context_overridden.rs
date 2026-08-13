@@ -1,4 +1,5 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
+use ruff_python_ast::name::QualifiedName;
 use ruff_python_ast::{self as ast, Expr};
 use ruff_text_size::Ranged;
 
@@ -52,6 +53,20 @@ pub(crate) fn context_overridden(checker: &Checker, call: &ast::ExprCall) {
     let [first, ..] = call.arguments.args.as_ref() else {
         return;
     };
+    // `self.with_context(clean_context(self.env.context))` merges a context stripped of
+    // request-scoped keys; it's the documented way to reset the context, not an override.
+    if let Expr::Call(ast::ExprCall { func, .. }) = first
+        && matches!(
+            checker
+                .semantic()
+                .resolve_qualified_name(func)
+                .as_ref()
+                .map(QualifiedName::segments),
+            Some(["odoo", "tools", "clean_context"])
+        )
+    {
+        return;
+    }
     checker.report_diagnostic(
         ContextOverridden {
             arg: checker.generator().expr(first),

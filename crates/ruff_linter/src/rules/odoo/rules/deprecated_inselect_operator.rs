@@ -4,6 +4,8 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::settings::OdooVersion;
 
 /// ## What it does
 /// Checks for the `inselect`/`not inselect` domain operators.
@@ -39,6 +41,10 @@ impl Violation for DeprecatedInselectOperator {
 
 /// ODOO044
 pub(crate) fn deprecated_inselect_operator(checker: &Checker, string: &ast::ExprStringLiteral) {
+    // `inselect`/`not inselect` were only removed in Odoo 18.0.
+    if !odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
+        return;
+    }
     let text = string.value.to_str();
     if text.eq_ignore_ascii_case("inselect") || text.eq_ignore_ascii_case("not inselect") {
         checker.report_diagnostic(

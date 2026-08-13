@@ -5,6 +5,8 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::settings::OdooVersion;
 
 /// ## What it does
 /// Checks for `raise` statements inside `unlink()` methods of Odoo models.
@@ -55,6 +57,10 @@ fn class_has_model_attributes(class_def: &ast::StmtClassDef) -> bool {
 
 /// ODOO039
 pub(crate) fn no_raise_unlink(checker: &Checker, raise: &ast::StmtRaise) {
+    // Deletion constraints only moved out of `unlink()` in Odoo 15.0.
+    if !odoo_version_applies(checker, Some(OdooVersion::new(15, 0)), None) {
+        return;
+    }
     let mut scopes = checker.semantic().current_scopes();
     let in_unlink_method = scopes.any(|scope| {
         matches!(scope.kind, ScopeKind::Function(function_def) if function_def.name.as_str() == "unlink")

@@ -5,7 +5,7 @@ use ruff_python_ast as ast;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, remove_dict_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, remove_dict_item};
 use crate::{Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -52,10 +52,7 @@ impl Violation for ManifestDeprecatedKey {
 
 /// ODOO002
 pub(crate) fn manifest_deprecated_key(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
 

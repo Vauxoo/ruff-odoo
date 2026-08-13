@@ -5,7 +5,8 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::is_odoo_model_class;
+use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
+use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability};
 
 /// ## What it does
@@ -42,14 +43,19 @@ impl Violation for DeprecatedSelfCr {
 
 /// ODOO035
 pub(crate) fn deprecated_self_cr(checker: &Checker, attribute: &ast::ExprAttribute) {
+    // `self._cr` was only deprecated in Odoo 19.0.
+    if !odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None) {
+        return;
+    }
     if attribute.attr.as_str() != "_cr" {
         return;
     }
     if !matches!(attribute.value.as_ref(), Expr::Name(name) if name.id == "self") {
         return;
     }
-    let in_odoo_model = checker.semantic().current_scopes().any(
-        |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(class_def)),
+    let semantic = checker.semantic();
+    let in_odoo_model = semantic.current_scopes().any(
+        |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def)),
     );
     if !in_odoo_model {
         return;

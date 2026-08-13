@@ -7,7 +7,8 @@ use crate::checkers::ast::Checker;
 use crate::codes::Rule;
 use crate::fix::edits::fits;
 use crate::line_width::LineWidthBuilder;
-use crate::rules::odoo::helpers::{dotted_name, wrap_string_literal};
+use crate::rules::odoo::helpers::{dotted_name, odoo_version_applies, wrap_string_literal};
+use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -238,7 +239,11 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
         return;
     };
 
-    if checker.is_rule_enabled(Rule::TranslationContainsVariable) {
+    if checker.is_rule_enabled(Rule::TranslationContainsVariable)
+        // Interpolating before translation was only flagged up to Odoo 13.0; from 14.0 on,
+        // `translation-not-lazy`-family checks handle this instead.
+        && odoo_version_applies(checker, None, Some(OdooVersion::new(13, 0)))
+    {
         let interpolated = match first_arg {
             // _('...' % variables)
             Expr::BinOp(ast::ExprBinOp {

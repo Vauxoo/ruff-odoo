@@ -5,7 +5,10 @@ use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
 use crate::fix::edits::fits;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_item, wrap_string_literal};
+use crate::rules::odoo::helpers::{
+    is_manifest_root_dict, manifest_item, odoo_version_applies, wrap_string_literal,
+};
+use crate::rules::odoo::settings::OdooVersion;
 use crate::{AlwaysFixableViolation, Edit, Fix};
 
 /// ## What it does
@@ -61,10 +64,11 @@ pub(crate) fn manifest_summary_multiline(
     dict: &ast::ExprDict,
     path: &std::path::Path,
 ) {
-    if !is_manifest_file(path) {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
-    if !checker.semantic().current_scope().kind.is_module() {
+    // The single-line requirement was only enforced starting Odoo 20.0.
+    if !odoo_version_applies(checker, Some(OdooVersion::new(20, 0)), None) {
         return;
     }
 
