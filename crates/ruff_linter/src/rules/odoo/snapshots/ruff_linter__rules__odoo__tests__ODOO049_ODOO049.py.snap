@@ -1,0 +1,68 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO049 String parameter on "message_post" requires translation. Use body=_(...)
+  --> ODOO049.py:9:32
+   |
+ 7 |     def action_confirm(self):
+ 8 |         # Flagged: plain literals and pre-translation interpolation.
+ 9 |         self.message_post(body="Order confirmed")
+   |                                ^^^^^^^^^^^^^^^^^
+10 |         self.message_post("Order confirmed positionally")
+11 |         self.message_post(subject="New quotation", body=_("Translated body"))
+   |
+
+ODOO049 String parameter on "message_post" requires translation. Use _(...)
+  --> ODOO049.py:10:27
+   |
+ 8 |         # Flagged: plain literals and pre-translation interpolation.
+ 9 |         self.message_post(body="Order confirmed")
+10 |         self.message_post("Order confirmed positionally")
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |         self.message_post(subject="New quotation", body=_("Translated body"))
+12 |         self.message_post(body="Order %s confirmed" % self.name)
+   |
+
+ODOO049 String parameter on "message_post" requires translation. Use subject=_(...)
+  --> ODOO049.py:11:35
+   |
+ 9 |         self.message_post(body="Order confirmed")
+10 |         self.message_post("Order confirmed positionally")
+11 |         self.message_post(subject="New quotation", body=_("Translated body"))
+   |                                   ^^^^^^^^^^^^^^^
+12 |         self.message_post(body="Order %s confirmed" % self.name)
+13 |         self.message_post(body="Order {} confirmed".format(self.name))
+   |
+
+ODOO049 String parameter on "message_post" requires translation. Use body=_(...)
+  --> ODOO049.py:12:32
+   |
+10 |         self.message_post("Order confirmed positionally")
+11 |         self.message_post(subject="New quotation", body=_("Translated body"))
+12 |         self.message_post(body="Order %s confirmed" % self.name)
+   |                                ^^^^^^^^^^^^^^^^^^^^
+13 |         self.message_post(body="Order {} confirmed".format(self.name))
+14 |         self.message_post(body=f"Order {self.name} confirmed")
+   |
+
+ODOO049 String parameter on "message_post" requires translation. Use body=_(...)
+  --> ODOO049.py:13:32
+   |
+11 |         self.message_post(subject="New quotation", body=_("Translated body"))
+12 |         self.message_post(body="Order %s confirmed" % self.name)
+13 |         self.message_post(body="Order {} confirmed".format(self.name))
+   |                                ^^^^^^^^^^^^^^^^^^^^
+14 |         self.message_post(body=f"Order {self.name} confirmed")
+15 |         # Not flagged: translated (interpolating a translation call is ODOO041's job).
+   |
+
+ODOO049 String parameter on "message_post" requires translation. Use body=_(...)
+  --> ODOO049.py:14:32
+   |
+12 |         self.message_post(body="Order %s confirmed" % self.name)
+13 |         self.message_post(body="Order {} confirmed".format(self.name))
+14 |         self.message_post(body=f"Order {self.name} confirmed")
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |         # Not flagged: translated (interpolating a translation call is ODOO041's job).
+16 |         self.message_post(body=_("Order confirmed"))
+   |

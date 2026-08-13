@@ -1406,6 +1406,15 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             ]) {
                 odoo::rules::translation_calls(checker, call);
             }
+            if checker.is_rule_enabled(Rule::TranslationRequired) {
+                odoo::rules::translation_required(checker, call, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ExternalRequestTimeout) {
+                odoo::rules::external_request_timeout(checker, call);
+            }
+            if checker.is_rule_enabled(Rule::SqlInjection) {
+                odoo::rules::sql_injection(checker, call, checker.path);
+            }
         }
         Expr::Dict(dict) => {
             if checker.any_rule_enabled(&[
@@ -1455,6 +1464,12 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::ManifestExternalAssets) {
                 odoo::rules::manifest_external_assets(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ManifestDataDuplicated) {
+                odoo::rules::manifest_data_duplicated(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ResourceNotExist) {
+                odoo::rules::resource_not_exist(checker, dict, checker.path);
             }
         }
         Expr::Set(set) => {

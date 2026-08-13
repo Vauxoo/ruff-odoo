@@ -405,6 +405,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::NoWriteInCompute) {
                 odoo::rules::no_write_in_compute(checker, class_def);
             }
+            if checker.is_rule_enabled(Rule::NoWizardInModels) {
+                odoo::rules::no_wizard_in_models(checker, class_def, checker.path);
+            }
             if checker.is_rule_enabled(Rule::NoStaticmethodDecorator) {
                 pylint::rules::no_staticmethod_decorator(checker, stmt);
             }

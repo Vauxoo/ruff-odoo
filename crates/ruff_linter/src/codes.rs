@@ -1061,6 +1061,12 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "045") => rules::odoo::rules::TestFolderImported,
         (Odoo, "046") => rules::odoo::rules::ManifestExternalAssets,
         (Odoo, "047") => rules::odoo::rules::PylintDisableComment,
+        (Odoo, "048") => rules::odoo::rules::ManifestDataDuplicated,
+        (Odoo, "049") => rules::odoo::rules::TranslationRequired,
+        (Odoo, "050") => rules::odoo::rules::NoWizardInModels,
+        (Odoo, "051") => rules::odoo::rules::ExternalRequestTimeout,
+        (Odoo, "052") => rules::odoo::rules::SqlInjection,
+        (Odoo, "053") => rules::odoo::rules::ResourceNotExist,
 
         // ruff
         (Ruff, "001") => rules::ruff::rules::AmbiguousUnicodeCharacterString,
