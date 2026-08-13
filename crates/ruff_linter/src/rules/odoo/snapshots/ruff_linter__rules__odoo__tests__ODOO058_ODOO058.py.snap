@@ -1,0 +1,45 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO058 Use lazy % formatting in odoo._ functions instead of an f-string
+ --> ODOO058.py:7:9
+  |
+5 | class Model:
+6 |     def method(self, var):
+7 |         _(f"Hello {var}")  # ODOO058
+  |         ^^^^^^^^^^^^^^^^^
+8 |         self.env._(f"Hello {var}")  # ODOO058
+9 |         _(f"Hello")  # ODOO058
+  |
+
+ODOO058 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> ODOO058.py:8:9
+   |
+ 6 |     def method(self, var):
+ 7 |         _(f"Hello {var}")  # ODOO058
+ 8 |         self.env._(f"Hello {var}")  # ODOO058
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |         _(f"Hello")  # ODOO058
+10 |         _(f"Hello {var}" f" and {var}")  # ODOO058
+   |
+
+ODOO058 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> ODOO058.py:9:9
+   |
+ 7 |         _(f"Hello {var}")  # ODOO058
+ 8 |         self.env._(f"Hello {var}")  # ODOO058
+ 9 |         _(f"Hello")  # ODOO058
+   |         ^^^^^^^^^^^
+10 |         _(f"Hello {var}" f" and {var}")  # ODOO058
+   |
+
+ODOO058 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> ODOO058.py:10:9
+   |
+ 8 |         self.env._(f"Hello {var}")  # ODOO058
+ 9 |         _(f"Hello")  # ODOO058
+10 |         _(f"Hello {var}" f" and {var}")  # ODOO058
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 |         # No diagnostic: the `%` placeholders show the interpolation is printf's.
+   |

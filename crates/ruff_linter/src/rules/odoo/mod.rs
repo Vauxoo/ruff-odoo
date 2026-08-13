@@ -89,6 +89,13 @@ mod tests {
         Rule::ManifestBehindMigrations,
         Path::new("ODOO054/ok/__manifest__.py")
     )]
+    #[test_case(Rule::TranslationFormatInterpolation, Path::new("ODOO056.py"))]
+    #[test_case(Rule::TranslationFormatTruncated, Path::new("ODOO057.py"))]
+    #[test_case(Rule::TranslationFstringInterpolation, Path::new("ODOO058.py"))]
+    #[test_case(Rule::TranslationNotLazy, Path::new("ODOO059.py"))]
+    #[test_case(Rule::TranslationTooFewArgs, Path::new("ODOO060.py"))]
+    #[test_case(Rule::TranslationTooManyArgs, Path::new("ODOO061.py"))]
+    #[test_case(Rule::TranslationUnsupportedFormat, Path::new("ODOO062.py"))]
     #[test_case(Rule::CategoryAllowedApp, Path::new("ODOOAPP001/__manifest__.py"))]
     #[test_case(
         Rule::MissingOdooFileApp,
