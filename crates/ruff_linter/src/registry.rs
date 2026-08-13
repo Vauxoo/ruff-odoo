@@ -171,7 +171,7 @@ pub enum Linter {
     /// [odoo](https://pypi.org/project/pylint-odoo/)
     #[prefix = "ODOO"]
     Odoo,
-    /// [odoo-app](https://apps.odoo.com/apps)
+    /// [odoo-app](https://github.com/Vauxoo/ruff-odoo/tree/main/crates/ruff_linter/src/rules/odoo_app)
     #[prefix = "OAPP"]
     OdooApp,
     /// [pandas-vet](https://pypi.org/project/pandas-vet/)
