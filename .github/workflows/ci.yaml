@@ -322,7 +322,9 @@ jobs:
     runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-22.04-16' || 'ubuntu-latest' }}
     needs: determine_changes
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-test') && (needs.determine_changes.outputs.code == 'true' || github.ref == 'refs/heads/main') }}
-    timeout-minutes: 20
+    # Forks run on standard 2-core ubuntu-latest instead of astral-sh's 16-core depot
+    # runners, and PR runs never save the rust cache, so give forks more headroom.
+    timeout-minutes: ${{ github.repository == 'astral-sh/ruff' && 20 || 35 }}
     env:
       # Line-tables-only debug info: faster builds, backtraces still work.
       CARGO_PROFILE_DEV_DEBUG: line-tables-only
