@@ -190,13 +190,14 @@ help: Convert to named placeholders passed as keyword arguments
    -     record.delegated_id.display_name,
    -     format_date(self.env, record.start_date),
    -     format_date(self.env, record.end_date),
-22 +     "%(record_delegated_from_id_display_name)s -> %(record_delegated_id_display_name)s "
-23 +     "(From %(record_start_date)s to %(record_end_date)s)",
-24 +     record_delegated_from_id_display_name=record.delegated_from_id.display_name,
-25 +     record_delegated_id_display_name=record.delegated_id.display_name,
-26 +     record_start_date=format_date(self.env, record.start_date),
-27 +     record_end_date=format_date(self.env, record.end_date),
-28 | )
+22 +     "%(record_delegated_from_id_display_name)s -> "
+23 +     "%(record_delegated_id_display_name)s (From %(record_start_date)s to "
+24 +     "%(record_end_date)s)",
+25 +     record_delegated_from_id_display_name=record.delegated_from_id.display_name,
+26 +     record_delegated_id_display_name=record.delegated_id.display_name,
+27 +     record_start_date=format_date(self.env, record.start_date),
+28 +     record_end_date=format_date(self.env, record.end_date),
+29 | )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -552,5 +553,29 @@ help: Convert to named placeholders passed as keyword arguments
 75 +         team_display_name=team.display_name,
 76 +         remaining_amount=remaining.amount,
 77 +     ))
+78 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:77:9
+   |
+75 |   def unmerge(self):
+76 |       _logger.info(
+77 | /         self.env._(
+78 | |             "Unmerged partnerx %s into %s", self.dst_partner_id.id, self.partner_ids.ids
+79 | |         )
+   | |_________^
+80 |       )
+   |
+help: Convert to named placeholders passed as keyword arguments
+   |
+77 |         self.env._(
+   -             "Unmerged partnerx %s into %s", self.dst_partner_id.id, self.partner_ids.ids
+78 +             "Unmerged partnerx %(self_dst_partner_id_id)s into "
+79 +             "%(self_partner_ids_ids)s",
+80 +             self_dst_partner_id_id=self.dst_partner_id.id,
+81 +             self_partner_ids_ids=self.partner_ids.ids,
+82 |         )
    |
 note: This is an unsafe fix and may change runtime behavior
