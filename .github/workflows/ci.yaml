@@ -638,7 +638,9 @@ jobs:
         needs.determine_changes.outputs.linter == 'true' ||
         needs.determine_changes.outputs.formatter == 'true'
       )
-    timeout-minutes: 20
+    # Forks run this on standard 2-core runners where the two ruff builds plus the
+    # ecosystem checks sit right at the 20-minute limit, so give forks more headroom.
+    timeout-minutes: ${{ github.repository == 'astral-sh/ruff' && 20 || 35 }}
     env:
       # Line-tables-only debug info: faster builds, backtraces still work.
       CARGO_PROFILE_DEV_DEBUG: line-tables-only
