@@ -1,0 +1,45 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO056 Use lazy % formatting in odoo._ functions instead of str.format
+ --> ODOO056.py:7:9
+  |
+5 | class Model:
+6 |     def method(self, var):
+7 |         _("Hello {}").format(var)  # ODOO056
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |         self.env._("Hello {}").format(var)  # ODOO056
+9 |         _("Hello {}".format(var))  # ODOO056
+  |
+
+ODOO056 Use lazy % formatting in odoo._ functions instead of str.format
+  --> ODOO056.py:8:9
+   |
+ 6 |     def method(self, var):
+ 7 |         _("Hello {}").format(var)  # ODOO056
+ 8 |         self.env._("Hello {}").format(var)  # ODOO056
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |         _("Hello {}".format(var))  # ODOO056
+10 |         self.env._("Hello {x}".format(x=var))  # ODOO056
+   |
+
+ODOO056 Use lazy % formatting in odoo._ functions instead of str.format
+  --> ODOO056.py:9:9
+   |
+ 7 |         _("Hello {}").format(var)  # ODOO056
+ 8 |         self.env._("Hello {}").format(var)  # ODOO056
+ 9 |         _("Hello {}".format(var))  # ODOO056
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |         self.env._("Hello {x}".format(x=var))  # ODOO056
+   |
+
+ODOO056 Use lazy % formatting in odoo._ functions instead of str.format
+  --> ODOO056.py:10:9
+   |
+ 8 |         self.env._("Hello {}").format(var)  # ODOO056
+ 9 |         _("Hello {}".format(var))  # ODOO056
+10 |         self.env._("Hello {x}".format(x=var))  # ODOO056
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 |         # No diagnostic: a non-empty format spec is too complex to convert.
+   |
