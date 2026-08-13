@@ -80,7 +80,11 @@ fn resolve_receiver_root(function_body: &[Stmt], expr: &Expr, depth: u8) -> Opti
         Expr::Subscript(subscript) => {
             resolve_receiver_root(function_body, &subscript.value, depth - 1)
         }
-        Expr::Attribute(_) => dotted_name(expr),
+        // `self.env["res.users"].browse(...)`: `dotted_name` can't resolve a chain with a
+        // `Subscript` link (`self.env[...]`), so fall back to recursing into the attribute's
+        // own receiver, which re-enters the `Subscript` arm above and resolves to `self.env`.
+        Expr::Attribute(attribute) => dotted_name(expr)
+            .or_else(|| resolve_receiver_root(function_body, &attribute.value, depth - 1)),
         _ => None,
     }
 }

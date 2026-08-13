@@ -45,7 +45,7 @@ impl Violation for ManifestRequiredKey {
 
 /// ODOO001
 pub(crate) fn manifest_required_key(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

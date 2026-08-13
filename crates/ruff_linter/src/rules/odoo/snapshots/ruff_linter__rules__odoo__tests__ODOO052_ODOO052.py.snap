@@ -84,5 +84,16 @@ ODOO052 SQL injection risk. Use parameters if you can. - More info https://githu
 22 |         cr.execute(query)
    |         ^^^^^^^^^^^^^^^^^
 23 |
-24 |     def no_injection_parameters(self, cr, name):
+24 |     def injection_subscript_variable(self, cr, name, queries):
+   |
+
+ODOO052 SQL injection risk. Use parameters if you can. - More info https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst#no-sql-injection
+  --> ODOO052.py:28:9
+   |
+26 |         # target rather than a plain name.
+27 |         queries[0] = "SELECT id FROM res_partner WHERE name = '%s'" % name
+28 |         cr.execute(queries[0])
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+29 |
+30 |     def no_injection_parameters(self, cr, name):
    |

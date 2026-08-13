@@ -113,10 +113,45 @@ pub(crate) fn manifest_anchor_range(dict: &ast::ExprDict) -> TextRange {
 /// `class`/`def`/`lambda`/comprehensions introduce a new scope).
 ///
 /// Must be called while the checker is visiting the candidate `Expr::Dict` node.
-pub(crate) fn is_manifest_root_dict(checker: &Checker, path: &Path) -> bool {
+pub(crate) fn is_manifest_root_dict(checker: &Checker, dict: &ast::ExprDict, path: &Path) -> bool {
     is_manifest_file(path)
         && checker.semantic().current_scope().kind.is_module()
         && checker.semantic().current_expression_parent().is_none()
+        && is_dict_literal_evaluable(dict)
+}
+
+/// Returns `true` if every key and value in `dict` is something Python's `ast.literal_eval`
+/// would accept (recursively): a constant, or a list/tuple/set/dict built purely from such
+/// constants. pylint-odoo parses `__manifest__.py` with `ast.literal_eval` and silently skips
+/// *every* manifest-content check for a file where that raises `ValueError` — e.g. a value
+/// using `or`/`and`, a function call, or a name reference instead of a literal (`{"key": "" or
+/// ""}`). Manifest-content rules must reproduce that same skip, or they read expressions
+/// pylint-odoo's own checker never actually evaluates.
+fn is_dict_literal_evaluable(dict: &ast::ExprDict) -> bool {
+    dict.items.iter().all(|item| {
+        item.key.as_ref().is_some_and(is_literal_evaluable_expr)
+            && is_literal_evaluable_expr(&item.value)
+    })
+}
+
+fn is_literal_evaluable_expr(expr: &Expr) -> bool {
+    match expr {
+        Expr::StringLiteral(_)
+        | Expr::BytesLiteral(_)
+        | Expr::NumberLiteral(_)
+        | Expr::BooleanLiteral(_)
+        | Expr::NoneLiteral(_) => true,
+        // `ast.literal_eval` allows a leading `+`/`-` on a numeric literal.
+        Expr::UnaryOp(ast::ExprUnaryOp { op, operand, .. }) => {
+            matches!(op, ast::UnaryOp::USub | ast::UnaryOp::UAdd)
+                && matches!(operand.as_ref(), Expr::NumberLiteral(_))
+        }
+        Expr::List(ast::ExprList { elts, .. })
+        | Expr::Tuple(ast::ExprTuple { elts, .. })
+        | Expr::Set(ast::ExprSet { elts, .. }) => elts.iter().all(is_literal_evaluable_expr),
+        Expr::Dict(dict) => is_dict_literal_evaluable(dict),
+        _ => false,
+    }
 }
 
 /// Returns `true` if `class_def`'s bases include an Odoo model base (`models.Model`,

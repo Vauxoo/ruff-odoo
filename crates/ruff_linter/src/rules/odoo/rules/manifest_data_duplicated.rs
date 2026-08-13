@@ -58,7 +58,7 @@ impl AlwaysFixableViolation for ManifestDataDuplicated {
 
 /// ODOO048
 pub(crate) fn manifest_data_duplicated(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

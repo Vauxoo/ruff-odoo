@@ -56,7 +56,7 @@ pub(crate) fn manifest_external_assets(
     dict: &ast::ExprDict,
     path: &std::path::Path,
 ) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

@@ -78,3 +78,11 @@ def unmerge(self):
             "Unmerged partnerx %s into %s", self.dst_partner_id.id, self.partner_ids.ids
         )
     )
+
+# Not fixable: the interpolation happens inside the call itself.
+_("Variables not translatable: %s, %s" % (variable1, variable2))
+self.env._("Variables not translatable: %s, %s" % (variable1, variable2))
+_lt("Variables not translatable: %s, %s" % (variable1, variable2))
+_("multi-positional args without placeholders {} {}".format("param1", "param2"))
+self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
+_lt("multi-positional args without placeholders {} {}".format("param1", "param2"))

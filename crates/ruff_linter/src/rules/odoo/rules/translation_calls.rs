@@ -265,15 +265,60 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
     }
 
     if checker.is_rule_enabled(Rule::TranslationPositional)
-        && let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = first_arg
+        && let Some(text) = translation_term_text(first_arg)
+        && (count_positional_printf(text) >= 2 || count_positional_format(text) >= 2)
     {
-        let text = value.to_str();
-        if count_positional_printf(text) >= 2 || count_positional_format(text) >= 2 {
-            let mut diagnostic = checker.report_diagnostic(TranslationPositional, call.range());
-            if let Some(fix) = convert_to_named_placeholders(checker, call, value, text) {
-                diagnostic.set_fix(fix);
+        let mut diagnostic = checker.report_diagnostic(TranslationPositional, call.range());
+        // Only the bare-string-literal shape (`_('...', arg1, arg2)`) has call-level
+        // positional arguments to rewrite into keywords; the interpolate-inside-the-call
+        // shapes (`_('...' % args)`, `_('...'.format(args))`) aren't fixable this way.
+        if let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = first_arg
+            && let Some(fix) = convert_to_named_placeholders(checker, call, value, text)
+        {
+            diagnostic.set_fix(fix);
+        }
+    }
+}
+
+/// Returns the literal text of a translation call's first argument, whether it's a bare
+/// string literal (`_('...')`) or a string literal with the interpolation happening inside
+/// the call itself (`_('...' % args)`, `_('...'.format(args))`) — pylint-odoo's
+/// `translation-positional-used` counts placeholders in the term either way.
+fn translation_term_text(expr: &Expr) -> Option<&str> {
+    match expr {
+        Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => Some(value.to_str()),
+        // _('...' % variables)
+        Expr::BinOp(ast::ExprBinOp {
+            op: ast::Operator::Mod,
+            left,
+            ..
+        }) => {
+            if let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = left.as_ref() {
+                Some(value.to_str())
+            } else {
+                None
             }
         }
+        // _('...'.format(variables))
+        Expr::Call(inner) => {
+            let Expr::Attribute(ast::ExprAttribute {
+                value: receiver,
+                attr,
+                ..
+            }) = inner.func.as_ref()
+            else {
+                return None;
+            };
+            if attr != "format" {
+                return None;
+            }
+            if let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = receiver.as_ref() {
+                Some(value.to_str())
+            } else {
+                None
+            }
+        }
+        _ => None,
     }
 }
 

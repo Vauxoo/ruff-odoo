@@ -48,7 +48,7 @@ const LICENSE_ALLOWED: &[&str] = &[
 
 /// ODOO010
 pub(crate) fn license_allowed(checker: &Checker, dict: &ast::ExprDict, path: &std::path::Path) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

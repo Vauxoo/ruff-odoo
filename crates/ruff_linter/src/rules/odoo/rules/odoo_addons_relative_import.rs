@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast as ast;
-use ruff_text_size::Ranged;
+use ruff_python_ast::{self as ast, Stmt};
+use ruff_text_size::{Ranged, TextRange};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
@@ -79,17 +79,55 @@ pub(crate) fn odoo_addons_relative_import(
     import_from: &ast::StmtImportFrom,
     path: &Path,
 ) {
-    let Some(module_name) = import_from
-        .module
-        .as_deref()
-        .and_then(|module| module.strip_prefix("odoo.addons."))
-        // `from odoo.addons.my_module.models import x` imports a submodule of my_module;
-        // only the leading segment identifies the Odoo module being imported from.
-        .map(|module_name| module_name.split('.').next().unwrap_or(module_name))
-    else {
+    let Some(module_name) = odoo_addons_module_name_from_import_from(import_from) else {
         return;
     };
+    check_odoo_addons_relative_import(checker, module_name, path, import_from.range());
+}
 
+/// ODOO023
+///
+/// Unlike `odoo_addons_relative_import`, this covers plain `import odoo.addons.my_module`
+/// statements (as opposed to `from odoo.addons.my_module import ...`), which pylint-odoo's
+/// `_get_odoo_module_imported` also flags.
+pub(crate) fn odoo_addons_relative_import_stmt(
+    checker: &Checker,
+    stmt: &Stmt,
+    names: &[ast::Alias],
+    path: &Path,
+) {
+    for alias in names {
+        let Some(module_name) = alias.name.as_str().strip_prefix("odoo.addons.") else {
+            continue;
+        };
+        // `import odoo.addons.my_module.models` imports a submodule of my_module; only the
+        // leading segment identifies the Odoo module being imported from.
+        let module_name = module_name.split('.').next().unwrap_or(module_name);
+        check_odoo_addons_relative_import(checker, module_name, path, stmt.range());
+    }
+}
+
+/// Extracts the Odoo module name targeted by `from odoo.addons[.my_module[...]] import ...`,
+/// mirroring pylint-odoo's `_get_odoo_module_imported`: either the first dotted segment after
+/// `odoo.addons.`, or — when the module is imported by name directly off `odoo.addons`, e.g.
+/// `from odoo.addons import my_module` — the first imported name.
+fn odoo_addons_module_name_from_import_from(import_from: &ast::StmtImportFrom) -> Option<&str> {
+    let module = import_from.module.as_deref()?;
+    if let Some(rest) = module.strip_prefix("odoo.addons.") {
+        return Some(rest.split('.').next().unwrap_or(rest));
+    }
+    if module == "odoo.addons" {
+        return import_from.names.first().map(|alias| alias.name.as_str());
+    }
+    None
+}
+
+fn check_odoo_addons_relative_import(
+    checker: &Checker,
+    module_name: &str,
+    path: &Path,
+    range: TextRange,
+) {
     let Some(module_dir) = enclosing_odoo_module_dir(path) else {
         return;
     };
@@ -104,7 +142,7 @@ pub(crate) fn odoo_addons_relative_import(
             OdooAddonsRelativeImport {
                 module: enclosing_module.to_string(),
             },
-            import_from.range(),
+            range,
         );
     }
 }

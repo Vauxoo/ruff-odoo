@@ -1,7 +1,10 @@
 use std::path::Path;
 
 use ruff_macros::{ViolationMetadata, derive_message_formats};
+use ruff_python_ast::comparable::ComparableExpr;
+use ruff_python_ast::statement_visitor::{StatementVisitor, walk_stmt};
 use ruff_python_ast::{self as ast, Expr, Stmt};
+use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::Violation;
@@ -46,19 +49,64 @@ impl Violation for SqlInjection {
 /// Same default list as pylint-odoo's `cursor-expr` option.
 const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];
 
-/// Returns the value a plain name was assigned in its resolved binding, to check how a
-/// query variable was built (`query = "..." % name; cr.execute(query)`).
-fn assigned_value<'a>(checker: &'a Checker, expr: &Expr) -> Option<&'a Expr> {
-    let Expr::Name(name) = expr else {
-        return None;
-    };
-    let semantic = checker.semantic();
-    let binding = semantic.binding(semantic.resolve_name(name)?);
-    match binding.statement(semantic)? {
-        Stmt::Assign(assign) => Some(&assign.value),
-        Stmt::AnnAssign(assign) => assign.value.as_deref(),
+/// Returns the value assigned to `expr`, to check how a query variable was built
+/// (`query = "..." % name; cr.execute(query)`).
+///
+/// For a plain name, resolves through its binding. Subscript targets (`var[1] = "..." %
+/// name; cr.execute(var[1])`) have no binding in Ruff's semantic model, so instead this
+/// walks the enclosing function for an `Assign` whose target is structurally identical,
+/// matching pylint-odoo's `_get_assignation_nodes`, which compares assignment targets by
+/// source text within the same function.
+fn assigned_value<'a>(checker: &'a Checker, expr: &'a Expr) -> Option<&'a Expr> {
+    match expr {
+        Expr::Name(name) => {
+            let semantic = checker.semantic();
+            let binding = semantic.binding(semantic.resolve_name(name)?);
+            match binding.statement(semantic)? {
+                Stmt::Assign(assign) => Some(&assign.value),
+                Stmt::AnnAssign(assign) => assign.value.as_deref(),
+                _ => None,
+            }
+        }
+        Expr::Subscript(_) => assigned_subscript_value(checker, expr),
         _ => None,
     }
+}
+
+/// Collects the value most recently assigned to `target` (a subscript expression) while
+/// walking a function body.
+struct AssignedSubscriptVisitor<'a> {
+    target: ComparableExpr<'a>,
+    value: Option<&'a Expr>,
+}
+
+impl<'a> StatementVisitor<'a> for AssignedSubscriptVisitor<'a> {
+    fn visit_stmt(&mut self, stmt: &'a Stmt) {
+        if let Stmt::Assign(assign) = stmt {
+            if assign
+                .targets
+                .iter()
+                .any(|assigned| ComparableExpr::from(assigned) == self.target)
+            {
+                self.value = Some(&assign.value);
+            }
+        }
+        walk_stmt(self, stmt);
+    }
+}
+
+/// Returns the value most recently assigned to `target` (a subscript expression) anywhere
+/// in the enclosing function.
+fn assigned_subscript_value<'a>(checker: &'a Checker, target: &'a Expr) -> Option<&'a Expr> {
+    let ScopeKind::Function(function_def) = checker.semantic().current_scope().kind else {
+        return None;
+    };
+    let mut visitor = AssignedSubscriptVisitor {
+        target: ComparableExpr::from(target),
+        value: None,
+    };
+    visitor.visit_body(&function_def.body);
+    visitor.value
 }
 
 /// Returns `true` if `expr` builds a `psycopg2.sql` object (`sql.SQL(...)`,

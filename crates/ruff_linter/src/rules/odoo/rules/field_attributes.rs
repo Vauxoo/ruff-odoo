@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr};
 use ruff_python_semantic::ScopeKind;
@@ -221,6 +223,36 @@ impl Violation for InheritableMethodLambda {
 /// Old field parameter name → its current replacement.
 const RENAMED_PARAMETERS: &[(&str, &str)] = &[("digits_compute", "digits"), ("select", "index")];
 
+/// Returns the string value of `expr`, if it's a plain string literal or an f-string with no
+/// interpolations (e.g. `f"_compute_foo"`), mirroring pylint-odoo's `_get_str_value`, which
+/// reconstructs an f-string's value from its literal segments.
+fn field_attribute_string_value(expr: &Expr) -> Option<Cow<'_, str>> {
+    match expr {
+        Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
+            Some(Cow::Borrowed(value.to_str()))
+        }
+        Expr::FString(fstring) => {
+            let has_interpolation = fstring.value.f_strings().any(|f_string| {
+                f_string
+                    .elements
+                    .iter()
+                    .any(ast::InterpolatedStringElement::is_interpolation)
+            });
+            if has_interpolation {
+                return None;
+            }
+            let mut value = String::new();
+            for f_string in fstring.value.f_strings() {
+                for literal in f_string.elements.literals() {
+                    value.push_str(&literal.value);
+                }
+            }
+            Some(Cow::Owned(value))
+        }
+        _ => None,
+    }
+}
+
 /// ODOO027, ODOO028, ODOO029, ODOO030, ODOO031, ODOO032, ODOO033
 pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
@@ -240,9 +272,9 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
         let arg_name = arg_name.as_str();
 
         if matches!(arg_name, "compute" | "search" | "inverse") {
-            if let Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) = &keyword.value {
+            if let Some(value) = field_attribute_string_value(&keyword.value) {
                 let expected_prefix = format!("_{arg_name}_");
-                if !value.to_str().starts_with(&expected_prefix) {
+                if !value.starts_with(&expected_prefix) {
                     match arg_name {
                         "compute" => {
                             if checker.is_rule_enabled(Rule::MethodCompute) {

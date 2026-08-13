@@ -51,7 +51,7 @@ pub(crate) fn development_status_allowed(
     dict: &ast::ExprDict,
     path: &std::path::Path,
 ) {
-    if !is_manifest_root_dict(checker, path) {
+    if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 

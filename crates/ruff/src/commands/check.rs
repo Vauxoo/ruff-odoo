@@ -529,10 +529,12 @@ class PerFilePair(models.Model):
     }
 
     /// `_inherit` may be a list/tuple of model names (a class extending several models at
-    /// once), not just a single string. Duplicates hidden inside that list form must still be
-    /// detected.
+    /// once), not just a single string. A class extending several models is not a duplicate
+    /// of one that only extends *one* of them — the full sets differ, so nothing should
+    /// merge cleanly.
     #[test]
-    fn duplicate_inherited_model_extension_detects_list_form_inherit() -> Result<()> {
+    fn duplicate_inherited_model_extension_list_and_string_with_different_models_not_flagged()
+    -> Result<()> {
         let tempdir = TempDir::new()?;
         let module = tempdir.path().join("my_module");
         let models = module.join("models");
@@ -558,6 +560,66 @@ from odoo import models
 
 class MixinB(models.Model):
     _inherit = "res.partner"
+"#,
+        )?;
+
+        let settings = Settings {
+            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            ..Settings::default()
+        };
+        let pyproject_config =
+            PyprojectConfig::new(PyprojectDiscoveryStrategy::Fixed, settings, None);
+
+        let diagnostics = check(
+            &[changed],
+            &pyproject_config,
+            &ConfigArguments::default(),
+            flags::Cache::Disabled,
+            flags::Noqa::Enabled,
+            flags::FixMode::Generate,
+            UnsafeFixes::Enabled,
+        )?;
+
+        assert!(
+            diagnostics.inner.is_empty(),
+            "a list _inherit extending several models should not be flagged as a duplicate \
+             of a string _inherit extending only one of them: {:?}",
+            diagnostics.inner,
+        );
+
+        Ok(())
+    }
+
+    /// Two classes with the same full set of `_inherit` models — regardless of whether it's
+    /// declared as a list, a tuple, or in a different order — are still a genuine duplicate.
+    #[test]
+    fn duplicate_inherited_model_extension_detects_list_form_inherit_regardless_of_order()
+    -> Result<()> {
+        let tempdir = TempDir::new()?;
+        let module = tempdir.path().join("my_module");
+        let models = module.join("models");
+        fs::create_dir_all(&models)?;
+        fs::write(module.join("__manifest__.py"), "{}\n")?;
+
+        let changed = models.join("mixin_a.py");
+        fs::write(
+            &changed,
+            r#"
+from odoo import models
+
+
+class MixinA(models.Model):
+    _inherit = ["res.partner", "mail.thread"]
+"#,
+        )?;
+        fs::write(
+            models.join("mixin_b.py"),
+            r#"
+from odoo import models
+
+
+class MixinB(models.Model):
+    _inherit = ("mail.thread", "res.partner")
 "#,
         )?;
 
