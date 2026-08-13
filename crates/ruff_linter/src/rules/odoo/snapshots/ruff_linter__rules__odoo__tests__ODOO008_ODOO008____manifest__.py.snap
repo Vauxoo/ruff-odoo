@@ -10,3 +10,12 @@ ODOO008 One of the following authors must be present in manifest: 'Odoo Communit
   |     ^^^^^^^^
 4 | }
   |
+
+ODOO008 One of the following authors must be present in manifest: 'Odoo Community Association (OCA)'
+  --> __manifest__.py:12:5
+   |
+11 | {
+12 |     "name": "Module Missing Author",
+   |     ^^^^^^
+13 | }
+   |

@@ -7,3 +7,7 @@
     "name": "My Other Module",
     "author": "Odoo Community Association (OCA), Someone Else",
 }
+
+{
+    "name": "Module Missing Author",
+}

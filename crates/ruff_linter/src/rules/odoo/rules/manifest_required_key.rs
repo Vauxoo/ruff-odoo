@@ -2,11 +2,10 @@ use std::path::Path;
 
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast as ast;
-use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::is_manifest_file;
+use crate::rules::odoo::helpers::{is_manifest_file, manifest_anchor_range};
 
 /// ## What it does
 /// Checks that an Odoo module's `__manifest__.py` declares a `license` key.
@@ -62,6 +61,6 @@ pub(crate) fn manifest_required_key(checker: &Checker, dict: &ast::ExprDict, pat
         )
     });
     if !has_key {
-        checker.report_diagnostic(ManifestRequiredKey { key }, dict.range());
+        checker.report_diagnostic(ManifestRequiredKey { key }, manifest_anchor_range(dict));
     }
 }

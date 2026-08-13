@@ -2,9 +2,10 @@
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
 ODOO016 Missing ./README.rst file
- --> __manifest__.py:1:1
+ --> __manifest__.py:2:5
   |
-1 | / {
-2 | |     "name": "My Module",
-3 | | }
-  | |_^
+1 | {
+2 |     "name": "My Module",
+  |     ^^^^^^
+3 | }
+  |
