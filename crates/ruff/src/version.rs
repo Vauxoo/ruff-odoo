@@ -48,8 +48,12 @@ pub(crate) fn version() -> VersionInfo {
         };
     }
 
-    // This version is pulled from Cargo.toml and set by Cargo
-    let version = option_env_str!("CARGO_PKG_VERSION").unwrap();
+    // Vauxoo fork: prefer the four-component `ruff-odoo` version (e.g.
+    // "0.16.2.6") that `build.rs` reads from the root `pyproject.toml`;
+    // `Cargo.toml` can only hold a three-component semver version. Builds
+    // outside the repository fall back to the crate version set by Cargo.
+    let version = option_env_str!("RUFF_ODOO_VERSION")
+        .unwrap_or_else(|| option_env_str!("CARGO_PKG_VERSION").unwrap());
 
     // Commit info is pulled from git and set by `build.rs`
     let commit_info = option_env_str!("RUFF_COMMIT_HASH").map(|commit_hash| CommitInfo {

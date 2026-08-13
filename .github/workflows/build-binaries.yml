@@ -28,9 +28,11 @@ permissions: {}
 
 env:
   # Vauxoo fork: the PyPI distribution is `ruff-odoo` (wheel/sdist filenames use
-  # the normalized `ruff_odoo` form), while the binary/module remain `ruff`.
+  # the normalized `ruff_odoo` form), the Python module is `ruff_odoo`, and the
+  # installed binary is `ruff-odoo`, so it never collides with upstream `ruff`.
   PACKAGE_NAME: ruff_odoo
-  MODULE_NAME: ruff
+  MODULE_NAME: ruff_odoo
+  BIN_NAME: ruff-odoo
   PYTHON_VERSION: "3.13"
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
@@ -60,7 +62,7 @@ jobs:
       - name: "Test sdist"
         run: |
           pip install dist/"${PACKAGE_NAME}"-*.tar.gz --force-reinstall
-          "${MODULE_NAME}" --help
+          "${BIN_NAME}" --help
           python -m "${MODULE_NAME}" --help
       - name: "Upload sdist"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -104,7 +106,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -155,8 +157,8 @@ jobs:
       - name: "Test wheel - aarch64"
         run: |
           pip install dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
-          ruff --help
-          python -m ruff --help
+          "${BIN_NAME}" --help
+          python -m "${MODULE_NAME}" --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -169,7 +171,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -233,7 +235,7 @@ jobs:
         run: |
           LLVM_READOBJ="$(rustc --print sysroot)/lib/rustlib/${{ matrix.platform.target }}/bin/llvm-readobj.exe"
           IMPORTS_FILE="$RUNNER_TEMP/ruff-coff-imports.txt"
-          "$LLVM_READOBJ" --coff-imports "target/${{ matrix.platform.target }}/release/ruff.exe" > "$IMPORTS_FILE"
+          "$LLVM_READOBJ" --coff-imports "target/${{ matrix.platform.target }}/release/ruff-odoo.exe" > "$IMPORTS_FILE"
 
           if grep -Eiq 'vcruntime[[:digit:]_]*\.dll|api-ms-win-crt-' "$IMPORTS_FILE"; then
             echo "Ruff must not dynamically link the Visual C++ runtime" >&2
@@ -244,7 +246,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
-          "${MODULE_NAME}" --help
+          "${BIN_NAME}" --help
           python -m "${MODULE_NAME}" --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -255,7 +257,7 @@ jobs:
         shell: bash
         run: |
           ARCHIVE_FILE=ruff-${{ matrix.platform.target }}.zip
-          7z a $ARCHIVE_FILE ./target/${{ matrix.platform.target }}/release/ruff.exe
+          7z a $ARCHIVE_FILE ./target/${{ matrix.platform.target }}/release/ruff-odoo.exe
           sha256sum $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -307,7 +309,7 @@ jobs:
         if: ${{ startsWith(matrix.target, 'x86_64') }}
         run: |
           pip install dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
-          "${MODULE_NAME}" --help
+          "${BIN_NAME}" --help
           python -m "${MODULE_NAME}" --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -324,7 +326,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -373,7 +375,7 @@ jobs:
       - name: "Test wheel"
         run: |
           pip install dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
-          "${MODULE_NAME}" --help
+          "${BIN_NAME}" --help
           python -m "${MODULE_NAME}" --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -390,7 +392,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -458,7 +460,7 @@ jobs:
             pip3 install -U pip
           run: |
             pip3 install ${{ env.PACKAGE_NAME }} --no-index --find-links dist/ --force-reinstall
-            ruff --help
+            ruff-odoo --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -474,7 +476,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -514,11 +516,11 @@ jobs:
       - name: "Test wheel"
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
-          docker run --rm -v ${{ github.workspace }}:/io -w /io --env MODULE_NAME --env PACKAGE_NAME alpine:latest sh -c "
+          docker run --rm -v ${{ github.workspace }}:/io -w /io --env BIN_NAME --env PACKAGE_NAME alpine:latest sh -c "
             apk add python3;
             python -m venv .venv;
             .venv/bin/pip3 install ${PACKAGE_NAME} --no-index --find-links dist/ --force-reinstall;
-            .venv/bin/${MODULE_NAME} --help;
+            .venv/bin/${BIN_NAME} --help;
             "
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -535,7 +537,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
@@ -587,7 +589,7 @@ jobs:
           run: |
             python -m venv .venv
             .venv/bin/pip3 install ${{ env.PACKAGE_NAME }} --no-index --find-links dist/ --force-reinstall
-            .venv/bin/${{ env.MODULE_NAME }} --help
+            .venv/bin/${{ env.BIN_NAME }} --help
       - name: "Upload wheels"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -603,7 +605,7 @@ jobs:
           ARCHIVE_FILE=$ARCHIVE_NAME.tar.gz
 
           mkdir -p $ARCHIVE_NAME
-          cp target/$TARGET/release/ruff $ARCHIVE_NAME/ruff
+          cp target/$TARGET/release/ruff-odoo $ARCHIVE_NAME/ruff-odoo
           tar czvf $ARCHIVE_FILE $ARCHIVE_NAME
           shasum -a 256 $ARCHIVE_FILE > $ARCHIVE_FILE.sha256
       - name: "Upload binary"
