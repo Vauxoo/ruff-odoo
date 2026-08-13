@@ -1,0 +1,46 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOOAPP003 Missing required key "currency" in manifest file for modules with price
+ --> __manifest__.py:3:5
+  |
+1 | # Paid app (has "price") missing "currency", "images", and "support": flagged for each.
+2 | {
+3 |     "name": "Incomplete app",
+  |     ^^^^^^
+4 |     "license": "LGPL-3",
+5 |     "price": 100,
+  |
+
+ODOOAPP003 Missing required key "images" in manifest file for modules with price
+ --> __manifest__.py:3:5
+  |
+1 | # Paid app (has "price") missing "currency", "images", and "support": flagged for each.
+2 | {
+3 |     "name": "Incomplete app",
+  |     ^^^^^^
+4 |     "license": "LGPL-3",
+5 |     "price": 100,
+  |
+
+ODOOAPP003 Missing required key "support" in manifest file for modules with price
+ --> __manifest__.py:3:5
+  |
+1 | # Paid app (has "price") missing "currency", "images", and "support": flagged for each.
+2 | {
+3 |     "name": "Incomplete app",
+  |     ^^^^^^
+4 |     "license": "LGPL-3",
+5 |     "price": 100,
+  |
+
+ODOOAPP003 Missing required key "support" in manifest file for modules with price
+  --> __manifest__.py:20:5
+   |
+18 | # Paid app missing only "support": flagged once.
+19 | {
+20 |     "name": "Almost complete app",
+   |     ^^^^^^
+21 |     "license": "LGPL-3",
+22 |     "price": 100,
+   |

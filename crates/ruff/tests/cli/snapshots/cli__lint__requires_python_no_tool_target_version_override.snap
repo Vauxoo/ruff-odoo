@@ -235,6 +235,7 @@ linter.isort.from_first = false
 linter.isort.length_sort = false
 linter.isort.length_sort_straight = false
 linter.mccabe.max_complexity = 10
+linter.odoo.prohibited_override_methods = []
 linter.pep8_naming.ignore_names = [
 	setUp,
 	tearDown,

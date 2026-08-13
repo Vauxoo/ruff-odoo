@@ -100,6 +100,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::MethodRequiredSuper) {
                 odoo::rules::method_required_super(checker, function_def);
             }
+            if checker.is_rule_enabled(Rule::ProhibitedMethodOverride) {
+                odoo::rules::prohibited_method_override(checker, function_def);
+            }
             if checker.is_rule_enabled(Rule::MissingReturn) {
                 odoo::rules::missing_return(checker, function_def);
             }
