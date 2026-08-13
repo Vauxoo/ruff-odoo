@@ -29,6 +29,14 @@ def renamed_message(env):  # pylint: disable=translation-positional-used
     return True
 
 
+def renamed_odoo_project_message(env):  # pylint: disable=consider-merging-classes-inherited
+    return True
+
+
+def renamed_odoo_project_code(env):  # pylint: disable=R8180
+    return True
+
+
 def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
     return True
 
