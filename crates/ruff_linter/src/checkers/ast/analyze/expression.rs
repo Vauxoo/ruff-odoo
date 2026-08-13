@@ -1471,6 +1471,18 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::ResourceNotExist) {
                 odoo::rules::resource_not_exist(checker, dict, checker.path);
             }
+            if checker.is_rule_enabled(Rule::ManifestBehindMigrations) {
+                odoo::rules::manifest_behind_migrations(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::CategoryAllowedApp) {
+                odoo::rules::category_allowed_app(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::MissingOdooFileApp) {
+                odoo::rules::missing_odoo_file_app(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::ManifestRequiredKeyApp) {
+                odoo::rules::manifest_required_key_app(checker, dict, checker.path);
+            }
         }
         Expr::Set(set) => {
             if checker.is_rule_enabled(Rule::ImplicitStringConcatenationInCollectionLiteral) {

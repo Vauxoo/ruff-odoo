@@ -2500,6 +2500,17 @@
             }
           ]
         },
+        "odoo": {
+          "description": "Options for the `odoo` plugin.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OdooOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "pep8-naming": {
           "description": "Options for the `pep8-naming` plugin.",
           "anyOf": [
@@ -2687,6 +2698,23 @@
         "alternating",
         "preferred"
       ]
+    },
+    "OdooOptions": {
+      "description": "Options for the `odoo` plugin.",
+      "type": "object",
+      "properties": {
+        "prohibited-override-methods": {
+          "description": "A list of method names whose override is prohibited (`ODOO055`). A method\ncounts as an override when its body delegates to `super().<method>(...)`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "OutputFormat": {
       "type": "string",
@@ -3796,6 +3824,16 @@
         "ODOO051",
         "ODOO052",
         "ODOO053",
+        "ODOO054",
+        "ODOO055",
+        "ODOOA",
+        "ODOOAP",
+        "ODOOAPP",
+        "ODOOAPP0",
+        "ODOOAPP00",
+        "ODOOAPP001",
+        "ODOOAPP002",
+        "ODOOAPP003",
         "PD",
         "PD0",
         "PD00",
@@ -4744,6 +4782,7 @@
         "camelcase-imported-as-constant",
         "camelcase-imported-as-lowercase",
         "cancel-scope-no-checkpoint",
+        "category-allowed-app",
         "check-and-remove-from-set",
         "class-as-data-structure",
         "class-with-mixed-type-vars",
@@ -5013,12 +5052,14 @@
         "magic-value-comparison",
         "mako-templates",
         "manifest-author-string",
+        "manifest-behind-migrations",
         "manifest-data-duplicated",
         "manifest-deprecated-key",
         "manifest-external-assets",
         "manifest-maintainers-list",
         "manifest-required-author",
         "manifest-required-key",
+        "manifest-required-key-app",
         "manifest-summary-multiline",
         "manifest-superfluous-key",
         "manual-dict-comprehension",
@@ -5043,6 +5084,7 @@
         "missing-maxsplit-arg",
         "missing-new-line-after-section-name",
         "missing-newline-at-end-of-file",
+        "missing-odoo-file-app",
         "missing-readme",
         "missing-required-import",
         "missing-return",
@@ -5236,6 +5278,7 @@
         "printf-string-formatting",
         "private-member-access",
         "private-type-parameter",
+        "prohibited-method-override",
         "prohibited-trailing-comma",
         "property-docstring-starts-with-verb",
         "property-with-parameters",

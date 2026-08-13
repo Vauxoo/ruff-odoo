@@ -1,6 +1,7 @@
 //! Rules from [odoo](https://pypi.org/project/pylint-odoo/).
 pub(crate) mod helpers;
 pub(crate) mod rules;
+pub mod settings;
 
 #[cfg(test)]
 mod tests {
@@ -80,11 +81,52 @@ mod tests {
     #[test_case(Rule::ExternalRequestTimeout, Path::new("ODOO051.py"))]
     #[test_case(Rule::SqlInjection, Path::new("ODOO052.py"))]
     #[test_case(Rule::ResourceNotExist, Path::new("ODOO053/__manifest__.py"))]
+    #[test_case(
+        Rule::ManifestBehindMigrations,
+        Path::new("ODOO054/behind/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestBehindMigrations,
+        Path::new("ODOO054/ok/__manifest__.py")
+    )]
+    #[test_case(Rule::CategoryAllowedApp, Path::new("ODOOAPP001/__manifest__.py"))]
+    #[test_case(
+        Rule::MissingOdooFileApp,
+        Path::new("ODOOAPP002/missing/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::MissingOdooFileApp,
+        Path::new("ODOOAPP002/present/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::MissingOdooFileApp,
+        Path::new("ODOOAPP002/no_price/__manifest__.py")
+    )]
+    #[test_case(Rule::ManifestRequiredKeyApp, Path::new("ODOOAPP003/__manifest__.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(
             Path::new("odoo").join(path).as_path(),
             &LinterSettings::for_rule(rule_code),
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn prohibited_method_override() -> Result<()> {
+        let snapshot = "prohibited_method_override".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO055.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    prohibited_override_methods: vec![
+                        "action_post".to_string(),
+                        "unlink".to_string(),
+                    ],
+                },
+                ..LinterSettings::for_rule(Rule::ProhibitedMethodOverride)
+            },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
         Ok(())

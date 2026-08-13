@@ -1067,6 +1067,13 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "051") => rules::odoo::rules::ExternalRequestTimeout,
         (Odoo, "052") => rules::odoo::rules::SqlInjection,
         (Odoo, "053") => rules::odoo::rules::ResourceNotExist,
+        (Odoo, "054") => rules::odoo::rules::ManifestBehindMigrations,
+        (Odoo, "055") => rules::odoo::rules::ProhibitedMethodOverride,
+        // Rules that only apply to paid apps (manifests with a "price" key), published on
+        // the Odoo Apps store: selectable as a group via the "ODOOAPP" prefix.
+        (Odoo, "APP001") => rules::odoo::rules::CategoryAllowedApp,
+        (Odoo, "APP002") => rules::odoo::rules::MissingOdooFileApp,
+        (Odoo, "APP003") => rules::odoo::rules::ManifestRequiredKeyApp,
 
         // ruff
         (Ruff, "001") => rules::ruff::rules::AmbiguousUnicodeCharacterString,

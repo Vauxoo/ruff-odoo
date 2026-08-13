@@ -30,8 +30,8 @@ use ruff_linter::rules::pylint::settings::ConstantType;
 use ruff_linter::rules::{
     flake8_copyright, flake8_errmsg, flake8_gettext, flake8_implicit_str_concat,
     flake8_import_conventions, flake8_pytest_style, flake8_quotes, flake8_self,
-    flake8_tidy_imports, flake8_type_checking, flake8_unused_arguments, isort, mccabe, pep8_naming,
-    pycodestyle, pydoclint, pydocstyle, pyflakes, pylint, pyupgrade, ruff,
+    flake8_tidy_imports, flake8_type_checking, flake8_unused_arguments, isort, mccabe, odoo,
+    pep8_naming, pycodestyle, pydoclint, pydocstyle, pyflakes, pylint, pyupgrade, ruff,
 };
 use ruff_linter::settings::types::{
     IdentifierPattern, Language, OutputFormat, PreviewMode, PythonVersion, RequiredVersion,
@@ -552,6 +552,10 @@ pub struct LintOptions {
         "#
     )]
     pub exclude: Option<Vec<String>>,
+
+    /// Options for the `odoo` plugin.
+    #[option_group]
+    pub odoo: Option<OdooOptions>,
 
     /// Options for the `pydoclint` plugin.
     #[option_group]
@@ -3173,6 +3177,34 @@ impl McCabeOptions {
     }
 }
 
+/// Options for the `odoo` plugin.
+#[derive(
+    Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize, OptionsMetadata, CombineOptions,
+)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct OdooOptions {
+    /// A list of method names whose override is prohibited (`ODOO055`). A method
+    /// counts as an override when its body delegates to `super().<method>(...)`.
+    #[option(
+        default = r#"[]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Flag overrides of `action_post`.
+            prohibited-override-methods = ["action_post"]
+        "#
+    )]
+    pub prohibited_override_methods: Option<Vec<String>>,
+}
+
+impl OdooOptions {
+    pub(crate) fn into_settings(self) -> odoo::settings::Settings {
+        odoo::settings::Settings {
+            prohibited_override_methods: self.prohibited_override_methods.unwrap_or_default(),
+        }
+    }
+}
+
 /// Options for the `pep8-naming` plugin.
 #[derive(
     Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize, OptionsMetadata, CombineOptions,
@@ -4318,6 +4350,7 @@ pub struct LintOptionsWire {
     extend_per_file_ignores: Option<FxHashMap<String, Vec<UnresolvedRuleSelector>>>,
 
     exclude: Option<Vec<String>>,
+    odoo: Option<OdooOptions>,
     pydoclint: Option<PydoclintOptions>,
     ruff: Option<RuffOptions>,
     preview: Option<bool>,
@@ -4374,6 +4407,7 @@ impl From<LintOptionsWire> for LintOptions {
             per_file_ignores,
             extend_per_file_ignores,
             exclude,
+            odoo,
             pydoclint,
             ruff,
             preview,
@@ -4431,6 +4465,7 @@ impl From<LintOptionsWire> for LintOptions {
                 extend_per_file_ignores,
             },
             exclude,
+            odoo,
             pydoclint,
             ruff,
             preview,

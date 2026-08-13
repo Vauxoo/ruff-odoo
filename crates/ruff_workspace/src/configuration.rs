@@ -52,7 +52,7 @@ use crate::options::{
     Flake8ImplicitStrConcatOptions, Flake8ImportConventionsOptions, Flake8PytestStyleOptions,
     Flake8QuotesOptions, Flake8SelfOptions, Flake8TidyImportsOptions, Flake8TypeCheckingOptions,
     Flake8UnusedArgumentsOptions, FormatOptions, IsortOptions, LintCommonOptions, LintOptions,
-    McCabeOptions, Options, Pep8NamingOptions, PyUpgradeOptions, PycodestyleOptions,
+    McCabeOptions, OdooOptions, Options, Pep8NamingOptions, PyUpgradeOptions, PycodestyleOptions,
     PydoclintOptions, PydocstyleOptions, PyflakesOptions, PylintOptions, RuffOptions,
     validate_required_version,
 };
@@ -475,6 +475,10 @@ impl Configuration {
                     .mccabe
                     .map(McCabeOptions::into_settings)
                     .unwrap_or_default(),
+                odoo: lint
+                    .odoo
+                    .map(OdooOptions::into_settings)
+                    .unwrap_or_default(),
                 pep8_naming: lint
                     .pep8_naming
                     .map(Pep8NamingOptions::try_into_settings)
@@ -768,6 +772,7 @@ pub struct LintConfiguration {
     pub flake8_unused_arguments: Option<Flake8UnusedArgumentsOptions>,
     pub isort: Option<IsortOptions>,
     pub mccabe: Option<McCabeOptions>,
+    pub odoo: Option<OdooOptions>,
     pub pep8_naming: Option<Pep8NamingOptions>,
     pub pycodestyle: Option<PycodestyleOptions>,
     pub pydoclint: Option<PydoclintOptions>,
@@ -889,6 +894,7 @@ impl LintConfiguration {
             flake8_unused_arguments: options.common.flake8_unused_arguments,
             isort: options.common.isort,
             mccabe: options.common.mccabe,
+            odoo: options.odoo,
             pep8_naming: options.common.pep8_naming,
             pycodestyle: options.common.pycodestyle,
             pydoclint: options.pydoclint,
@@ -1304,6 +1310,7 @@ impl LintConfiguration {
                 .combine(config.flake8_unused_arguments),
             isort: self.isort.combine(config.isort),
             mccabe: self.mccabe.combine(config.mccabe),
+            odoo: self.odoo.combine(config.odoo),
             pep8_naming: self.pep8_naming.combine(config.pep8_naming),
             pycodestyle: self.pycodestyle.combine(config.pycodestyle),
             pydoclint: self.pydoclint.combine(config.pydoclint),
