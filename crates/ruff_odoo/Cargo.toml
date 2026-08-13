@@ -1,0 +1,36 @@
+[package]
+# Vauxoo fork: thin wrapper around the `ruff` crate that ships the same CLI
+# under the `ruff-odoo` binary name, so the PyPI `ruff-odoo` package can be
+# installed alongside upstream `ruff` on the same machine without the two
+# fighting over the `ruff` entry point. The wheel build (`[tool.maturin]` in
+# the root `pyproject.toml`) points at this crate; the published version is the
+# four-component one from `pyproject.toml`, not this Cargo version.
+name = "ruff-odoo"
+version = "0.16.2"
+description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
+authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+homepage = { workspace = true }
+documentation = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+publish = false
+
+[dependencies]
+ruff = { workspace = true }
+
+anyhow = { workspace = true }
+argfile = { workspace = true }
+clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
+colored = { workspace = true }
+wild = { workspace = true }
+
+[target.'cfg(all(not(target_os = "windows"), not(target_os = "openbsd"), not(target_os = "aix"), not(target_os = "android"), any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "powerpc64", target_arch = "riscv64")))'.dependencies]
+tikv-jemallocator = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+mimalloc = { workspace = true }
+
+[lints]
+workspace = true

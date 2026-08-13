@@ -21,7 +21,8 @@ env:
   CARGO_NET_RETRY: 10
   CARGO_TERM_COLOR: always
   RUSTUP_MAX_RETRIES: 10
-  PACKAGE_NAME: ruff
+  # Vauxoo fork: install/test the local `ruff-odoo` wheel, not upstream `ruff`.
+  PACKAGE_NAME: ruff-odoo
   PYTHON_VERSION: "3.14"
   NEXTEST_PROFILE: ci
   # Enable mdtests that require external dependencies
@@ -873,9 +874,9 @@ jobs:
           args: --out dist
       - name: "Test wheel"
         run: |
-          pip install --force-reinstall --find-links dist "${PACKAGE_NAME}"
-          ruff --help
-          python -m ruff --help
+          pip install --no-index --force-reinstall --find-links dist "${PACKAGE_NAME}"
+          ruff-odoo --help
+          python -m ruff_odoo --help
       - name: "Remove wheels from cache"
         run: rm -rf target/wheels
 

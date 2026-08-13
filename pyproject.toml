@@ -4,10 +4,10 @@ build-backend = "maturin"
 
 [project]
 # Vauxoo fork: published to PyPI as `ruff-odoo` because the `ruff` name belongs
-# to upstream. The binary and Python module are still named `ruff`, so this
-# package is a drop-in replacement inside an isolated environment (e.g. the one
-# pre-commit creates per hook repo), but it must not be installed alongside the
-# upstream `ruff` package in the same environment.
+# to upstream. The binary is `ruff-odoo` and the Python module is `ruff_odoo`
+# (built from the `crates/ruff_odoo` wrapper crate), so this package can be
+# installed alongside the upstream `ruff` package on the same machine — even in
+# the same environment — without colliding with its `ruff` entry point.
 name = "ruff-odoo"
 version = "0.16.2.14"
 description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
@@ -52,8 +52,8 @@ Changelog = "https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md"
 
 [tool.maturin]
 bindings = "bin"
-manifest-path = "crates/ruff/Cargo.toml"
-module-name = "ruff"
+manifest-path = "crates/ruff_odoo/Cargo.toml"
+module-name = "ruff_odoo"
 python-source = "python"
 strip = true
 exclude = [

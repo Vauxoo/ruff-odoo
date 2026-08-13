@@ -3128,6 +3128,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ruff-odoo"
+version = "0.16.2"
+dependencies = [
+ "anyhow",
+ "argfile",
+ "clap",
+ "colored",
+ "mimalloc",
+ "ruff",
+ "tikv-jemallocator",
+ "wild",
+]
+
+[[package]]
 name = "ruff_annotate_snippets"
 version = "0.0.9"
 dependencies = [

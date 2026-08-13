@@ -120,7 +120,10 @@ const STYLES: Styles = Styles::styled()
     about = "Ruff: An extremely fast Python linter and code formatter.",
     after_help = "For help with a specific command, see: `ruff help <command>`."
 )]
-#[command(version)]
+// Vauxoo fork: use the full version from `version.rs` (four-component
+// `ruff-odoo` version plus commit info) instead of clap's default
+// `CARGO_PKG_VERSION`, so `--version` matches the `version` subcommand.
+#[command(version = crate::version::version().to_string())]
 #[command(styles = STYLES)]
 pub struct Args {
     #[command(subcommand)]
