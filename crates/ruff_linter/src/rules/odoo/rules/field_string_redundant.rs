@@ -94,7 +94,7 @@ pub(crate) fn field_string_redundant(checker: &Checker, assign: &ast::StmtAssign
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;
     };
-    if !is_odoo_model_class(class_def) {
+    if !is_odoo_model_class(checker.semantic(), class_def) {
         return;
     }
 

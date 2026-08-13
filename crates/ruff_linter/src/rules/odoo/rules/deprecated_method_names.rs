@@ -6,7 +6,8 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Rule;
-use crate::rules::odoo::helpers::is_odoo_model_class;
+use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
+use crate::rules::odoo::settings::OdooVersion;
 
 /// ## What it does
 /// Checks for `name_get` method definitions.
@@ -72,13 +73,16 @@ pub(crate) fn deprecated_method_names(checker: &Checker, function_def: &ast::Stm
         return;
     };
 
-    if checker.is_rule_enabled(Rule::DeprecatedNameGet) && function_def.name.as_str() == "name_get"
+    if checker.is_rule_enabled(Rule::DeprecatedNameGet)
+        && function_def.name.as_str() == "name_get"
+        // `name_get` was only deprecated in Odoo 17.0.
+        && odoo_version_applies(checker, Some(OdooVersion::new(17, 0)), None)
     {
         checker.report_diagnostic(DeprecatedNameGet, function_def.name.range());
     }
 
     if checker.is_rule_enabled(Rule::DeprecatedOdooModelMethod)
-        && is_odoo_model_class(class_def)
+        && is_odoo_model_class(checker.semantic(), class_def)
         && DEPRECATED_MODEL_METHODS.contains(&function_def.name.as_str())
     {
         checker.report_diagnostic(

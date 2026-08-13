@@ -46,9 +46,18 @@ mod tests {
         Rule::OdooAddonsRelativeImport,
         Path::new("ODOO023/my_module/models/foo.py")
     )]
+    #[test_case(
+        Rule::OdooAddonsRelativeImport,
+        Path::new("ODOO023/my_module/tests/test_foo.py")
+    )]
+    #[test_case(
+        Rule::OdooAddonsRelativeImport,
+        Path::new("ODOO023/my_module/migrations/16.0.1.0/pre-migrate.py")
+    )]
     #[test_case(Rule::DirectTranslationCall, Path::new("ODOO024.py"))]
     #[test_case(Rule::ManifestSuperfluousKey, Path::new("ODOO025/__manifest__.py"))]
     #[test_case(Rule::HeaderComments, Path::new("ODOO026.py"))]
+    #[test_case(Rule::HeaderComments, Path::new("ODOO026_comments_only.py"))]
     #[test_case(Rule::MethodCompute, Path::new("ODOO027.py"))]
     #[test_case(Rule::MethodSearch, Path::new("ODOO028.py"))]
     #[test_case(Rule::MethodInverse, Path::new("ODOO029.py"))]
@@ -121,6 +130,40 @@ mod tests {
     }
 
     #[test]
+    fn deprecated_self_cr_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_self_cr_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO035.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedSelfCr)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn deprecated_self_cr_enabled_at_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_self_cr_enabled_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO035.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedSelfCr)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
     fn prohibited_method_override() -> Result<()> {
         let snapshot = "prohibited_method_override".to_string();
         let diagnostics = test_path(
@@ -131,6 +174,7 @@ mod tests {
                         "action_post".to_string(),
                         "unlink".to_string(),
                     ],
+                    ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::ProhibitedMethodOverride)
             },

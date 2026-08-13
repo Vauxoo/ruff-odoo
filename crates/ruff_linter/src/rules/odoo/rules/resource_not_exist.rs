@@ -6,7 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{MANIFEST_DATA_KEYS, is_manifest_file, manifest_item};
+use crate::rules::odoo::helpers::{MANIFEST_DATA_KEYS, is_manifest_root_dict, manifest_item};
 
 /// ## What it does
 /// Checks that every file listed in the data keys (`data`, `demo`, ...) of an Odoo
@@ -50,10 +50,7 @@ impl Violation for ResourceNotExist {
 
 /// ODOO053
 pub(crate) fn resource_not_exist(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     let Some(dir) = path.parent() else {

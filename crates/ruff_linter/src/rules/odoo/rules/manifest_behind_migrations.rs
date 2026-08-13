@@ -6,7 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_manifest_file, manifest_string_item};
+use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// ## What it does
 /// Checks that the `version` in an Odoo module's `__manifest__.py` is not lower than the
@@ -57,10 +57,7 @@ fn version_tuple(version: &str) -> Option<Vec<u64>> {
 
 /// ODOO054
 pub(crate) fn manifest_behind_migrations(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
-    if !is_manifest_file(path) {
-        return;
-    }
-    if !checker.semantic().current_scope().kind.is_module() {
+    if !is_manifest_root_dict(checker, path) {
         return;
     }
     let Some((key, version)) = manifest_string_item(dict, "version") else {

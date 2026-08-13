@@ -1,3 +1,6 @@
+from odoo import models
+
+
 class MyModel(models.Model):
     _inherit = "my.model"
 

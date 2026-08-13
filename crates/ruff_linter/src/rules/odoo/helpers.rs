@@ -1,13 +1,16 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use ruff_python_ast::name::QualifiedName;
 use ruff_python_ast::{self as ast, Expr};
+use ruff_python_semantic::SemanticModel;
 use ruff_python_trivia::{SimpleTokenKind, SimpleTokenizer};
 use ruff_text_size::{Ranged, TextLen, TextRange};
 
 use crate::Edit;
 use crate::checkers::ast::Checker;
 use crate::line_width::LineWidthBuilder;
+use crate::rules::odoo::settings::OdooVersion;
 
 /// Renders `content` as string-literal pieces for a parenthesized implicit concatenation.
 ///
@@ -102,21 +105,40 @@ pub(crate) fn manifest_anchor_range(dict: &ast::ExprDict) -> TextRange {
     )
 }
 
-const ODOO_MODEL_BASES: &[&str] = &["Model", "TransientModel", "AbstractModel"];
+/// Returns `true` if the dict literal currently being visited is the manifest's top-level
+/// dict: `path` is a manifest file, we're at module scope, and the dict has no parent
+/// expression (it isn't nested inside another dict/list/call, e.g. the `"assets"` sub-dict).
+/// Without the last check, rules would also fire on every nested dict literal in the
+/// manifest, since nested literals stay in module scope too (only
+/// `class`/`def`/`lambda`/comprehensions introduce a new scope).
+///
+/// Must be called while the checker is visiting the candidate `Expr::Dict` node.
+pub(crate) fn is_manifest_root_dict(checker: &Checker, path: &Path) -> bool {
+    is_manifest_file(path)
+        && checker.semantic().current_scope().kind.is_module()
+        && checker.semantic().current_expression_parent().is_none()
+}
 
-/// Returns `true` if `class_def`'s bases include (by unqualified name) an Odoo model base,
-/// e.g. `models.Model` or `Model`.
-pub(crate) fn is_odoo_model_class(class_def: &ast::StmtClassDef) -> bool {
+/// Returns `true` if `class_def`'s bases include an Odoo model base (`models.Model`,
+/// `TransientModel`, ...) resolved through imports, e.g. `from odoo import models` or
+/// `from odoo.models import Model`. A bare `Model` base from an unrelated `models` module
+/// doesn't count.
+pub(crate) fn is_odoo_model_class(semantic: &SemanticModel, class_def: &ast::StmtClassDef) -> bool {
     let Some(arguments) = class_def.arguments.as_deref() else {
         return false;
     };
     arguments.args.iter().any(|base| {
-        let name = match base {
-            Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
-            Expr::Name(ast::ExprName { id, .. }) => id.as_str(),
-            _ => return false,
-        };
-        ODOO_MODEL_BASES.contains(&name)
+        matches!(
+            semantic
+                .resolve_qualified_name(base)
+                .as_ref()
+                .map(QualifiedName::segments),
+            Some([
+                "odoo",
+                "models",
+                "Model" | "TransientModel" | "AbstractModel"
+            ])
+        )
     })
 }
 
@@ -151,6 +173,23 @@ pub(crate) fn dotted_name(expr: &Expr) -> Option<String> {
 /// Manifest keys whose values are lists of module data file paths.
 pub(crate) const MANIFEST_DATA_KEYS: &[&str] =
     &["data", "demo", "demo_xml", "init_xml", "test", "update_xml"];
+
+/// Returns `true` if a rule scoped to Odoo versions `min..=max` (either bound optional)
+/// should apply given `checker`'s configured `odoo-version`.
+///
+/// Mirrors pylint-odoo's `checks_maxmin_odoo_version`: when no `odoo-version` is configured,
+/// version-scoped rules stay enabled unconditionally (so behavior doesn't regress for users
+/// who haven't opted into the setting).
+pub(crate) fn odoo_version_applies(
+    checker: &Checker,
+    min: Option<OdooVersion>,
+    max: Option<OdooVersion>,
+) -> bool {
+    let Some(odoo_version) = checker.settings().odoo.odoo_version else {
+        return true;
+    };
+    min.is_none_or(|min| odoo_version >= min) && max.is_none_or(|max| odoo_version <= max)
+}
 
 /// Generate an [`Edit`] to remove `item` (a key-value pair) from `dict`, including its
 /// surrounding comma, leaving the rest of the dictionary display intact.

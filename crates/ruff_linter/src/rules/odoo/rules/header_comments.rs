@@ -1,7 +1,7 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_trivia::CommentRanges;
 use ruff_source_file::LineRanges;
-use ruff_text_size::TextRange;
+use ruff_text_size::{TextLen, TextRange};
 
 use crate::Locator;
 use crate::checkers::ast::LintContext;
@@ -57,12 +57,34 @@ const VALID_HEADER_COMMENTS: &[&str] = &[
     "pylint:",
 ];
 
+/// Returns `true` if every non-blank line in the file is a comment. The original Fixit check
+/// this rule ports skipped comment-only files entirely, since deleting every stray comment
+/// would otherwise leave the file empty.
+fn file_is_comments_only(locator: &Locator, comment_ranges: &CommentRanges) -> bool {
+    let mut last_end = locator.bom_start_offset();
+    for comment_range in comment_ranges {
+        let before_comment = locator.slice(TextRange::new(last_end, comment_range.start()));
+        if !before_comment.trim().is_empty() {
+            return false;
+        }
+        last_end = locator.full_line_range(comment_range.start()).end();
+    }
+    locator
+        .slice(TextRange::new(last_end, locator.contents().text_len()))
+        .trim()
+        .is_empty()
+}
+
 /// ODOO026
 pub(crate) fn header_comments(
     context: &LintContext,
     locator: &Locator,
     comment_ranges: &CommentRanges,
 ) {
+    if file_is_comments_only(locator, comment_ranges) {
+        return;
+    }
+
     let mut last_end = locator.bom_start_offset();
 
     for comment_range in comment_ranges {

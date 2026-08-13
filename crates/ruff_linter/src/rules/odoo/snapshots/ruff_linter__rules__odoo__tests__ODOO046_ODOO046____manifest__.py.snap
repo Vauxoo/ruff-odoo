@@ -9,5 +9,16 @@ ODOO046 Asset https://cdn.example.com/lib.js should be distributed with module's
 5 |             "https://cdn.example.com/lib.js",
   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 6 |             "my_module/static/src/js/widget.js",
-7 |         ],
+7 |             ("replace", "my_module/static/src/js/old.js", "https://cdn.example.com/new.js"),
+  |
+
+ODOO046 Asset https://cdn.example.com/new.js should be distributed with module's source code
+ --> __manifest__.py:7:59
+  |
+5 |             "https://cdn.example.com/lib.js",
+6 |             "my_module/static/src/js/widget.js",
+7 |             ("replace", "my_module/static/src/js/old.js", "https://cdn.example.com/new.js"),
+  |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |         ],
+9 |     },
   |
