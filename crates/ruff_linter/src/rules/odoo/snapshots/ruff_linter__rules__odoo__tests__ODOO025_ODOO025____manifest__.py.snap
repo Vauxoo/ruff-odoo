@@ -6,7 +6,7 @@ ODOO025 [*] Manifest superfluous key "installable". It is the same as the defaul
   |
 1 | {
 2 |     "installable": True,
-  |     ^^^^^^^^^^^^^^^^^^^
+  |     ^^^^^^^^^^^^^
 3 |     "depends": [],
 4 |     "author": "",
   |
@@ -23,7 +23,7 @@ ODOO025 [*] Manifest superfluous key "depends". It is the same as the default va
 1 | {
 2 |     "installable": True,
 3 |     "depends": [],
-  |     ^^^^^^^^^^^^^
+  |     ^^^^^^^^^
 4 |     "author": "",
 5 |     "active": False,
   |
@@ -40,7 +40,7 @@ ODOO025 [*] Manifest superfluous key "author". It is the same as the default val
 2 |     "installable": True,
 3 |     "depends": [],
 4 |     "author": "",
-  |     ^^^^^^^^^^^^
+  |     ^^^^^^^^
 5 |     "active": False,
 6 |     "name": "My Module",
   |
