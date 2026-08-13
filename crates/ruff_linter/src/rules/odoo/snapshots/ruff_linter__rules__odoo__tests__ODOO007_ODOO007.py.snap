@@ -45,7 +45,7 @@ ODOO007 [*] The `string` attribute is redundant and should be removed
 11 |     state = fields.Selection([("a", "A")], "State")
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 12 |
-13 |     other = fields.Char(string="Different Label")
+13 |     partner_ids = fields.Many2many(
    |
 help: Remove redundant `string` attribute
    |
@@ -53,4 +53,24 @@ help: Remove redundant `string` attribute
    -     state = fields.Selection([("a", "A")], "State")
 11 +     state = fields.Selection([("a", "A")])
 12 |
+   |
+
+ODOO007 [*] The `string` attribute is redundant and should be removed
+  --> ODOO007.py:13:5
+   |
+11 |       state = fields.Selection([("a", "A")], "State")
+12 |
+13 | /     partner_ids = fields.Many2many(
+14 | |         "res.partner", "table_name", "col1", "col2", "Partner"
+15 | |     )
+   | |_____^
+16 |
+17 |       other = fields.Char(string="Different Label")
+   |
+help: Remove redundant `string` attribute
+   |
+13 |     partner_ids = fields.Many2many(
+   -         "res.partner", "table_name", "col1", "col2", "Partner"
+14 +         "res.partner", "table_name", "col1", "col2"
+15 |     )
    |

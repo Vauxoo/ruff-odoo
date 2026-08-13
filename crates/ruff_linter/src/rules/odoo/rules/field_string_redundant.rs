@@ -53,8 +53,9 @@ impl Violation for FieldStringRedundant {
 /// positional argument.
 fn string_arg_position(field_type: &str) -> usize {
     match field_type {
-        "Selection" | "Reference" | "Many2one" | "Many2many" => 1,
+        "Selection" | "Reference" | "Many2one" => 1,
         "One2many" => 2,
+        "Many2many" => 4,
         _ => 0,
     }
 }

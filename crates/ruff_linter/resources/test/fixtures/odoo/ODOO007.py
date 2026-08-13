@@ -10,6 +10,10 @@ class MyModel(models.Model):
 
     state = fields.Selection([("a", "A")], "State")
 
+    partner_ids = fields.Many2many(
+        "res.partner", "table_name", "col1", "col2", "Partner"
+    )
+
     other = fields.Char(string="Different Label")
 
     name33 = fields.Char("Name33", related="partner_id.name")
