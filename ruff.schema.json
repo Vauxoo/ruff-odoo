@@ -2703,6 +2703,26 @@
       "description": "Options for the `odoo` plugin.",
       "type": "object",
       "properties": {
+        "category-allowed": {
+          "description": "A list of categories allowed in a module's manifest (`ODOO065`). While the list is\nempty the rule is inert, so a project only opts in by naming its categories.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "odoo-required-files": {
+          "description": "A list of files every Odoo module must ship (`ODOO066`), as paths relative to the\nmodule directory. While the list is empty the rule is inert.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "odoo-version": {
           "description": "The targeted Odoo version, used to suppress rules that only apply to a specific\nrange of Odoo versions (e.g. `deprecated-self-cr` only applies since 19.0).",
           "anyOf": [
@@ -3856,6 +3876,9 @@
         "ODOO061",
         "ODOO062",
         "ODOO063",
+        "ODOO064",
+        "ODOO065",
+        "ODOO066",
         "PD",
         "PD0",
         "PD00",
@@ -4733,6 +4756,7 @@
         "async-zero-sleep",
         "asyncio-dangling-task",
         "attribute-deprecated",
+        "attribute-string-redundant",
         "avoidable-escaped-quote",
         "await-outside-async",
         "bad-builtin-groupby",
@@ -4804,6 +4828,7 @@
         "camelcase-imported-as-constant",
         "camelcase-imported-as-lowercase",
         "cancel-scope-no-checkpoint",
+        "category-allowed",
         "category-allowed-app",
         "check-and-remove-from-set",
         "class-as-data-structure",
@@ -4820,6 +4845,7 @@
         "complex-assignment-in-stub",
         "complex-if-statement-in-stub",
         "complex-structure",
+        "consider-merging-classes-inherited",
         "constant-imported-as-non-constant",
         "context-overridden",
         "continue-in-finally",
@@ -4851,7 +4877,6 @@
         "dict-index-missing-items",
         "dict-iter-missing-items",
         "direct-logger-instantiation",
-        "direct-translation-call",
         "django-all-with-model-form",
         "django-exclude-with-model-form",
         "django-extra",
@@ -4879,7 +4904,6 @@
         "duplicate-class-field-definition",
         "duplicate-entry-in-dunder-all",
         "duplicate-handler-exception",
-        "duplicate-inherited-model-extension",
         "duplicate-isinstance-call",
         "duplicate-literal-member",
         "duplicate-try-block-exception",
@@ -4923,7 +4947,6 @@
         "fast-api-non-annotated-dependency",
         "fast-api-redundant-response-model",
         "fast-api-unused-path-parameter",
-        "field-string-redundant",
         "first-word-uncapitalized",
         "flask-debug-true",
         "float-equality-comparison",
@@ -5085,6 +5108,7 @@
         "manifest-required-key-app",
         "manifest-summary-multiline",
         "manifest-superfluous-key",
+        "manifest-version-format",
         "manual-dict-comprehension",
         "manual-from-import",
         "manual-list-comprehension",
@@ -5107,6 +5131,7 @@
         "missing-maxsplit-arg",
         "missing-new-line-after-section-name",
         "missing-newline-at-end-of-file",
+        "missing-odoo-file",
         "missing-odoo-file-app",
         "missing-readme",
         "missing-required-import",
@@ -5295,6 +5320,7 @@
         "percent-format-unsupported-format-character",
         "post-init-default",
         "potential-index-error",
+        "prefer-env-translation",
         "print",
         "print-empty-string",
         "printf-in-get-text-func-call",
@@ -5532,7 +5558,7 @@
         "translation-fstring-interpolation",
         "translation-injection",
         "translation-not-lazy",
-        "translation-positional",
+        "translation-positional-used",
         "translation-required",
         "translation-too-few-args",
         "translation-too-many-args",
@@ -5671,6 +5697,7 @@
         "unused-static-method-argument",
         "unused-unpacked-variable",
         "unused-variable",
+        "use-vim-comment",
         "used-dummy-variable",
         "useless-class-metaclass-type",
         "useless-comparison",
@@ -5691,7 +5718,6 @@
         "verbose-decimal-constructor",
         "verbose-log-message",
         "verbose-raise",
-        "vim-comment",
         "wait-for-process-in-async-function",
         "weak-cryptographic-key",
         "website-manifest-key-not-valid-uri",

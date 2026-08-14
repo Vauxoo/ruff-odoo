@@ -524,13 +524,12 @@ help: Convert to named placeholders passed as keyword arguments
 65 |     if failed:
    -         raise ValidationError(_("Automated activity creation failed for stage %s on opportunity %s", self.stage_id.display_name, self.opportunity_id.display_name))
 66 +         raise ValidationError(_(
-67 +             "Automated activity creation failed for stage "
-68 +             "%(self_stage_id_display_name)s on opportunity "
-69 +             "%(self_opportunity_id_display_name)s",
-70 +             self_stage_id_display_name=self.stage_id.display_name,
-71 +             self_opportunity_id_display_name=self.opportunity_id.display_name,
-72 +         ))
-73 |
+67 +             "Automated activity creation failed for stage %(stage_id_display_name)s "
+68 +             "on opportunity %(opportunity_id_display_name)s",
+69 +             stage_id_display_name=self.stage_id.display_name,
+70 +             opportunity_id_display_name=self.opportunity_id.display_name,
+71 +         ))
+72 |
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -572,11 +571,10 @@ help: Convert to named placeholders passed as keyword arguments
    |
 77 |         self.env._(
    -             "Unmerged partnerx %s into %s", self.dst_partner_id.id, self.partner_ids.ids
-78 +             "Unmerged partnerx %(self_dst_partner_id_id)s into "
-79 +             "%(self_partner_ids_ids)s",
-80 +             self_dst_partner_id_id=self.dst_partner_id.id,
-81 +             self_partner_ids_ids=self.partner_ids.ids,
-82 |         )
+78 +             "Unmerged partnerx %(dst_partner_id_id)s into %(partner_ids_ids)s",
+79 +             dst_partner_id_id=self.dst_partner_id.id,
+80 +             partner_ids_ids=self.partner_ids.ids,
+81 |         )
    |
 note: This is an unsafe fix and may change runtime behavior
 
@@ -646,3 +644,38 @@ ODOO042 Translation method is using positional string printf formatting with mul
 88 | _lt("multi-positional args without placeholders {} {}".format("param1", "param2"))
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 help: Convert to named placeholders passed as keyword arguments
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+  --> ODOO042.py:94:5
+   |
+92 | # and every method of a model reads its values off `self`.
+93 | def report(self):
+94 |     _("%s owes %s", self.partner_id.name, self.amount_total)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Convert to named placeholders passed as keyword arguments
+   |
+93 | def report(self):
+   -     _("%s owes %s", self.partner_id.name, self.amount_total)
+94 +     _(
+95 +         "%(partner_id_name)s owes %(amount_total)s",
+96 +         partner_id_name=self.partner_id.name,
+97 +         amount_total=self.amount_total,
+98 +     )
+99 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODOO042 [*] Translation method is using positional string printf formatting with multiple arguments. Use named placeholders instead
+   --> ODOO042.py:100:5
+    |
+ 98 | # placeholder: `self.name` and `name` must stay distinct.
+ 99 | def compare(self, name):
+100 |     _("%s vs %s", self.name, name)
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Convert to named placeholders passed as keyword arguments
+    |
+99  | def compare(self, name):
+    -     _("%s vs %s", self.name, name)
+100 +     _("%(self_name)s vs %(name)s", self_name=self.name, name=name)
+    |
+note: This is an unsafe fix and may change runtime behavior

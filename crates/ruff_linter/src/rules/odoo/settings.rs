@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 pub struct Settings {
     pub prohibited_override_methods: Vec<String>,
     pub odoo_version: Option<OdooVersion>,
+    pub category_allowed: Vec<String>,
+    pub odoo_required_files: Vec<String>,
 }
 
 impl Display for Settings {
@@ -21,6 +23,8 @@ impl Display for Settings {
             fields = [
                 self.prohibited_override_methods | array,
                 self.odoo_version | optional,
+                self.category_allowed | array,
+                self.odoo_required_files | array,
             ]
         }
         Ok(())

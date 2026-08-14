@@ -1391,8 +1391,8 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::BadBuiltinGroupby) {
                 odoo::rules::bad_builtin_groupby(checker, call);
             }
-            if checker.is_rule_enabled(Rule::DirectTranslationCall) {
-                odoo::rules::direct_translation_call(checker, call);
+            if checker.is_rule_enabled(Rule::PreferEnvTranslation) {
+                odoo::rules::prefer_env_translation(checker, call);
             }
             if checker.is_rule_enabled(Rule::SuperMethodMismatch) {
                 odoo::rules::super_method_mismatch(checker, call);
@@ -1402,7 +1402,7 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.any_rule_enabled(&[
                 Rule::TranslationContainsVariable,
-                Rule::TranslationPositional,
+                Rule::TranslationPositionalUsed,
                 Rule::TranslationInjection,
             ]) {
                 odoo::rules::translation_calls(checker, call);
@@ -1474,6 +1474,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::ManifestSuperfluousKey) {
                 odoo::rules::manifest_superfluous_key(checker, dict, checker.path);
             }
+            if checker.is_rule_enabled(Rule::ManifestVersionFormat) {
+                odoo::rules::manifest_version_format(checker, dict, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ManifestExternalAssets) {
                 odoo::rules::manifest_external_assets(checker, dict, checker.path);
             }
@@ -1485,6 +1488,12 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::ManifestBehindMigrations) {
                 odoo::rules::manifest_behind_migrations(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::CategoryAllowed) {
+                odoo::rules::category_allowed(checker, dict, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::MissingOdooFile) {
+                odoo::rules::missing_odoo_file(checker, dict, checker.path);
             }
             if checker.is_rule_enabled(Rule::CategoryAllowedApp) {
                 odoo_app::rules::category_allowed_app(checker, dict, checker.path);
