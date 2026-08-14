@@ -17,12 +17,12 @@ mod tests {
 
     #[test_case(Rule::ManifestRequiredKey, Path::new("ODOO001/__manifest__.py"))]
     #[test_case(Rule::ManifestDeprecatedKey, Path::new("ODOO002/__manifest__.py"))]
-    #[test_case(Rule::VimComment, Path::new("ODOO003.py"))]
+    #[test_case(Rule::UseVimComment, Path::new("ODOO003.py"))]
     #[test_case(Rule::ExceptPass, Path::new("ODOO004.py"))]
     #[test_case(Rule::MethodRequiredSuper, Path::new("ODOO005.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("ODOO006_0.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("ODOO006_1.py"))]
-    #[test_case(Rule::FieldStringRedundant, Path::new("ODOO007.py"))]
+    #[test_case(Rule::AttributeStringRedundant, Path::new("ODOO007.py"))]
     #[test_case(Rule::ManifestRequiredAuthor, Path::new("ODOO008/__manifest__.py"))]
     #[test_case(Rule::ManifestAuthorString, Path::new("ODOO009/__manifest__.py"))]
     #[test_case(Rule::LicenseAllowed, Path::new("ODOO010/__manifest__.py"))]
@@ -54,7 +54,7 @@ mod tests {
         Rule::OdooAddonsRelativeImport,
         Path::new("ODOO023/my_module/migrations/16.0.1.0/pre-migrate.py")
     )]
-    #[test_case(Rule::DirectTranslationCall, Path::new("ODOO024.py"))]
+    #[test_case(Rule::PreferEnvTranslation, Path::new("ODOO024.py"))]
     #[test_case(Rule::ManifestSuperfluousKey, Path::new("ODOO025/__manifest__.py"))]
     #[test_case(Rule::HeaderComments, Path::new("ODOO026.py"))]
     #[test_case(Rule::HeaderComments, Path::new("ODOO026_comments_only.py"))]
@@ -73,7 +73,7 @@ mod tests {
     #[test_case(Rule::NoRaiseUnlink, Path::new("ODOO039.py"))]
     #[test_case(Rule::NoWriteInCompute, Path::new("ODOO040.py"))]
     #[test_case(Rule::TranslationContainsVariable, Path::new("ODOO041.py"))]
-    #[test_case(Rule::TranslationPositional, Path::new("ODOO042.py"))]
+    #[test_case(Rule::TranslationPositionalUsed, Path::new("ODOO042.py"))]
     #[test_case(Rule::TranslationInjection, Path::new("ODOO043.py"))]
     #[test_case(Rule::DeprecatedInselectOperator, Path::new("ODOO044.py"))]
     #[test_case(Rule::TestFolderImported, Path::new("ODOO045/__init__.py"))]
@@ -105,6 +105,7 @@ mod tests {
     #[test_case(Rule::TranslationTooFewArgs, Path::new("ODOO060.py"))]
     #[test_case(Rule::TranslationTooManyArgs, Path::new("ODOO061.py"))]
     #[test_case(Rule::TranslationUnsupportedFormat, Path::new("ODOO062.py"))]
+    #[test_case(Rule::ManifestVersionFormat, Path::new("ODOO064/__manifest__.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(
@@ -144,6 +145,144 @@ mod tests {
                 },
                 ..LinterSettings::for_rule(Rule::DeprecatedSelfCr)
             },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Before Odoo 18.0 there is no `self.env._`, so the bare `_()` is correct and
+    /// `prefer-env-translation` must stay quiet.
+    #[test]
+    fn prefer_env_translation_suppressed_before_odoo_18() -> Result<()> {
+        let snapshot = "prefer_env_translation_suppressed_before_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO024.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::PreferEnvTranslation)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `translation-required` has to suggest the same translation call that
+    /// `prefer-env-translation` would accept for the configured version — the bare `_()`
+    /// before 18.0, `self.env._()` from 18.0 on — or the two rules would fight each other.
+    #[test]
+    fn translation_required_suggests_bare_underscore_before_odoo_18() -> Result<()> {
+        let snapshot = "translation_required_suggests_bare_underscore_before_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO049.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::TranslationRequired)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// With a configured series, a version for a different series is wrong even though its
+    /// shape is right.
+    #[test]
+    fn manifest_version_format_checks_the_configured_series() -> Result<()> {
+        let snapshot = "manifest_version_format_checks_the_configured_series".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO064/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestVersionFormat)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `category-allowed` stays inert until the project lists its categories.
+    #[test]
+    fn category_allowed_is_inert_without_configuration() -> Result<()> {
+        let snapshot = "category_allowed_is_inert_without_configuration".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO065/__manifest__.py"),
+            &LinterSettings::for_rule(Rule::CategoryAllowed),
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn category_allowed() -> Result<()> {
+        let snapshot = "category_allowed".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO065/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    category_allowed: vec!["Accounting".to_string(), "Sales".to_string()],
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::CategoryAllowed)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `missing-odoo-file` stays inert until the project lists its required files.
+    #[test]
+    fn missing_odoo_file_is_inert_without_configuration() -> Result<()> {
+        let snapshot = "missing_odoo_file_is_inert_without_configuration".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO066/missing/__manifest__.py"),
+            &LinterSettings::for_rule(Rule::MissingOdooFile),
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test_case("missing")]
+    #[test_case("present")]
+    fn missing_odoo_file(module: &str) -> Result<()> {
+        let snapshot = format!("missing_odoo_file_{module}");
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO066")
+                .join(module)
+                .join("__manifest__.py")
+                .as_path(),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_required_files: vec!["static/description/index.html".to_string()],
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingOdooFile)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// A standalone `# pylint: disable` is only rewritten when the rules it names are part of
+    /// the run, so this fixture is linted with those rules enabled alongside `ODOO047`.
+    #[test]
+    fn pylint_disable_comment_standalone() -> Result<()> {
+        let snapshot = "pylint_disable_comment_standalone".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO047_standalone.py"),
+            &LinterSettings::for_rules([
+                Rule::PylintDisableComment,
+                Rule::MethodRequiredSuper,
+                Rule::ContextOverridden,
+                Rule::InvalidCommit,
+            ]),
         )?;
         assert_diagnostics!(snapshot, diagnostics);
         Ok(())

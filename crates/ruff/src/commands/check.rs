@@ -480,7 +480,7 @@ class PerFilePair(models.Model):
 "#,
         )?;
 
-        let mut linter = LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension);
+        let mut linter = LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited);
         linter.per_file_ignores = CompiledPerFileIgnoreList::resolve(
             vec![PerFileIgnore::new(
                 "ignored_by_per_file.py".to_string(),
@@ -564,7 +564,7 @@ class MixinB(models.Model):
         )?;
 
         let settings = Settings {
-            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            linter: LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited),
             ..Settings::default()
         };
         let pyproject_config =
@@ -624,7 +624,7 @@ class MixinB(models.Model):
         )?;
 
         let settings = Settings {
-            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            linter: LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited),
             ..Settings::default()
         };
         let pyproject_config =
@@ -695,7 +695,7 @@ class VendoredPartnerB(models.Model):
 "#,
         )?;
 
-        let mut linter = LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension);
+        let mut linter = LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited);
         linter.exclude = FilePatternSet::try_from_iter([FilePattern::Config(
             "vendor_partner_b.py".to_string(),
         )])?;
@@ -761,7 +761,7 @@ class IgnoredByGitignore(models.Model):
         )?;
 
         let settings = Settings {
-            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            linter: LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited),
             ..Settings::default()
         };
         let pyproject_config =
@@ -830,7 +830,7 @@ class PartnerB(models.Model):
         )?;
 
         let settings = Settings {
-            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            linter: LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited),
             ..Settings::default()
         };
         let pyproject_config =
@@ -875,7 +875,7 @@ class PartnerB(models.Model):
             .open(models.join("unreadable.py"))?;
 
         let settings = Settings {
-            linter: LinterSettings::for_rule(Rule::DuplicateInheritedModelExtension),
+            linter: LinterSettings::for_rule(Rule::ConsiderMergingClassesInherited),
             ..Settings::default()
         };
         let pyproject_config =

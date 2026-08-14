@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO065 Category "Acounting" not allowed in manifest file
+ --> __manifest__.py:4:5
+  |
+2 |     "name": "Category not in the allowed list",
+3 |     # Flagged: a typo of an allowed category.
+4 |     "category": "Acounting",
+  |     ^^^^^^^^^^
+5 | }
+  |

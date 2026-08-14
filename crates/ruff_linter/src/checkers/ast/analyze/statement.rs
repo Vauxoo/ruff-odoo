@@ -979,6 +979,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::NoRaiseUnlink) {
                 odoo::rules::no_raise_unlink(checker, raise);
             }
+            if checker.is_rule_enabled(Rule::TranslationRequired) {
+                odoo::rules::translation_required_raise(checker, raise, checker.path);
+            }
             if checker.is_rule_enabled(Rule::RaiseLiteral) {
                 if let Some(exc) = exc {
                     flake8_bugbear::rules::raise_literal(checker, exc);
@@ -1500,8 +1503,8 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
                     checker, stmt, targets, value,
                 );
             }
-            if checker.is_rule_enabled(Rule::FieldStringRedundant) {
-                odoo::rules::field_string_redundant(checker, assign);
+            if checker.is_rule_enabled(Rule::AttributeStringRedundant) {
+                odoo::rules::attribute_string_redundant(checker, assign);
             }
             if checker.is_rule_enabled(Rule::AttributeDeprecated) {
                 odoo::rules::attribute_deprecated(checker, assign);

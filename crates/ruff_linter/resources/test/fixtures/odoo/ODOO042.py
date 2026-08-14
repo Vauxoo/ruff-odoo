@@ -86,3 +86,15 @@ _lt("Variables not translatable: %s, %s" % (variable1, variable2))
 _("multi-positional args without placeholders {} {}".format("param1", "param2"))
 self.env._("multi-positional args without placeholders {} {}".format("param1", "param2"))
 _lt("multi-positional args without placeholders {} {}".format("param1", "param2"))
+
+
+# The `self`/`cls` root is dropped from placeholder names: it says nothing about the value,
+# and every method of a model reads its values off `self`.
+def report(self):
+    _("%s owes %s", self.partner_id.name, self.amount_total)
+
+
+# Dropping the root is skipped when it would merge two different expressions into one
+# placeholder: `self.name` and `name` must stay distinct.
+def compare(self, name):
+    _("%s vs %s", self.name, name)

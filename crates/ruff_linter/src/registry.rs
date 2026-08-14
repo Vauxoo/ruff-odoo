@@ -313,7 +313,7 @@ impl Rule {
             | Rule::UTF8EncodingDeclaration
             | Rule::HeaderComments
             | Rule::PylintDisableComment
-            | Rule::VimComment => LintSource::Tokens,
+            | Rule::UseVimComment => LintSource::Tokens,
             Rule::IOError => LintSource::Io,
             Rule::UnsortedImports | Rule::MissingRequiredImport => LintSource::Imports,
             Rule::ImplicitNamespacePackage
@@ -471,9 +471,16 @@ mod tests {
     #[test]
     fn rule_naming_convention() {
         // The disallowed rule names are defined in a separate file so that they can also be picked up by add_rule.py.
+        // This fork deliberately keeps the list empty: the `ODOO`/`OAPP` rules are ports of
+        // pylint-odoo and OCA odoo-pre-commit-hooks checks, and users select and suppress them
+        // by the names those tools already use (`use-vim-comment`, `prefer-env-translation`,
+        // `consider-merging-classes-inherited`, ...). Renaming them to satisfy the upstream
+        // convention would break that one-to-one mapping, so blank lines are skipped rather
+        // than parsed as an (everything-matching) empty glob.
         let patterns: Vec<_> = include_str!("../resources/test/disallowed_rule_names.txt")
-            .trim()
-            .split('\n')
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
             .map(|line| {
                 glob::Pattern::new(line).expect("malformed pattern in disallowed_rule_names.txt")
             })

@@ -20,9 +20,9 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
-pub(crate) struct VimComment;
+pub(crate) struct UseVimComment;
 
-impl Violation for VimComment {
+impl Violation for UseVimComment {
     const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
 
     #[derive_message_formats]
@@ -48,7 +48,7 @@ pub(crate) fn use_vim_comment(context: &LintContext, locator: &Locator, comment_
         return;
     }
 
-    let Some(mut diagnostic) = context.report_diagnostic_if_enabled(VimComment, comment_range)
+    let Some(mut diagnostic) = context.report_diagnostic_if_enabled(UseVimComment, comment_range)
     else {
         return;
     };

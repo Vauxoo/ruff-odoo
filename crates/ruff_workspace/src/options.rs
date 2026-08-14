@@ -3207,6 +3207,28 @@ pub struct OdooOptions {
         "#
     )]
     pub odoo_version: Option<OdooVersion>,
+    /// A list of categories allowed in a module's manifest (`ODOO065`). While the list is
+    /// empty the rule is inert, so a project only opts in by naming its categories.
+    #[option(
+        default = r#"[]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Only these categories may appear in a manifest.
+            category-allowed = ["Accounting", "Sales", "Warehouse"]
+        "#
+    )]
+    pub category_allowed: Option<Vec<String>>,
+    /// A list of files every Odoo module must ship (`ODOO066`), as paths relative to the
+    /// module directory. While the list is empty the rule is inert.
+    #[option(
+        default = r#"[]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Every module must have a description page.
+            odoo-required-files = ["static/description/index.html"]
+        "#
+    )]
+    pub odoo_required_files: Option<Vec<String>>,
 }
 
 impl OdooOptions {
@@ -3214,6 +3236,8 @@ impl OdooOptions {
         odoo::settings::Settings {
             prohibited_override_methods: self.prohibited_override_methods.unwrap_or_default(),
             odoo_version: self.odoo_version,
+            category_allowed: self.category_allowed.unwrap_or_default(),
+            odoo_required_files: self.odoo_required_files.unwrap_or_default(),
         }
     }
 }

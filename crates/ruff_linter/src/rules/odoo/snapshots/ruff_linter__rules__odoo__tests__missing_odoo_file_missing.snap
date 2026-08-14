@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO066 Missing missing/static/description/index.html file
+ --> __manifest__.py:2:5
+  |
+1 | {
+2 |     "name": "Module without the required description page",
+  |     ^^^^^^
+3 |     "version": "17.0.1.0.0",
+4 | }
+  |
