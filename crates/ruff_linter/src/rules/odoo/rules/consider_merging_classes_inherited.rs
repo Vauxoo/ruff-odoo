@@ -28,15 +28,15 @@ use crate::Violation;
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
-pub(crate) struct DuplicateInheritedModelExtension {
+pub(crate) struct ConsiderMergingClassesInherited {
     pub(crate) model: String,
     pub(crate) locations: String,
 }
 
-impl Violation for DuplicateInheritedModelExtension {
+impl Violation for ConsiderMergingClassesInherited {
     #[derive_message_formats]
     fn message(&self) -> String {
-        let DuplicateInheritedModelExtension { model, locations } = self;
+        let ConsiderMergingClassesInherited { model, locations } = self;
         format!("Consider merging classes inherited to \"{model}\" from {locations}.")
     }
 }

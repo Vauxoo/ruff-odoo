@@ -34,9 +34,9 @@ use crate::{Fix, FixAvailability, Violation};
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
-pub(crate) struct FieldStringRedundant;
+pub(crate) struct AttributeStringRedundant;
 
-impl Violation for FieldStringRedundant {
+impl Violation for AttributeStringRedundant {
     const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
 
     #[derive_message_formats]
@@ -91,7 +91,7 @@ fn inferred_label(field_name: &str) -> String {
 }
 
 /// ODOO007
-pub(crate) fn field_string_redundant(checker: &Checker, assign: &ast::StmtAssign) {
+pub(crate) fn attribute_string_redundant(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;
     };
@@ -142,7 +142,7 @@ pub(crate) fn field_string_redundant(checker: &Checker, assign: &ast::StmtAssign
         return;
     }
 
-    let mut diagnostic = checker.report_diagnostic(FieldStringRedundant, assign.range());
+    let mut diagnostic = checker.report_diagnostic(AttributeStringRedundant, assign.range());
     diagnostic.try_set_fix(|| {
         let edit = if let Some(keyword) = string_keyword {
             remove_argument(

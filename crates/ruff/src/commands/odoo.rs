@@ -40,7 +40,7 @@ pub(crate) fn check_duplicate_inherited_model_extensions(
             .resolve(path)
             .linter
             .rules
-            .enabled(Rule::DuplicateInheritedModelExtension)
+            .enabled(Rule::ConsiderMergingClassesInherited)
         {
             continue;
         }
@@ -311,7 +311,7 @@ fn string_literals(expr: &Expr) -> Vec<String> {
 }
 
 fn create_diagnostic(primary: InheritLocation, model: &str, locations: &str) -> Diagnostic {
-    let rule = Rule::DuplicateInheritedModelExtension;
+    let rule = Rule::ConsiderMergingClassesInherited;
     let source_file =
         SourceFileBuilder::new(primary.path.to_string_lossy(), primary.source).finish();
     let mut diagnostic = Diagnostic::new(
@@ -343,7 +343,7 @@ fn location_suppressed(
     resolver: &Resolver<'_>,
     noqa: flags::Noqa,
 ) -> bool {
-    let rule = Rule::DuplicateInheritedModelExtension;
+    let rule = Rule::ConsiderMergingClassesInherited;
     let settings = resolver.resolve(&location.path);
     if !settings.linter.rules.enabled(rule)
         || ruff_linter::fs::ignores_from_path(&location.path, &settings.linter.per_file_ignores)

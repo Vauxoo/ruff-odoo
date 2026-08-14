@@ -4,6 +4,8 @@ use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -11,6 +13,10 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// ## Why is this bad?
 /// Since Odoo 18.0, `self.env._()` is preferred over the bare `_()`/`_lt()` functions.
+///
+/// The rule only applies from Odoo 18.0 on: `self.env._` does not exist in earlier versions,
+/// so on an older codebase the bare `_()` is the only correct call. Configure the targeted
+/// version with the `odoo-version` setting; without it the rule stays enabled.
 ///
 /// ## Example
 /// ```python
@@ -25,9 +31,9 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// ```
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
-pub(crate) struct DirectTranslationCall;
+pub(crate) struct PreferEnvTranslation;
 
-impl Violation for DirectTranslationCall {
+impl Violation for PreferEnvTranslation {
     const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
 
     #[derive_message_formats]
@@ -41,7 +47,10 @@ impl Violation for DirectTranslationCall {
 }
 
 /// ODOO024
-pub(crate) fn direct_translation_call(checker: &Checker, call: &ast::ExprCall) {
+pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
+    if !odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
+        return;
+    }
     let Expr::Name(ast::ExprName { id, .. }) = call.func.as_ref() else {
         return;
     };
@@ -49,7 +58,7 @@ pub(crate) fn direct_translation_call(checker: &Checker, call: &ast::ExprCall) {
         return;
     }
 
-    let mut diagnostic = checker.report_diagnostic(DirectTranslationCall, call.func.range());
+    let mut diagnostic = checker.report_diagnostic(PreferEnvTranslation, call.func.range());
 
     // Only offer the fix inside a method whose first parameter is `self` — outside of one,
     // `self.env` wouldn't resolve to anything.

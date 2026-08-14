@@ -75,9 +75,9 @@ impl Violation for TranslationContainsVariable {
 /// re-exported and re-translated.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2")]
-pub(crate) struct TranslationPositional;
+pub(crate) struct TranslationPositionalUsed;
 
-impl Violation for TranslationPositional {
+impl Violation for TranslationPositionalUsed {
     const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
 
     #[derive_message_formats]
@@ -264,11 +264,11 @@ pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
         }
     }
 
-    if checker.is_rule_enabled(Rule::TranslationPositional)
+    if checker.is_rule_enabled(Rule::TranslationPositionalUsed)
         && let Some(text) = translation_term_text(first_arg)
         && (count_positional_printf(text) >= 2 || count_positional_format(text) >= 2)
     {
-        let mut diagnostic = checker.report_diagnostic(TranslationPositional, call.range());
+        let mut diagnostic = checker.report_diagnostic(TranslationPositionalUsed, call.range());
         // Only the bare-string-literal shape (`_('...', arg1, arg2)`) has call-level
         // positional arguments to rewrite into keywords; the interpolate-inside-the-call
         // shapes (`_('...' % args)`, `_('...'.format(args))`) aren't fixable this way.
@@ -436,6 +436,41 @@ fn is_self_rooted(name: &str) -> bool {
     name == "self" || name == "cls" || name.starts_with("self_") || name.starts_with("cls_")
 }
 
+/// Drops the `self_`/`cls_` root from a derived name, so `self.partner_id.name` yields a
+/// `%(partner_id_name)s` placeholder rather than `%(self_partner_id_name)s`.
+///
+/// The receiver adds nothing to a translator-facing placeholder: every method of a model
+/// reads values off `self`, so the prefix is noise on every single name. A bare `self`/`cls`
+/// keeps its name — stripping it would leave nothing behind.
+fn strip_self_prefix(name: &str) -> &str {
+    name.strip_prefix("self_")
+        .or_else(|| name.strip_prefix("cls_"))
+        .unwrap_or(name)
+}
+
+/// Applies [`strip_self_prefix`] to every derived name, unless doing so would make two
+/// arguments that write different source text share a placeholder (`self.name` and `name` in
+/// the same call). Merging those would silently interpolate one value twice, so the whole
+/// call keeps the unstripped names instead.
+fn strip_self_prefixes(names: &[String], sources: &[&str]) -> Vec<String> {
+    let stripped: Vec<String> = names
+        .iter()
+        .map(|name| strip_self_prefix(name).to_string())
+        .collect();
+    let mut claimed: Vec<(&str, &str)> = Vec::with_capacity(stripped.len());
+    for (name, source) in stripped.iter().zip(sources) {
+        match claimed
+            .iter()
+            .find(|(claimed_name, _)| claimed_name == name)
+        {
+            Some((_, claimed_source)) if claimed_source == source => {}
+            Some(_) => return names.to_vec(),
+            None => claimed.push((name, source)),
+        }
+    }
+    stripped
+}
+
 /// Builds a fix rewriting `_("%s of %s", count, tier.name)` into
 /// `_("%(count)s of %(tier_name)s", count=count, tier_name=tier.name)`.
 ///
@@ -476,21 +511,24 @@ fn convert_to_named_placeholders(
     // can share a single keyword argument; distinct expressions colliding on a name (e.g.
     // `a.b` and `a_b`) can't be merged, so no fix is offered.
     let locator = checker.locator();
-    let mut names = Vec::with_capacity(args.len());
-    let mut keywords: Vec<(String, &str)> = Vec::with_capacity(args.len());
-    for arg in args {
-        let name = placeholder_name(arg)?;
+    let sources: Vec<&str> = args.iter().map(|arg| locator.slice(arg.range())).collect();
+    let derived: Vec<String> = args
+        .iter()
+        .map(placeholder_name)
+        .collect::<Option<Vec<_>>>()?;
+    let names = strip_self_prefixes(&derived, &sources);
+
+    let mut keywords: Vec<(&str, &str)> = Vec::with_capacity(args.len());
+    for (name, source) in names.iter().zip(&sources) {
         // `_lt` (`LazyTranslate`) consumes `_module`/`_default_lang` keywords itself.
         if matches!(name.as_str(), "_module" | "_default_lang") {
             return None;
         }
-        let source = locator.slice(arg.range());
-        match keywords.iter().find(|(existing, _)| *existing == name) {
-            Some((_, existing_source)) if *existing_source == source => {}
+        match keywords.iter().find(|(existing, _)| existing == name) {
+            Some((_, existing_source)) if existing_source == source => {}
             Some(_) => return None,
-            None => keywords.push((name.clone(), source)),
+            None => keywords.push((name, source)),
         }
-        names.push(name);
     }
 
     // Rebuild the term with `(name)` spliced into each positional conversion, keeping the

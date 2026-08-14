@@ -62,7 +62,7 @@ pub(crate) fn check_tokens(
         eradicate::rules::commented_out_code(context, locator, comment_ranges);
     }
 
-    if context.is_rule_enabled(Rule::VimComment) {
+    if context.is_rule_enabled(Rule::UseVimComment) {
         for range in comment_ranges {
             odoo::rules::use_vim_comment(context, locator, range);
         }
@@ -72,11 +72,9 @@ pub(crate) fn check_tokens(
         odoo::rules::header_comments(context, locator, comment_ranges);
     }
 
-    if context.is_rule_enabled(Rule::PylintDisableComment) {
-        for range in comment_ranges {
-            odoo::rules::pylint_disable_comment(context, locator, range);
-        }
-    }
+    // `pylint-disable-comment` also scans comments, but it needs the diagnostics every other
+    // rule produced in order to migrate a block-scoped pragma, so it runs from `check_path`
+    // once the rest of the run is done rather than here.
 
     if context.is_rule_enabled(Rule::UTF8EncodingDeclaration) {
         pyupgrade::rules::unnecessary_coding_comment(context, locator, comment_ranges);
