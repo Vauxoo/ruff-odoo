@@ -26,6 +26,21 @@
     "summary": "First line\n" "second line",
 }
 
+# Only the source layout is multi-line here: the concatenated value has no newline in it,
+# so there is nothing to collapse and the summary must be left untouched.
+{
+    "name": "Implicit Concatenation Across Lines",
+    "summary": "Add conditional mako template to any report "
+    "on models that inherits comment.template.",
+}
+
+# A backslash continuation is also purely a source-layout newline: the value stays one line.
+{
+    "name": "Backslash Continuation",
+    "summary": "Add conditional mako template to any report \
+on models that inherits comment.template.",
+}
+
 {
     "name": "CRM Activity Automation",
     "summary": """
