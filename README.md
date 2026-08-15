@@ -1,3 +1,10 @@
+> [!NOTE]
+> This is Vauxoo's `ruff-odoo` fork of Ruff. The published command is `ruff-odoo`, the PyPI package
+> is [`ruff-odoo`](https://pypi.org/project/ruff-odoo/), and releases use a four-component version.
+> See [README-odoo.md](README-odoo.md) for the fork's command name, installation, and version
+> scheme, and <https://vauxoo.github.io/ruff-odoo/> for the Odoo rules. Everything below is upstream
+> Ruff's README and describes the `ruff` command.
+
 <!-- Begin section: Overview -->
 
 # Ruff

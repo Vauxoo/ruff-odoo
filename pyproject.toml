@@ -13,7 +13,10 @@ version = "0.16.2.14"
 description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
 authors = [{ name = "Astral Software Inc.", email = "hey@astral.sh" }]
 maintainers = [{ name = "Vauxoo", email = "info@vauxoo.com" }]
-readme = "README.md"
+# The root `README.md` is upstream's and documents the `ruff` command, which
+# would send users of this package to the wrong binary; `README-odoo.md` covers
+# the fork's command name, installation, and version scheme instead.
+readme = "README-odoo.md"
 requires-python = ">=3.7"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -46,9 +49,9 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Vauxoo/ruff"
-Documentation = "https://docs.astral.sh/ruff/"
-Changelog = "https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md"
+Repository = "https://github.com/Vauxoo/ruff-odoo"
+Documentation = "https://vauxoo.github.io/ruff-odoo/"
+Changelog = "https://github.com/Vauxoo/ruff-odoo/releases"
 
 [tool.maturin]
 bindings = "bin"
