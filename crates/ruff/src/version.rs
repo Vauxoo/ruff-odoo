@@ -23,6 +23,19 @@ pub(crate) struct VersionInfo {
     commit_info: Option<CommitInfo>,
 }
 
+impl VersionInfo {
+    /// The release version on its own, without the git commit information that
+    /// [`Display`](fmt::Display) appends.
+    ///
+    /// `ruff --version` reports this, because tools that shell out to Ruff (for
+    /// example `ruff-lsp`) parse that output as a bare PEP 440 version and
+    /// choke on the trailing " (<commit> <date>)". The `version` subcommand
+    /// still reports the full string.
+    pub(crate) fn into_version(self) -> String {
+        self.version
+    }
+}
+
 impl fmt::Display for VersionInfo {
     /// Formatted version information: "<version>[+<commits>] (<commit> <date>)"
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
