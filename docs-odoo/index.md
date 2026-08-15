@@ -24,9 +24,15 @@ upstream:
 pip install ruff-odoo
 ```
 
-The binary is still called `ruff`, so this is a drop-in replacement — but for that same
-reason it must not be installed next to the upstream `ruff` package in the same
-environment.
+The command it installs is `ruff-odoo`, not `ruff`. It is the same CLI with the same
+subcommands and the same configuration, only under a name that cannot collide with an
+upstream `ruff` installation, so both can live in the same environment:
+
+```shell
+ruff-odoo check .
+```
+
+The Python module is `ruff_odoo`, so `python -m ruff_odoo check .` works too.
 
 With pre-commit, use the mirror repo, which installs prebuilt wheels instead of compiling
 from source:
@@ -34,7 +40,7 @@ from source:
 ```yaml
 repos:
   - repo: https://github.com/vauxoo/ruff-pre-commit
-    rev: v0.16.2.13
+    rev: 0.16.2.14
     hooks:
       - id: ruff-check
 ```
@@ -55,7 +61,7 @@ extend-select = ["ODOO", "OAPP"]
 Or, without a config file:
 
 ```shell
-ruff check --preview --select ODOO,OAPP .
+ruff-odoo check --preview --select ODOO,OAPP .
 ```
 
 Some rules only make sense against a whole Odoo module rather than a single file — the
@@ -65,6 +71,31 @@ files.
 
 A few rules are configurable (allowed licenses, allowed categories, required manifest
 keys, and so on) under `[tool.ruff.lint.odoo]`; see [settings](settings.md#lintodoo).
+
+## Versioning
+
+Releases use four components, `x.y.z.w`: `x.y.z` is the upstream Ruff release this fork is
+built on, and `w` counts the fork's own releases on top of it. So `0.16.2.4` is the
+fourth Vauxoo release of upstream Ruff `0.16.2`. When the fork moves to a newer
+upstream, `x.y.z` follows it and `w` starts counting again. Release tags are the bare
+version, with no `v` prefix — pin `rev:` accordingly.
+
+`--version` prints that version and nothing else, so tools that shell out to the binary and
+parse the output as a [PEP 440](https://peps.python.org/pep-0440/) version keep working:
+
+```console
+$ ruff-odoo --version
+ruff-odoo 0.16.2.14
+```
+
+The `version` subcommand is the detailed one, adding the number of commits since the
+release tag and the commit the binary was built from. Pass `--output-format json` for the
+same information as a machine-readable object:
+
+```console
+$ ruff-odoo version
+ruff-odoo 0.16.2.14+3 (b45cfcb38 2026-08-15)
+```
 
 ## Migrating from pylint-odoo
 

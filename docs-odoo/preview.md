@@ -15,7 +15,7 @@ preview = true
 or per invocation:
 
 ```shell
-ruff check --preview --select ODOO,OAPP .
+ruff-odoo check --preview --select ODOO,OAPP .
 ```
 
 While a rule is in preview, its diagnostic message, the exact code it flags, and the fix
