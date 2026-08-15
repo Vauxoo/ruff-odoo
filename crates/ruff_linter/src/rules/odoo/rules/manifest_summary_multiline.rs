@@ -32,6 +32,16 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// }
 /// ```
 ///
+/// Only a newline in the summary's *value* is reported. A summary whose source is spread over
+/// several lines — an implicit concatenation, or a backslash continuation — produces a
+/// single-line value, so it is left untouched:
+/// ```python
+/// {
+///     "summary": "Does "
+///     "things.",
+/// }
+/// ```
+///
 /// When the collapsed summary would exceed the configured line length, the fix wraps it
 /// into a parenthesized implicit string concatenation instead:
 /// ```python
