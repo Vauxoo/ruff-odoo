@@ -6,7 +6,7 @@
 # the root `pyproject.toml`) points at this crate; the published version is the
 # four-component one from `pyproject.toml`, not this Cargo version.
 name = "ruff-odoo"
-version = "0.16.2"
+version = "0.16.3"
 description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
 authors = { workspace = true }
 edition = { workspace = true }
