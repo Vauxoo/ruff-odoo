@@ -26,7 +26,7 @@ use crate::checkers::ast::Checker;
 /// groupby(records, key=lambda r: r.partner_id)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct BadBuiltinGroupby;
 
 impl Violation for BadBuiltinGroupby {

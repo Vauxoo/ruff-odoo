@@ -21,7 +21,7 @@ use crate::checkers::ast::Checker;
 /// from odoo.exceptions import UserError
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct OdooExceptionWarning;
 
 impl Violation for OdooExceptionWarning {

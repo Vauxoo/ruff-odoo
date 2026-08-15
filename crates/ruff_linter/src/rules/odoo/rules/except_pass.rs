@@ -30,7 +30,7 @@ use crate::checkers::ast::Checker;
 ///     _logger.exception("do_something failed")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct ExceptPass;
 
 impl Violation for ExceptPass {

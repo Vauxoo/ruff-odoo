@@ -28,7 +28,7 @@ use crate::rules::odoo::settings::OdooVersion;
 /// def _compute_display_name(self): ...
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DeprecatedNameGet;
 
 impl Violation for DeprecatedNameGet {
@@ -51,7 +51,7 @@ impl Violation for DeprecatedNameGet {
 /// def fields_view_get(self, view_id=None, view_type="form", **kwargs): ...
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DeprecatedOdooModelMethod {
     name: String,
 }

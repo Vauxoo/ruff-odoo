@@ -33,7 +33,7 @@ use crate::checkers::ast::Checker;
 ///         return super().write(vals)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct MethodRequiredSuper {
     name: String,
 }

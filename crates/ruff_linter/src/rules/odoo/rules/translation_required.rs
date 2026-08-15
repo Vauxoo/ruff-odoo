@@ -39,7 +39,7 @@ use crate::rules::odoo::settings::OdooVersion;
 ///
 /// Files under a `tests/` directory are ignored, matching pylint-odoo.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct TranslationRequired {
     /// The called function the literal was passed to, e.g. `message_post` or `UserError`.
     func: String,

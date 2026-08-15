@@ -37,9 +37,9 @@ use crate::generate_rules_table::{generate_legend, generate_linter_section};
 const LINTERS: [Linter; 2] = [Linter::Odoo, Linter::OdooApp];
 
 /// The Odoo rules live here, not in `astral-sh/ruff`.
-const FORK: Repository = Repository {
+pub(crate) const FORK: Repository = Repository {
     slug: "Vauxoo/ruff-odoo",
-    release_tags: false,
+    release_tags: true,
 };
 
 /// The site's source directory, relative to the repository root.

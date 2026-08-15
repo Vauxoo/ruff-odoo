@@ -26,7 +26,7 @@ use crate::rules::odoo::helpers::is_odoo_model_class;
 /// partners = self.env["res.partner"].search([], limit=100)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct NoSearchAll {
     method: String,
 }

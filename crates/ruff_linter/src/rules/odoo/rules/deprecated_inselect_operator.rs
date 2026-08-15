@@ -24,7 +24,7 @@ use crate::rules::odoo::settings::OdooVersion;
 /// domain = [("id", "in", SQL(...))]
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DeprecatedInselectOperator {
     operator: String,
 }

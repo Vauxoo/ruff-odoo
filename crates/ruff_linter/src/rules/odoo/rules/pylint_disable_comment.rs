@@ -57,7 +57,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// Messages without a Ruff equivalent are kept in a `# pylint: disable` comment
 /// next to the inserted `noqa`.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.3")]
 pub(crate) struct PylintDisableComment {
     codes: String,
 }

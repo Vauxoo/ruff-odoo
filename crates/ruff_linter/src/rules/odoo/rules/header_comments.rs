@@ -26,7 +26,7 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// import os
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct HeaderComments;
 
 impl AlwaysFixableViolation for HeaderComments {
