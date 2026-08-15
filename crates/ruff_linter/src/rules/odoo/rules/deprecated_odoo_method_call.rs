@@ -29,7 +29,7 @@ use crate::{Edit, Fix, FixAvailability};
 /// groups = self._read_group(domain, ["partner_id"], ["amount:sum"])
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.14")]
 pub(crate) struct DeprecatedOdooMethodCall {
     name: String,
     since: OdooVersion,

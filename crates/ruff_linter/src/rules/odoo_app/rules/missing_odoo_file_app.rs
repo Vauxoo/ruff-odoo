@@ -16,7 +16,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, 
 /// `static/description/index.html` as the app's store page. Without it the app is listed
 /// with no description page.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.10")]
 pub(crate) struct MissingOdooFileApp {
     path: String,
 }

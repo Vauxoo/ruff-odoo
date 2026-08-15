@@ -15,7 +15,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 /// The README is what's shown on the module's Apps page and is the primary source of
 /// documentation for the module.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct MissingReadme;
 
 impl Violation for MissingReadme {

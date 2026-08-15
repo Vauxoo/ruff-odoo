@@ -31,7 +31,7 @@ use crate::checkers::ast::Checker;
 ///     _name = "sale.import"
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct NoWizardInModels;
 
 impl Violation for NoWizardInModels {

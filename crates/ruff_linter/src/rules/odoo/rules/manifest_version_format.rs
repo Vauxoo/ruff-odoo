@@ -38,7 +38,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 /// When `odoo-version` is configured, the first two parts must match it exactly. Without it
 /// the series is not known, so any five numeric parts are accepted.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.13")]
 pub(crate) struct ManifestVersionFormat {
     version: String,
     expected: String,

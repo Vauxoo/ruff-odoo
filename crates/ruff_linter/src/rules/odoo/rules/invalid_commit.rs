@@ -19,7 +19,7 @@ use crate::rules::odoo::helpers::dotted_name;
 /// self.env.cr.commit()
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InvalidCommit;
 
 impl Violation for InvalidCommit {

@@ -29,7 +29,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// _("Hello %s") % name
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct TranslationContainsVariable;
 
 impl Violation for TranslationContainsVariable {
@@ -74,7 +74,7 @@ impl Violation for TranslationContainsVariable {
 /// translations keyed on the old term (in `.po` files) no longer match and must be
 /// re-exported and re-translated.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct TranslationPositionalUsed;
 
 impl Violation for TranslationPositionalUsed {
@@ -110,7 +110,7 @@ impl Violation for TranslationPositionalUsed {
 /// _("Hello %s") % name
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct TranslationInjection;
 
 impl Violation for TranslationInjection {

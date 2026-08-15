@@ -28,7 +28,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DevelopmentStatusAllowed {
     status: String,
 }

@@ -27,7 +27,7 @@ use crate::rules::odoo::helpers::is_manifest_file;
 /// from . import models
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct OdooAddonsRelativeImport {
     module: String,
 }

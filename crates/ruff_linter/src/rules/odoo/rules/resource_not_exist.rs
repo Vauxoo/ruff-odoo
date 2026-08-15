@@ -34,7 +34,7 @@ use crate::rules::odoo::helpers::{MANIFEST_DATA_KEYS, is_manifest_root_dict, man
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct ResourceNotExist {
     key: String,
     resource: String,

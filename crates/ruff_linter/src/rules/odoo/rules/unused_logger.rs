@@ -25,7 +25,7 @@ use crate::{AlwaysFixableViolation, Fix};
 /// import logging
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct UnusedLogger;
 
 impl AlwaysFixableViolation for UnusedLogger {

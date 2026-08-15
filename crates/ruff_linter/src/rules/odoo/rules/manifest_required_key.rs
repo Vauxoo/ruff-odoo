@@ -30,7 +30,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct ManifestRequiredKey {
     key: &'static str,
 }

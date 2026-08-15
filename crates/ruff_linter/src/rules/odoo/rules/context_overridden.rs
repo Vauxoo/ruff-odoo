@@ -24,7 +24,7 @@ use crate::checkers::ast::Checker;
 /// self.with_context(**ctx)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct ContextOverridden {
     arg: String,
 }
