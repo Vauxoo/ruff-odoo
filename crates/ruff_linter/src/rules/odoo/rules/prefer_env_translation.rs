@@ -30,7 +30,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///     return self.env._("Hello")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct PreferEnvTranslation;
 
 impl Violation for PreferEnvTranslation {

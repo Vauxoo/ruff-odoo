@@ -30,7 +30,7 @@ use crate::checkers::ast::Checker;
 /// ## Options
 /// - `lint.odoo.prohibited-override-methods`
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.8")]
 pub(crate) struct ProhibitedMethodOverride {
     name: String,
 }

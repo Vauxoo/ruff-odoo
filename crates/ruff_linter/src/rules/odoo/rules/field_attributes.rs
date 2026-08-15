@@ -28,7 +28,7 @@ use crate::rules::odoo::helpers::{class_defines_method, odoo_field_type};
 /// total = fields.Float(compute="_compute_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct MethodCompute;
 
 impl Violation for MethodCompute {
@@ -55,7 +55,7 @@ impl Violation for MethodCompute {
 /// total = fields.Float(search="_search_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct MethodSearch;
 
 impl Violation for MethodSearch {
@@ -82,7 +82,7 @@ impl Violation for MethodSearch {
 /// total = fields.Float(inverse="_inverse_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct MethodInverse;
 
 impl Violation for MethodInverse {
@@ -110,7 +110,7 @@ impl Violation for MethodInverse {
 /// amount = fields.Float(digits=get_precision("Account"))
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct RenamedFieldParameter {
     old: String,
     new: String,
@@ -142,7 +142,7 @@ impl Violation for RenamedFieldParameter {
 /// name = fields.Char(string="Name")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct TranslationField;
 
 impl Violation for TranslationField {
@@ -171,7 +171,7 @@ impl Violation for TranslationField {
 /// total = fields.Float(compute="_compute_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InheritableMethodString {
     name: String,
 }
@@ -206,7 +206,7 @@ impl Violation for InheritableMethodString {
 /// )
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InheritableMethodLambda {
     argument: String,
     name: String,

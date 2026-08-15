@@ -136,8 +136,13 @@ fn parse_version(meta: &ParseNestedMeta) -> syn::Result<LitStr> {
     /// Match either a semantic version with an optional `v` prefix for versions before 0.5.0
     /// (`v0.2.3`, `0.12.34`) or the special `NEXT_RUFF_VERSION` placeholder that is updated by
     /// rooster in releases.
-    static VERSION: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"^(v0.[0-4].\d+|\d+\.\d+\.\d+|NEXT_RUFF_VERSION)$").unwrap());
+    ///
+    /// Vauxoo fork: the fourth component is optional so the `ODOO`/`OAPP` rules can record the
+    /// fork release that shipped them (`0.16.2.9`), which is the version users actually install.
+    /// Upstream rules keep the three-component form.
+    static VERSION: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"^(v0.[0-4].\d+|\d+\.\d+\.\d+(\.\d+)?|NEXT_RUFF_VERSION)$").unwrap()
+    });
 
     let lit: LitStr = meta.value()?.parse()?;
     let value = lit.value();

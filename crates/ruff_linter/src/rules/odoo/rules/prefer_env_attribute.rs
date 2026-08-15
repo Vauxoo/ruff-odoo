@@ -29,7 +29,7 @@ use crate::{Edit, Fix, FixAvailability};
 /// lang = self.env.context.get("lang")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.14")]
 pub(crate) struct PreferEnvAttribute {
     receiver: String,
     deprecated: String,

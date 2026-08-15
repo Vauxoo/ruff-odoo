@@ -38,7 +38,7 @@ use crate::{AlwaysFixableViolation, Fix};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct ManifestDataDuplicated {
     file: String,
     key: String,

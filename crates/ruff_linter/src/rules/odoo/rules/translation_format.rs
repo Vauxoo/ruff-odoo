@@ -43,7 +43,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// introduced in Odoo 14.0, and because a function named `_` that is not Odoo's
 /// translation function (e.g. `gettext.gettext`) does not accept the extra arguments.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationNotLazy;
 
 impl Violation for TranslationNotLazy {
@@ -81,7 +81,7 @@ impl Violation for TranslationNotLazy {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationFormatInterpolation;
 
 impl Violation for TranslationFormatInterpolation {
@@ -110,7 +110,7 @@ impl Violation for TranslationFormatInterpolation {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationFstringInterpolation;
 
 impl Violation for TranslationFstringInterpolation {
@@ -138,7 +138,7 @@ impl Violation for TranslationFstringInterpolation {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationUnsupportedFormat {
     unsupported_char: char,
     index: usize,
@@ -176,7 +176,7 @@ impl Violation for TranslationUnsupportedFormat {
 /// _("Progress: %s %%", progress)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationFormatTruncated;
 
 impl Violation for TranslationFormatTruncated {
@@ -204,7 +204,7 @@ impl Violation for TranslationFormatTruncated {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationTooManyArgs;
 
 impl Violation for TranslationTooManyArgs {
@@ -232,7 +232,7 @@ impl Violation for TranslationTooManyArgs {
 /// _("%s of %s", count, total)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationTooFewArgs;
 
 impl Violation for TranslationTooFewArgs {

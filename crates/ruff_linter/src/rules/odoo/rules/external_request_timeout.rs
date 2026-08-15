@@ -30,7 +30,7 @@ use crate::checkers::ast::Checker;
 /// `external-request-timeout` default list — enable one of the two, not both, to avoid
 /// duplicated reports on `requests` calls.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct ExternalRequestTimeout {
     method: String,
 }

@@ -37,12 +37,9 @@ pub(crate) struct Repository {
     /// The `owner/name` slug, e.g. `astral-sh/ruff`.
     pub(crate) slug: &'static str,
 
-    /// Whether the repository publishes a release tag per Ruff version.
-    ///
-    /// Upstream does, so the version a rule was introduced in links straight to its
-    /// tag. The fork versions independently (`0.16.2.13` while its rules record
-    /// `since = "0.16.2"`), so a `releases/tag/{since}` URL there would 404 and we
-    /// link the release list instead.
+    /// Whether the repository publishes a release tag matching the version a rule
+    /// records in its `since` metadata, so that version can link straight to its tag
+    /// rather than to the repository's release list.
     pub(crate) release_tags: bool,
 }
 
@@ -53,7 +50,15 @@ pub(crate) const UPSTREAM: Repository = Repository {
 
 pub(crate) fn main(args: &Args) -> Result<()> {
     for rule in Rule::iter() {
-        if let Some(output) = generate_rule_doc(rule, UPSTREAM) {
+        // The `ODOO`/`OAPP` rules appear on the upstream-shaped site too, but they
+        // belong to the fork, so their links have to point there — an upstream
+        // release tag for a four-component fork version does not exist.
+        let repository = match rule.noqa_code().prefix() {
+            "ODOO" | "OAPP" => crate::generate_odoo_docs::FORK,
+            _ => UPSTREAM,
+        };
+
+        if let Some(output) = generate_rule_doc(rule, repository) {
             let filename = PathBuf::from(ROOT_DIR)
                 .join("docs")
                 .join("rules")

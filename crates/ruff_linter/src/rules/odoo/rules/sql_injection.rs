@@ -34,7 +34,7 @@ use crate::rules::odoo::helpers::dotted_name;
 /// self.env.cr.execute("SELECT id FROM res_partner WHERE name = %s", (name,))
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2")]
+#[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct SqlInjection;
 
 impl Violation for SqlInjection {
