@@ -4,7 +4,7 @@
 use itertools::Itertools;
 use std::fmt::Write;
 
-use ruff_options_metadata::{OptionField, OptionSet, OptionsMetadata, Visit};
+use ruff_options_metadata::{OptionEntry, OptionField, OptionSet, OptionsMetadata, Visit};
 use ruff_python_trivia::textwrap;
 use ruff_workspace::options::Options;
 
@@ -18,6 +18,44 @@ pub(crate) fn generate() -> String {
     );
 
     output
+}
+
+/// Render the documentation for a single group of options, e.g. `lint.odoo`, exactly as
+/// it appears within the full settings page — same headings, same anchors.
+///
+/// The fork's `ODOO`/`OAPP` docs site documents only the settings its own rules read;
+/// every other Ruff option stays documented upstream. Returns `None` if `path` doesn't
+/// name a group.
+pub(crate) fn generate_group(path: &str) -> Option<String> {
+    let mut parents = Vec::new();
+    let mut group = None;
+    let mut prefix = String::new();
+
+    let mut segments = path.split('.').peekable();
+    while let Some(segment) = segments.next() {
+        if !prefix.is_empty() {
+            prefix.push('.');
+        }
+        prefix.push_str(segment);
+
+        let OptionEntry::Set(set) = Options::metadata().find(&prefix)? else {
+            return None;
+        };
+        let set = Set::Named {
+            name: segment.to_owned(),
+            set,
+        };
+
+        if segments.peek().is_some() {
+            parents.push(set);
+        } else {
+            group = Some(set);
+        }
+    }
+
+    let mut output = String::new();
+    generate_set(&mut output, group?, &mut parents);
+    Some(output)
 }
 
 fn generate_set(output: &mut String, set: Set, parents: &mut Vec<Set>) {

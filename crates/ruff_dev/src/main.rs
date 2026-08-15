@@ -16,6 +16,7 @@ mod generate_cli_help;
 mod generate_default_rules;
 mod generate_docs;
 mod generate_json_schema;
+mod generate_odoo_docs;
 mod generate_options;
 mod generate_rules_table;
 mod generate_ty_cli_reference;
@@ -63,6 +64,8 @@ enum Command {
     GenerateCliHelp(generate_cli_help::Args),
     /// Generate Markdown docs.
     GenerateDocs(generate_docs::Args),
+    /// Generate the Markdown sources for the `ODOO`/`OAPP` documentation site.
+    GenerateOdooDocs(generate_odoo_docs::Args),
     /// Print the AST for a given Python file.
     PrintAST(print_ast::Args),
     /// Print the LibCST CST for a given Python file.
@@ -108,6 +111,7 @@ fn main() -> Result<ExitCode> {
         Command::GenerateTyEnvVarsReference(args) => generate_ty_env_vars_reference::main(&args)?,
         Command::GenerateCliHelp(args) => generate_cli_help::main(&args)?,
         Command::GenerateDocs(args) => generate_docs::main(&args)?,
+        Command::GenerateOdooDocs(args) => generate_odoo_docs::main(&args)?,
         Command::PrintAST(args) => print_ast::main(&args)?,
         Command::PrintCST(args) => print_cst::main(&args)?,
         Command::PrintTokens(args) => print_tokens::main(&args)?,

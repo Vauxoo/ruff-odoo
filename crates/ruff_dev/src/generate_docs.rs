@@ -25,121 +25,35 @@ pub(crate) struct Args {
     pub(crate) dry_run: bool,
 }
 
+/// The GitHub repository that a generated rule page links back to.
+///
+/// Rule pages carry three links that are repository-specific: the release the rule
+/// was introduced in, a search for related issues, and the rule's source file. This
+/// fork publishes a second docs site covering only its own `ODOO`/`OAPP` rules,
+/// whose sources and issues live in `Vauxoo/ruff-odoo`; pointing those links at
+/// `astral-sh/ruff` would send readers to files and issues that don't exist there.
+#[derive(Copy, Clone)]
+pub(crate) struct Repository {
+    /// The `owner/name` slug, e.g. `astral-sh/ruff`.
+    pub(crate) slug: &'static str,
+
+    /// Whether the repository publishes a release tag per Ruff version.
+    ///
+    /// Upstream does, so the version a rule was introduced in links straight to its
+    /// tag. The fork versions independently (`0.16.2.13` while its rules record
+    /// `since = "0.16.2"`), so a `releases/tag/{since}` URL there would 404 and we
+    /// link the release list instead.
+    pub(crate) release_tags: bool,
+}
+
+pub(crate) const UPSTREAM: Repository = Repository {
+    slug: "astral-sh/ruff",
+    release_tags: true,
+};
+
 pub(crate) fn main(args: &Args) -> Result<()> {
     for rule in Rule::iter() {
-        if let Some(explanation) = rule.explanation() {
-            let mut output = String::new();
-
-            let _ = writeln!(&mut output, "# {} ({})", rule.name(), rule.noqa_code());
-
-            let status_text = match rule.group() {
-                RuleGroup::Stable { since } => {
-                    format!(
-                        r#"Added in <a href="https://github.com/astral-sh/ruff/releases/tag/{since}">{since}</a>"#
-                    )
-                }
-                RuleGroup::Preview { since } => {
-                    format!(
-                        r#"Preview (since <a href="https://github.com/astral-sh/ruff/releases/tag/{since}">{since}</a>)"#
-                    )
-                }
-                RuleGroup::Deprecated { since } => {
-                    format!(
-                        r#"Deprecated (since <a href="https://github.com/astral-sh/ruff/releases/tag/{since}">{since}</a>)"#
-                    )
-                }
-                RuleGroup::Removed { since } => {
-                    format!(
-                        r#"Removed (since <a href="https://github.com/astral-sh/ruff/releases/tag/{since}">{since}</a>)"#
-                    )
-                }
-            };
-
-            let _ = writeln!(
-                &mut output,
-                r#"<small>
-{status_text} ·
-<a href="https://github.com/astral-sh/ruff/issues?q=sort%3Aupdated-desc%20is%3Aissue%20is%3Aopen%20(%27{encoded_name}%27%20OR%20{rule_code})" target="_blank">Related issues</a> ·
-<a href="https://github.com/astral-sh/ruff/blob/main/{file}#L{line}" target="_blank">View source</a>
-</small>
-
-"#,
-                encoded_name =
-                    url::form_urlencoded::byte_serialize(rule.name().as_str().as_bytes())
-                        .collect::<String>(),
-                rule_code = rule.noqa_code(),
-                file =
-                    url::form_urlencoded::byte_serialize(rule.file().replace('\\', "/").as_bytes())
-                        .collect::<String>(),
-                line = rule.line(),
-            );
-            let (linter, _) = Linter::parse_code(&rule.noqa_code().to_string()).unwrap();
-            if linter.url().is_some() {
-                let common_prefix: String = match linter.common_prefix() {
-                    "" => linter
-                        .upstream_categories()
-                        .unwrap()
-                        .iter()
-                        .map(|c| c.prefix)
-                        .join("-"),
-                    prefix => prefix.to_string(),
-                };
-                let anchor = format!(
-                    "{}-{}",
-                    linter.name().to_lowercase(),
-                    common_prefix.to_lowercase()
-                );
-
-                let _ = write!(
-                    output,
-                    "Derived from the **[{}](../rules.md#{})** linter.",
-                    linter.name(),
-                    anchor,
-                );
-                output.push('\n');
-                output.push('\n');
-            }
-
-            if rule.is_deprecated() {
-                output.push_str(
-                    r"**Warning: This rule is deprecated and will be removed in a future release.**",
-                );
-                output.push('\n');
-                output.push('\n');
-            }
-
-            if rule.is_removed() {
-                output.push_str(
-                    r"**Warning: This rule has been removed and its documentation is only available for historical reasons.**",
-                );
-                output.push('\n');
-                output.push('\n');
-            }
-
-            let fix_availability = rule.fixable();
-            if matches!(
-                fix_availability,
-                FixAvailability::Always | FixAvailability::Sometimes
-            ) {
-                output.push_str(&fix_availability.to_string());
-                output.push('\n');
-                output.push('\n');
-            }
-
-            if rule.is_preview() {
-                output.push_str(
-                    r"This rule is unstable and in [preview](../preview.md). The `--preview` flag is required for use.",
-                );
-                output.push('\n');
-                output.push('\n');
-            }
-
-            process_documentation(
-                explanation.trim(),
-                &mut output,
-                &rule.noqa_code().to_string(),
-            );
-
+        if let Some(output) = generate_rule_doc(rule, UPSTREAM) {
             let filename = PathBuf::from(ROOT_DIR)
                 .join("docs")
                 .join("rules")
@@ -155,6 +69,123 @@ pub(crate) fn main(args: &Args) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Render the Markdown page for `rule`, or `None` if the rule has no documentation.
+///
+/// The page is written for a docs directory laid out like `docs/`: the links it emits
+/// assume sibling `rules.md`, `preview.md` and `settings.md` pages one level up from
+/// the rule page itself.
+pub(crate) fn generate_rule_doc(rule: Rule, repository: Repository) -> Option<String> {
+    let explanation = rule.explanation()?;
+    let mut output = String::new();
+
+    let _ = writeln!(&mut output, "# {} ({})", rule.name(), rule.noqa_code());
+
+    let group = rule.group();
+    let since = match group {
+        RuleGroup::Stable { since }
+        | RuleGroup::Preview { since }
+        | RuleGroup::Deprecated { since }
+        | RuleGroup::Removed { since } => since,
+    };
+    let slug = repository.slug;
+    let version_link = if repository.release_tags {
+        format!(r#"<a href="https://github.com/{slug}/releases/tag/{since}">{since}</a>"#)
+    } else {
+        format!(r#"<a href="https://github.com/{slug}/releases">{since}</a>"#)
+    };
+    let status_text = match group {
+        RuleGroup::Stable { .. } => format!("Added in {version_link}"),
+        RuleGroup::Preview { .. } => format!("Preview (since {version_link})"),
+        RuleGroup::Deprecated { .. } => format!("Deprecated (since {version_link})"),
+        RuleGroup::Removed { .. } => format!("Removed (since {version_link})"),
+    };
+
+    let _ = writeln!(
+        &mut output,
+        r#"<small>
+{status_text} ·
+<a href="https://github.com/{slug}/issues?q=sort%3Aupdated-desc%20is%3Aissue%20is%3Aopen%20(%27{encoded_name}%27%20OR%20{rule_code})" target="_blank">Related issues</a> ·
+<a href="https://github.com/{slug}/blob/main/{file}#L{line}" target="_blank">View source</a>
+</small>
+
+"#,
+        encoded_name = url::form_urlencoded::byte_serialize(rule.name().as_str().as_bytes())
+            .collect::<String>(),
+        rule_code = rule.noqa_code(),
+        file = url::form_urlencoded::byte_serialize(rule.file().replace('\\', "/").as_bytes())
+            .collect::<String>(),
+        line = rule.line(),
+    );
+    let (linter, _) = Linter::parse_code(&rule.noqa_code().to_string()).unwrap();
+    if linter.url().is_some() {
+        let common_prefix: String = match linter.common_prefix() {
+            "" => linter
+                .upstream_categories()
+                .unwrap()
+                .iter()
+                .map(|c| c.prefix)
+                .join("-"),
+            prefix => prefix.to_string(),
+        };
+        let anchor = format!(
+            "{}-{}",
+            linter.name().to_lowercase(),
+            common_prefix.to_lowercase()
+        );
+
+        let _ = write!(
+            output,
+            "Derived from the **[{}](../rules.md#{})** linter.",
+            linter.name(),
+            anchor,
+        );
+        output.push('\n');
+        output.push('\n');
+    }
+
+    if rule.is_deprecated() {
+        output.push_str(
+            r"**Warning: This rule is deprecated and will be removed in a future release.**",
+        );
+        output.push('\n');
+        output.push('\n');
+    }
+
+    if rule.is_removed() {
+        output.push_str(
+            r"**Warning: This rule has been removed and its documentation is only available for historical reasons.**",
+        );
+        output.push('\n');
+        output.push('\n');
+    }
+
+    let fix_availability = rule.fixable();
+    if matches!(
+        fix_availability,
+        FixAvailability::Always | FixAvailability::Sometimes
+    ) {
+        output.push_str(&fix_availability.to_string());
+        output.push('\n');
+        output.push('\n');
+    }
+
+    if rule.is_preview() {
+        output.push_str(
+            r"This rule is unstable and in [preview](../preview.md). The `--preview` flag is required for use.",
+        );
+        output.push('\n');
+        output.push('\n');
+    }
+
+    process_documentation(
+        explanation.trim(),
+        &mut output,
+        &rule.noqa_code().to_string(),
+    );
+
+    Some(output)
 }
 
 fn process_documentation(documentation: &str, out: &mut String, rule_name: &str) {

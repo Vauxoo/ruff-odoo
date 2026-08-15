@@ -103,130 +103,144 @@ fn generate_table(table_out: &mut String, rules: impl IntoIterator<Item = Rule>,
     table_out.push('\n');
 }
 
-pub(crate) fn generate() -> String {
-    // Generate the table string.
-    let mut table_out = String::new();
-
+/// Write the legend explaining the status and fixability icons used in the tables.
+///
+/// `preview_link` is the link target for the word "preview"; it varies because the
+/// page explaining preview mode is not in the same place in every docs site this
+/// table is rendered into.
+pub(crate) fn generate_legend(table_out: &mut String, preview_link: &str) {
     table_out.push_str("### Legend");
     table_out.push('\n');
 
     let _ = write!(
-        &mut table_out,
-        "{SPACER}{PREVIEW_SYMBOL}{SPACER} The rule is unstable and is in [\"preview\"](faq.md#what-is-preview)."
+        table_out,
+        "{SPACER}{PREVIEW_SYMBOL}{SPACER} The rule is unstable and is in [\"preview\"]({preview_link})."
     );
     table_out.push_str("<br />");
 
     let _ = write!(
-        &mut table_out,
+        table_out,
         "{SPACER}{WARNING_SYMBOL}{SPACER} The rule has been deprecated and will be removed in a future release."
     );
     table_out.push_str("<br />");
 
     let _ = write!(
-        &mut table_out,
+        table_out,
         "{SPACER}{REMOVED_SYMBOL}{SPACER} The rule has been removed only the documentation is available."
     );
     table_out.push_str("<br />");
 
     let _ = write!(
-        &mut table_out,
+        table_out,
         "{SPACER}{FIX_SYMBOL}{SPACER} The rule is automatically fixable by the `--fix` command-line option."
     );
     table_out.push_str("\n\n");
     table_out.push_str("All rules not marked as preview, deprecated or removed are stable.");
     table_out.push('\n');
+}
 
-    for linter in Linter::iter() {
-        let codes_csv: String = match linter.common_prefix() {
-            "" => linter
-                .upstream_categories()
-                .unwrap()
-                .iter()
-                .map(|c| c.prefix)
-                .join(", "),
-            prefix => prefix.to_string(),
-        };
-        let _ = write!(&mut table_out, "### {} ({codes_csv})", linter.name());
+/// Write the `### <linter>` heading for `linter`, along with its rule table(s).
+pub(crate) fn generate_linter_section(table_out: &mut String, linter: &Linter) {
+    let codes_csv: String = match linter.common_prefix() {
+        "" => linter
+            .upstream_categories()
+            .unwrap()
+            .iter()
+            .map(|c| c.prefix)
+            .join(", "),
+        prefix => prefix.to_string(),
+    };
+    let _ = write!(table_out, "### {} ({codes_csv})", linter.name());
+    table_out.push('\n');
+    table_out.push('\n');
+
+    if let Some(url) = linter.url() {
+        let host = url
+            .trim_start_matches("https://")
+            .split('/')
+            .next()
+            .unwrap();
+        let _ = write!(
+            table_out,
+            "For more, see [{}]({}) on {}.",
+            linter.name(),
+            url,
+            match host {
+                "pypi.org" => "PyPI",
+                "github.com" => "GitHub",
+                host => panic!(
+                    "unexpected host in URL of {}, expected pypi.org or github.com but found \
+                     {host}",
+                    linter.name()
+                ),
+            }
+        );
         table_out.push('\n');
         table_out.push('\n');
+    }
 
-        if let Some(url) = linter.url() {
-            let host = url
-                .trim_start_matches("https://")
-                .split('/')
-                .next()
-                .unwrap();
-            let _ = write!(
-                table_out,
-                "For more, see [{}]({}) on {}.",
-                linter.name(),
-                url,
-                match host {
-                    "pypi.org" => "PyPI",
-                    "github.com" => "GitHub",
-                    host => panic!(
-                        "unexpected host in URL of {}, expected pypi.org or github.com but found \
-                         {host}",
-                        linter.name()
-                    ),
-                }
-            );
-            table_out.push('\n');
-            table_out.push('\n');
-        }
+    // The linter names for Ruff and NumPy are suffixed with "-specific rules."
+    let linter_name = linter.name().trim_end_matches("-specific rules");
+    // Several linter names are capitalized, but their settings are not.
+    let linter_name_lower = linter_name.to_lowercase();
+    if Options::metadata().has(&format!("lint.{linter_name_lower}")) {
+        let _ = write!(
+            table_out,
+            "For related settings, see [{linter_name}](settings.md#lint{linter_name_lower}).",
+        );
+        table_out.push('\n');
+        table_out.push('\n');
+    }
 
-        // The linter names for Ruff and NumPy are suffixed with "-specific rules."
-        let linter_name = linter.name().trim_end_matches("-specific rules");
-        // Several linter names are capitalized, but their settings are not.
-        let linter_name_lower = linter_name.to_lowercase();
-        if Options::metadata().has(&format!("lint.{linter_name_lower}")) {
-            let _ = write!(
-                table_out,
-                "For related settings, see [{linter_name}](settings.md#lint{linter_name_lower}).",
-            );
-            table_out.push('\n');
-            table_out.push('\n');
-        }
+    let rules_by_upstream_category = linter
+        .all_rules()
+        .map(|rule| (rule.upstream_category(linter), rule))
+        .into_group_map();
 
-        let rules_by_upstream_category = linter
-            .all_rules()
-            .map(|rule| (rule.upstream_category(&linter), rule))
-            .into_group_map();
+    let mut rules_by_upstream_category: Vec<_> = rules_by_upstream_category.iter().collect();
 
-        let mut rules_by_upstream_category: Vec<_> = rules_by_upstream_category.iter().collect();
+    // Sort the upstream categories alphabetically by prefix.
+    rules_by_upstream_category.sort_by(|(a, _), (b, _)| {
+        a.as_ref()
+            .map(|category| category.prefix)
+            .unwrap_or_default()
+            .cmp(
+                b.as_ref()
+                    .map(|category| category.prefix)
+                    .unwrap_or_default(),
+            )
+    });
 
-        // Sort the upstream categories alphabetically by prefix.
-        rules_by_upstream_category.sort_by(|(a, _), (b, _)| {
-            a.as_ref()
-                .map(|category| category.prefix)
-                .unwrap_or_default()
-                .cmp(
-                    b.as_ref()
-                        .map(|category| category.prefix)
-                        .unwrap_or_default(),
-                )
-        });
-
-        if rules_by_upstream_category.len() > 1 {
-            for (opt, rules) in rules_by_upstream_category {
-                if opt.is_some() {
-                    let UpstreamCategoryAndPrefix { category, prefix } = opt.unwrap();
-                    match codes_csv.as_str() {
-                        "PL" => {
-                            let _ = write!(table_out, "#### {category} ({codes_csv}{prefix})");
-                        }
-                        _ => {
-                            let _ = write!(table_out, "#### {category} ({prefix})");
-                        }
+    if rules_by_upstream_category.len() > 1 {
+        for (opt, rules) in rules_by_upstream_category {
+            if opt.is_some() {
+                let UpstreamCategoryAndPrefix { category, prefix } = opt.unwrap();
+                match codes_csv.as_str() {
+                    "PL" => {
+                        let _ = write!(table_out, "#### {category} ({codes_csv}{prefix})");
+                    }
+                    _ => {
+                        let _ = write!(table_out, "#### {category} ({prefix})");
                     }
                 }
-                table_out.push('\n');
-                table_out.push('\n');
-                generate_table(&mut table_out, rules.clone(), &linter);
             }
-        } else {
-            generate_table(&mut table_out, linter.all_rules(), &linter);
+            table_out.push('\n');
+            table_out.push('\n');
+            generate_table(table_out, rules.clone(), linter);
         }
+    } else {
+        generate_table(table_out, linter.all_rules(), linter);
+    }
+}
+
+pub(crate) fn generate() -> String {
+    // Generate the table string.
+    let mut table_out = String::new();
+
+    generate_legend(&mut table_out, "faq.md#what-is-preview");
+
+    for linter in Linter::iter() {
+        generate_linter_section(&mut table_out, &linter);
     }
 
     table_out
