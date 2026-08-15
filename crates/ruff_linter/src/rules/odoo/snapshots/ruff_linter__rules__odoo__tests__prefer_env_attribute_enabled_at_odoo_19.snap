@@ -1,0 +1,109 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODOO067 [*] Use "self.env.cr" instead of "self._cr" (deprecated since 19.0)
+  --> ODOO067.py:9:9
+   |
+ 8 |     def action_do(self):
+ 9 |         self._cr.execute("SELECT 1")
+   |         ^^^^^^^^
+10 |         self._uid
+11 |         self._context.get("lang")
+   |
+help: Replace with `self.env.cr`
+   |
+8  |     def action_do(self):
+   -         self._cr.execute("SELECT 1")
+9  +         self.env.cr.execute("SELECT 1")
+10 |         self._uid
+   |
+
+ODOO067 [*] Use "self.env.uid" instead of "self._uid" (deprecated since 19.0)
+  --> ODOO067.py:10:9
+   |
+ 8 |     def action_do(self):
+ 9 |         self._cr.execute("SELECT 1")
+10 |         self._uid
+   |         ^^^^^^^^^
+11 |         self._context.get("lang")
+12 |         self.env.cr.execute("SELECT 2")
+   |
+help: Replace with `self.env.uid`
+   |
+9  |         self._cr.execute("SELECT 1")
+   -         self._uid
+10 +         self.env.uid
+11 |         self._context.get("lang")
+   |
+
+ODOO067 [*] Use "self.env.context" instead of "self._context" (deprecated since 19.0)
+  --> ODOO067.py:11:9
+   |
+ 9 |         self._cr.execute("SELECT 1")
+10 |         self._uid
+11 |         self._context.get("lang")
+   |         ^^^^^^^^^^^^^
+12 |         self.env.cr.execute("SELECT 2")
+13 |         self.env.uid
+   |
+help: Replace with `self.env.context`
+   |
+10 |         self._uid
+   -         self._context.get("lang")
+11 +         self.env.context.get("lang")
+12 |         self.env.cr.execute("SELECT 2")
+   |
+
+ODOO067 [*] Use "request.env.cr" instead of "request._cr" (deprecated since 19.0)
+  --> ODOO067.py:19:9
+   |
+17 | class MyController:
+18 |     def handle(self):
+19 |         request._cr.execute("SELECT 1")
+   |         ^^^^^^^^^^^
+20 |         request._uid
+21 |         request._context.get("lang")
+   |
+help: Replace with `request.env.cr`
+   |
+18 |     def handle(self):
+   -         request._cr.execute("SELECT 1")
+19 +         request.env.cr.execute("SELECT 1")
+20 |         request._uid
+   |
+
+ODOO067 [*] Use "request.env.uid" instead of "request._uid" (deprecated since 19.0)
+  --> ODOO067.py:20:9
+   |
+18 |     def handle(self):
+19 |         request._cr.execute("SELECT 1")
+20 |         request._uid
+   |         ^^^^^^^^^^^^
+21 |         request._context.get("lang")
+22 |         request.env.context.get("lang")
+   |
+help: Replace with `request.env.uid`
+   |
+19 |         request._cr.execute("SELECT 1")
+   -         request._uid
+20 +         request.env.uid
+21 |         request._context.get("lang")
+   |
+
+ODOO067 [*] Use "request.env.context" instead of "request._context" (deprecated since 19.0)
+  --> ODOO067.py:21:9
+   |
+19 |         request._cr.execute("SELECT 1")
+20 |         request._uid
+21 |         request._context.get("lang")
+   |         ^^^^^^^^^^^^^^^^
+22 |         request.env.context.get("lang")
+   |
+help: Replace with `request.env.context`
+   |
+20 |         request._uid
+   -         request._context.get("lang")
+21 |         request.env.context.get("lang")
+22 +         request.env.context.get("lang")
+23 |
+   |
