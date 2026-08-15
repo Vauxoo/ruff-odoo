@@ -192,6 +192,8 @@ venv.bak/
 
 # mkdocs documentation
 /site
+# mkdocs-odoo.yml
+/site-odoo
 
 # mypy
 .mypy_cache/

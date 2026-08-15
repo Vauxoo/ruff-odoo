@@ -3,8 +3,9 @@
 use anyhow::Result;
 
 use crate::{
-    generate_cli_help, generate_docs, generate_json_schema, generate_ty_cli_reference,
-    generate_ty_env_vars_reference, generate_ty_options, generate_ty_rules, generate_ty_schema,
+    generate_cli_help, generate_docs, generate_json_schema, generate_odoo_docs,
+    generate_ty_cli_reference, generate_ty_env_vars_reference, generate_ty_options,
+    generate_ty_rules, generate_ty_schema,
 };
 
 pub(crate) const REGENERATE_ALL_COMMAND: &str = "cargo dev generate-all";
@@ -39,6 +40,9 @@ pub(crate) fn main(args: &Args) -> Result<()> {
     generate_ty_schema::main(&generate_ty_schema::Args { mode: args.mode })?;
     generate_cli_help::main(&generate_cli_help::Args { mode: args.mode })?;
     generate_docs::main(&generate_docs::Args {
+        dry_run: args.mode.is_dry_run(),
+    })?;
+    generate_odoo_docs::main(&generate_odoo_docs::Args {
         dry_run: args.mode.is_dry_run(),
     })?;
     generate_ty_options::main(&generate_ty_options::Args { mode: args.mode })?;
