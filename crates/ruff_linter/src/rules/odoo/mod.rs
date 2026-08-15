@@ -66,7 +66,6 @@ mod tests {
     #[test_case(Rule::InheritableMethodString, Path::new("ODOO032.py"))]
     #[test_case(Rule::InheritableMethodLambda, Path::new("ODOO033.py"))]
     #[test_case(Rule::DeprecatedNameGet, Path::new("ODOO034.py"))]
-    #[test_case(Rule::DeprecatedSelfCr, Path::new("ODOO035.py"))]
     #[test_case(Rule::SuperMethodMismatch, Path::new("ODOO036.py"))]
     #[test_case(Rule::DeprecatedOdooModelMethod, Path::new("ODOO037.py"))]
     #[test_case(Rule::NoSearchAll, Path::new("ODOO038.py"))]
@@ -106,6 +105,8 @@ mod tests {
     #[test_case(Rule::TranslationTooManyArgs, Path::new("ODOO061.py"))]
     #[test_case(Rule::TranslationUnsupportedFormat, Path::new("ODOO062.py"))]
     #[test_case(Rule::ManifestVersionFormat, Path::new("ODOO064/__manifest__.py"))]
+    #[test_case(Rule::PreferEnvAttribute, Path::new("ODOO067.py"))]
+    #[test_case(Rule::DeprecatedOdooMethodCall, Path::new("ODOO068.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
         let diagnostics = test_path(
@@ -117,16 +118,16 @@ mod tests {
     }
 
     #[test]
-    fn deprecated_self_cr_suppressed_before_odoo_19() -> Result<()> {
-        let snapshot = "deprecated_self_cr_suppressed_before_odoo_19".to_string();
+    fn prefer_env_attribute_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "prefer_env_attribute_suppressed_before_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO035.py"),
+            Path::new("odoo/ODOO067.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
                     ..super::settings::Settings::default()
                 },
-                ..LinterSettings::for_rule(Rule::DeprecatedSelfCr)
+                ..LinterSettings::for_rule(Rule::PreferEnvAttribute)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
@@ -134,16 +135,36 @@ mod tests {
     }
 
     #[test]
-    fn deprecated_self_cr_enabled_at_odoo_19() -> Result<()> {
-        let snapshot = "deprecated_self_cr_enabled_at_odoo_19".to_string();
+    fn prefer_env_attribute_enabled_at_odoo_19() -> Result<()> {
+        let snapshot = "prefer_env_attribute_enabled_at_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO035.py"),
+            Path::new("odoo/ODOO067.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
                     ..super::settings::Settings::default()
                 },
-                ..LinterSettings::for_rule(Rule::DeprecatedSelfCr)
+                ..LinterSettings::for_rule(Rule::PreferEnvAttribute)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The deprecated-method table is keyed by the version that deprecated each method, so a
+    /// project on 18.0 sees the 18.0 entries and none of the 19.0 ones (`read_group`,
+    /// `check_field_access_rights`, `toggle_active`).
+    #[test]
+    fn deprecated_odoo_method_call_at_odoo_18() -> Result<()> {
+        let snapshot = "deprecated_odoo_method_call_at_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/ODOO068.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooMethodCall)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
