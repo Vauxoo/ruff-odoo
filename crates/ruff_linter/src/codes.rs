@@ -1048,7 +1048,6 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "032") => rules::odoo::rules::InheritableMethodString,
         (Odoo, "033") => rules::odoo::rules::InheritableMethodLambda,
         (Odoo, "034") => rules::odoo::rules::DeprecatedNameGet,
-        (Odoo, "035") => rules::odoo::rules::DeprecatedSelfCr,
         (Odoo, "036") => rules::odoo::rules::SuperMethodMismatch,
         (Odoo, "037") => rules::odoo::rules::DeprecatedOdooModelMethod,
         (Odoo, "038") => rules::odoo::rules::NoSearchAll,
@@ -1080,6 +1079,8 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "064") => rules::odoo::rules::ManifestVersionFormat,
         (Odoo, "065") => rules::odoo::rules::CategoryAllowed,
         (Odoo, "066") => rules::odoo::rules::MissingOdooFile,
+        (Odoo, "067") => rules::odoo::rules::PreferEnvAttribute,
+        (Odoo, "068") => rules::odoo::rules::DeprecatedOdooMethodCall,
         // odoo app: rules that only apply to paid apps (manifests with a "price" key),
         // published on the Odoo Apps store. Kept as a separate linter (rather than nested
         // under "ODOO") so that selecting "ODOO" doesn't also select these.

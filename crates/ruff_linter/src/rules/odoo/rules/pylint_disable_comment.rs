@@ -89,6 +89,9 @@ impl Violation for PylintDisableComment {
 const MESSAGE_ALIASES: &[(&str, &str)] = &[
     ("print-used", "print"),
     ("too-complex", "complex-structure"),
+    // `prefer-env-attribute` covers `self._uid` and `self._context` on top of pylint-odoo's
+    // `self._cr`, so it doesn't keep the original message name.
+    ("deprecated-self-cr", "prefer-env-attribute"),
     // pylint-odoo message codes, in ODOO_MSGS order.
     ("C8101", "manifest-required-author"),
     ("C8102", "manifest-required-key"),
@@ -148,7 +151,7 @@ const MESSAGE_ALIASES: &[(&str, &str)] = &[
     ("W8162", "manifest-external-assets"),
     ("W8163", "no-search-all"),
     ("W8164", "super-method-mismatch"),
-    ("W8165", "deprecated-self-cr"),
+    ("W8165", "prefer-env-attribute"),
     ("W8202", "use-vim-comment"),
     // pylint-odoo's `custom_logging` checker re-publishes pylint's `logging-*`
     // messages as `translation-*`, rewriting the first `12` of each code to `83`
