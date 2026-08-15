@@ -120,10 +120,11 @@ const STYLES: Styles = Styles::styled()
     about = "Ruff: An extremely fast Python linter and code formatter.",
     after_help = "For help with a specific command, see: `ruff help <command>`."
 )]
-// Vauxoo fork: use the full version from `version.rs` (four-component
-// `ruff-odoo` version plus commit info) instead of clap's default
-// `CARGO_PKG_VERSION`, so `--version` matches the `version` subcommand.
-#[command(version = crate::version::version().to_string())]
+// Vauxoo fork: report the four-component `ruff-odoo` version from `version.rs`
+// instead of clap's default `CARGO_PKG_VERSION`, which `Cargo.toml` limits to
+// three components. Like upstream, `--version` stays a bare version number with
+// no commit information appended; the `version` subcommand reports the rest.
+#[command(version = crate::version::version().into_version())]
 #[command(styles = STYLES)]
 pub struct Args {
     #[command(subcommand)]
