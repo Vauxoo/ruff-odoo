@@ -362,10 +362,24 @@ impl Rule {
         self.explanation().is_some().then(|| {
             format!(
                 "{}/rules/{name}",
-                env!("CARGO_PKG_HOMEPAGE"),
+                self.documentation_site(),
                 name = self.name()
             )
         })
+    }
+
+    /// The documentation site that hosts this rule's page.
+    ///
+    /// Vauxoo fork: the `ODOO`/`OAPP` rules exist only here, so their pages are published
+    /// to this fork's own site rather than to `docs.astral.sh/ruff`, which is what the
+    /// workspace `homepage` points at. Routing per rule — instead of repointing that
+    /// `homepage` — is what keeps the ~1000 upstream rules linking to the upstream site,
+    /// where their pages actually are.
+    fn documentation_site(self) -> &'static str {
+        match self.noqa_code().prefix() {
+            "ODOO" | "OAPP" => "https://vauxoo.github.io/ruff-odoo",
+            _ => env!("CARGO_PKG_HOMEPAGE"),
+        }
     }
 
     pub fn name(&self) -> LintName {
@@ -464,6 +478,28 @@ mod tests {
                 rule.explanation().is_some(),
                 "Rule {} is missing documentation",
                 rule.name()
+            );
+        }
+    }
+
+    /// Every rule links to the site that actually publishes its page: the fork's own
+    /// rules to the fork's site, everything else to upstream's. Getting this wrong is
+    /// invisible in normal use — the diagnostic still renders, the link just 404s — so
+    /// assert it for all rules rather than a sample.
+    #[test]
+    fn documentation_url_matches_the_publishing_site() {
+        for rule in Rule::iter() {
+            let url = rule.url().expect("every rule is documented");
+            let expected = match rule.noqa_code().prefix() {
+                "ODOO" | "OAPP" => "https://vauxoo.github.io/ruff-odoo/rules/",
+                _ => "https://docs.astral.sh/ruff/rules/",
+            };
+            assert_eq!(
+                url,
+                format!("{expected}{}", rule.name()),
+                "{} ({}) links to the wrong documentation site",
+                rule.name(),
+                rule.noqa_code()
             );
         }
     }
