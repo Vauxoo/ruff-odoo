@@ -37,8 +37,8 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// single-line value, so it is left untouched:
 /// ```python
 /// {
-///     "summary": "Does "
-///     "things.",
+///     "summary": "A summary whose source is split across two adjacent string literals "
+///     "even though its value is still a single line.",
 /// }
 /// ```
 ///
