@@ -60,7 +60,7 @@ Use the mirror repository, which installs the prebuilt wheels:
 repos:
   - repo: https://github.com/vauxoo/ruff-pre-commit
     # Use the latest release tag; see the version scheme below.
-    rev: 0.16.2.17
+    rev: 0.16.3.17
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -78,10 +78,12 @@ is slow and requires a Rust toolchain. Prefer the mirror.
 Fork releases use **four** components, `x.y.z.w`:
 
 - `x.y.z` is the upstream Ruff release this fork is based on (for example `0.16.2`).
-- `w` counts the fork's own releases on top of that upstream base, starting at `1`.
+- `w` counts the fork's own releases, independently of that upstream base.
 
-So `0.16.2.4` is the fourth Vauxoo release built on upstream Ruff `0.16.2`. When the fork is
-rebased onto a newer upstream, `x.y.z` follows it and `w` starts counting again.
+So `0.16.2.4` is the fourth Vauxoo release, built on upstream Ruff `0.16.2`. When the fork is
+synced onto a newer upstream, `x.y.z` follows it and `w` carries over untouched: syncing
+`0.16.2.4` onto upstream `0.16.3` gives `0.16.3.4`, and the next release is `0.16.3.5`. The
+counter never restarts, so a fork version is never reused and never goes backwards.
 
 The version lives in `[project] version` of the root [`pyproject.toml`](https://github.com/Vauxoo/ruff-odoo/blob/main/pyproject.toml)
 and is bumped by `bump2version` (see [`.bumpversion.cfg`](https://github.com/Vauxoo/ruff-odoo/blob/main/.bumpversion.cfg)),
@@ -100,7 +102,7 @@ repository falls back to the Cargo version.
 
 ```console
 $ ruff-odoo --version
-ruff-odoo 0.16.2.17
+ruff-odoo 0.16.3.17
 ```
 
 It stays bare on purpose: tools that shell out to the binary (`ruff-lsp`, for one) parse that output
@@ -111,7 +113,7 @@ the commit the binary was built from:
 
 ```console
 $ ruff-odoo version
-ruff-odoo 0.16.2.17+3 (b45cfcb38 2026-08-15)
+ruff-odoo 0.16.3.17+3 (b45cfcb38 2026-08-15)
 ```
 
 The leading name is the binary that was actually invoked, so a locally built `ruff` dev binary
@@ -122,12 +124,12 @@ For machine-readable output, ask for JSON:
 ```console
 $ ruff-odoo version --output-format json
 {
-  "version": "0.16.2.17",
+  "version": "0.16.3.17",
   "commit_info": {
     "short_commit_hash": "b45cfcb38",
     "commit_hash": "b45cfcb38d111d9f446b195125290a19e4cf8a4e",
     "commit_date": "2026-08-15",
-    "last_tag": "0.16.2.17",
+    "last_tag": "0.16.3.17",
     "commits_since_last_tag": 3
   }
 }

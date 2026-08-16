@@ -40,7 +40,7 @@ from source:
 ```yaml
 repos:
   - repo: https://github.com/vauxoo/ruff-pre-commit
-    rev: 0.16.2.17
+    rev: 0.16.3.17
     hooks:
       - id: ruff-check
 ```
@@ -75,17 +75,18 @@ keys, and so on) under `[tool.ruff.lint.odoo]`; see [settings](settings.md#linto
 ## Versioning
 
 Releases use four components, `x.y.z.w`: `x.y.z` is the upstream Ruff release this fork is
-built on, and `w` counts the fork's own releases on top of it. So `0.16.2.4` is the
-fourth Vauxoo release of upstream Ruff `0.16.2`. When the fork moves to a newer
-upstream, `x.y.z` follows it and `w` starts counting again. Release tags are the bare
-version, with no `v` prefix — pin `rev:` accordingly.
+built on, and `w` counts the fork's own releases, independently of that base. So `0.16.2.4`
+is the fourth Vauxoo release, built on upstream Ruff `0.16.2`. When the fork moves to a newer
+upstream, `x.y.z` follows it and `w` carries over untouched — syncing `0.16.2.4` onto
+upstream `0.16.3` gives `0.16.3.4`, and the counter never restarts. Release tags are the
+bare version, with no `v` prefix — pin `rev:` accordingly.
 
 `--version` prints that version and nothing else, so tools that shell out to the binary and
 parse the output as a [PEP 440](https://peps.python.org/pep-0440/) version keep working:
 
 ```console
 $ ruff-odoo --version
-ruff-odoo 0.16.2.17
+ruff-odoo 0.16.3.17
 ```
 
 The `version` subcommand is the detailed one, adding the number of commits since the
@@ -94,7 +95,7 @@ same information as a machine-readable object:
 
 ```console
 $ ruff-odoo version
-ruff-odoo 0.16.2.17+3 (b45cfcb38 2026-08-15)
+ruff-odoo 0.16.3.17+3 (b45cfcb38 2026-08-15)
 ```
 
 ## Migrating from pylint-odoo
