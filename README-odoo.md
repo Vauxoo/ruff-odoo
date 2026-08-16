@@ -78,10 +78,12 @@ is slow and requires a Rust toolchain. Prefer the mirror.
 Fork releases use **four** components, `x.y.z.w`:
 
 - `x.y.z` is the upstream Ruff release this fork is based on (for example `0.16.2`).
-- `w` counts the fork's own releases on top of that upstream base, starting at `1`.
+- `w` counts the fork's own releases, independently of that upstream base.
 
-So `0.16.2.4` is the fourth Vauxoo release built on upstream Ruff `0.16.2`. When the fork is
-rebased onto a newer upstream, `x.y.z` follows it and `w` starts counting again.
+So `0.16.2.4` is the fourth Vauxoo release, built on upstream Ruff `0.16.2`. When the fork is
+synced onto a newer upstream, `x.y.z` follows it and `w` carries over untouched: syncing
+`0.16.2.4` onto upstream `0.16.3` gives `0.16.3.4`, and the next release is `0.16.3.5`. The
+counter never restarts, so a fork version is never reused and never goes backwards.
 
 The version lives in `[project] version` of the root [`pyproject.toml`](https://github.com/Vauxoo/ruff-odoo/blob/main/pyproject.toml)
 and is bumped by `bump2version` (see [`.bumpversion.cfg`](https://github.com/Vauxoo/ruff-odoo/blob/main/.bumpversion.cfg)),
