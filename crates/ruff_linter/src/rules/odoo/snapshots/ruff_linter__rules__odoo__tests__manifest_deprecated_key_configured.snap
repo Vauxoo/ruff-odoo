@@ -1,0 +1,19 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8103 [*] Deprecated key "qweb" in manifest file
+  --> __manifest__.py:26:5
+   |
+24 | {
+25 |     "name": "Qweb",
+26 |     "qweb": ["static/src/xml/base.xml"],
+   |     ^^^^^^
+27 | }
+   |
+help: Remove deprecated key "qweb"
+   |
+25 |     "name": "Qweb",
+   -     "qweb": ["static/src/xml/base.xml"],
+26 | }
+   |
+note: This is an unsafe fix and may change runtime behavior

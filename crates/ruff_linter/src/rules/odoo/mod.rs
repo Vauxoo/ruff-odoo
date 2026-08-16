@@ -319,6 +319,47 @@ mod tests {
         Ok(())
     }
 
+    /// `qweb` only became deprecated in 16.0, when the `web.assets_qweb` bundle was removed,
+    /// so a module targeting an older series keeps it.
+    #[test]
+    fn manifest_deprecated_key_before_odoo_16() -> Result<()> {
+        let snapshot = "manifest_deprecated_key_before_odoo_16".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/manifest_deprecated_key/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(15, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestDeprecatedKey)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// A configured `manifest-deprecated-keys` replaces the built-in list outright: `qweb` is
+    /// reported even below 16.0, and `description`, deprecated by default, is not.
+    #[test]
+    fn manifest_deprecated_key_configured() -> Result<()> {
+        let snapshot = "manifest_deprecated_key_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/manifest_deprecated_key/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(15, 0)),
+                    manifest_deprecated_keys: super::settings::ManifestDeprecatedKeys::UserProvided(
+                        vec!["qweb".to_string()],
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestDeprecatedKey)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     /// `category-allowed` stays inert until the project lists its categories.
     #[test]
     fn category_allowed_is_inert_without_configuration() -> Result<()> {

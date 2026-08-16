@@ -13,6 +13,7 @@ pub struct Settings {
     pub odoo_version: Option<OdooVersion>,
     pub category_allowed: Vec<String>,
     pub odoo_required_files: Vec<String>,
+    pub manifest_deprecated_keys: ManifestDeprecatedKeys,
 }
 
 impl Display for Settings {
@@ -25,9 +26,32 @@ impl Display for Settings {
                 self.odoo_version | optional,
                 self.category_allowed | array,
                 self.odoo_required_files | array,
+                self.manifest_deprecated_keys,
             ]
         }
         Ok(())
+    }
+}
+
+/// The manifest keys `manifest-deprecated-key` (`ODC8103`) reports.
+#[derive(Debug, Clone, Default, CacheKey)]
+pub enum ManifestDeprecatedKeys {
+    /// The keys Odoo itself deprecated, each one scoped to the versions it is deprecated in.
+    #[default]
+    Default,
+    /// The exact list configured through `manifest-deprecated-keys`, reported whatever the
+    /// configured `odoo-version` is.
+    UserProvided(Vec<String>),
+}
+
+impl Display for ManifestDeprecatedKeys {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            ManifestDeprecatedKeys::Default => f.write_str("default"),
+            ManifestDeprecatedKeys::UserProvided(keys) => {
+                write!(f, "[{}]", keys.join(", "))
+            }
+        }
     }
 }
 

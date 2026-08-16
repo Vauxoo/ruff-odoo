@@ -3229,6 +3229,18 @@ pub struct OdooOptions {
         "#
     )]
     pub odoo_required_files: Option<Vec<String>>,
+    /// The manifest keys reported as deprecated (`ODC8103`). Setting it replaces the built-in
+    /// list — `active` and `description` for every version, plus `qweb` from Odoo 16.0 on —
+    /// and the keys named here are then reported whatever the configured `odoo-version` is.
+    #[option(
+        default = r#"["active", "description", "qweb"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Leave `qweb` alone, and deprecate a key of our own.
+            manifest-deprecated-keys = ["active", "description", "demo_xml"]
+        "#
+    )]
+    pub manifest_deprecated_keys: Option<Vec<String>>,
 }
 
 impl OdooOptions {
@@ -3238,6 +3250,10 @@ impl OdooOptions {
             odoo_version: self.odoo_version,
             category_allowed: self.category_allowed.unwrap_or_default(),
             odoo_required_files: self.odoo_required_files.unwrap_or_default(),
+            manifest_deprecated_keys: match self.manifest_deprecated_keys {
+                Some(keys) => odoo::settings::ManifestDeprecatedKeys::UserProvided(keys),
+                None => odoo::settings::ManifestDeprecatedKeys::Default,
+            },
         }
     }
 }
