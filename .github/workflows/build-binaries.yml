@@ -4,6 +4,22 @@
 #
 # Assumed to run as a subworkflow of .github/workflows/release.yml; specifically, as a local
 # artifacts job within `cargo-dist`.
+#
+# Vauxoo fork: every `runs-on` picks its runner through
+# `github.repository == 'astral-sh/ruff' && '<upstream runner>' || '<github-hosted>'`.
+# Upstream's Depot and Namespace runners exist only in its own organization, and a job asking
+# for a label no runner offers does not fail — it queues forever, so the release simply never
+# publishes and nothing turns red to say why. Upstream already writes that conditional for the
+# macOS and Windows jobs; the Linux ones are ours to keep.
+#
+# Each fallback names the same Ubuntu release its Depot label does, rather than tracking
+# `ubuntu-latest`. The wheels are built inside manylinux containers, so the host does not set
+# their glibc floor — but the PGO training steps run on the host, and having GitHub move that
+# host under us the day `ubuntu-latest` advances is the kind of silent change this comment
+# exists to prevent.
+#
+# This is an astral-owned file, so expect a `sync-astral-upstream` rebase to reintroduce bare
+# `depot-*` labels: re-check every `runs-on` here after one.
 name: "Build binaries"
 
 on:
@@ -42,7 +58,7 @@ env:
 jobs:
   sdist:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-4' || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -269,7 +285,7 @@ jobs:
 
   linux:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: ${{ matrix.target == 'x86_64-unknown-linux-gnu' && 'depot-ubuntu-24.04-8' || 'depot-ubuntu-24.04-4' }}
+    runs-on: ${{ github.repository != 'astral-sh/ruff' && 'ubuntu-24.04' || (matrix.target == 'x86_64-unknown-linux-gnu' && 'depot-ubuntu-24.04-8' || 'depot-ubuntu-24.04-4') }}
     strategy:
       matrix:
         target:
@@ -339,7 +355,7 @@ jobs:
 
   linux-aarch64:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: depot-ubuntu-24.04-arm-8
+    runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-arm-8' || 'ubuntu-24.04-arm' }}
     env:
       # see https://github.com/astral-sh/ruff/issues/3791
       # and https://github.com/gnzlbg/jemallocator/issues/170#issuecomment-1503228963
@@ -405,7 +421,7 @@ jobs:
 
   linux-cross:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-4' || 'ubuntu-24.04' }}
     strategy:
       matrix:
         platform:
@@ -489,7 +505,7 @@ jobs:
 
   musllinux:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-4' || 'ubuntu-24.04' }}
     strategy:
       matrix:
         target:
@@ -550,7 +566,7 @@ jobs:
 
   musllinux-cross:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-build') }}
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-4' || 'ubuntu-24.04' }}
     strategy:
       matrix:
         platform:
