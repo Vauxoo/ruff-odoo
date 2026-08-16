@@ -67,7 +67,7 @@ fn is_valid_website_uri(url: &str) -> bool {
     !netloc.is_empty() && !netloc.contains("__") && DOMAIN_RE.is_match(netloc)
 }
 
-/// ODOO014
+/// ODW8114
 pub(crate) fn website_manifest_key_not_valid_uri(
     checker: &Checker,
     dict: &ast::ExprDict,

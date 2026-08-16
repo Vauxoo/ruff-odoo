@@ -1,0 +1,51 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8150 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:1:1
+  |
+1 | from odoo.addons.my_module import models as _models
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 | from odoo.addons.my_module.models import foo as _foo
+3 | from odoo.addons.other_module import models as _other
+  |
+
+ODW8150 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:2:1
+  |
+1 | from odoo.addons.my_module import models as _models
+2 | from odoo.addons.my_module.models import foo as _foo
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 | from odoo.addons.other_module import models as _other
+4 | from odoo.addons import my_module as _my_module
+  |
+
+ODW8150 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:4:1
+  |
+2 | from odoo.addons.my_module.models import foo as _foo
+3 | from odoo.addons.other_module import models as _other
+4 | from odoo.addons import my_module as _my_module
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 | from odoo.addons import other_module as _other_module
+  |
+
+ODW8150 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:7:1
+  |
+5 | from odoo.addons import other_module as _other_module
+6 |
+7 | import odoo.addons.my_module as _my_module2
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 | import odoo.addons.my_module.models as _foo2
+9 | import odoo.addons.other_module as _other2
+  |
+
+ODW8150 Same Odoo module absolute import. You should use relative import with "." instead of "odoo.addons.my_module"
+ --> foo.py:8:1
+  |
+7 | import odoo.addons.my_module as _my_module2
+8 | import odoo.addons.my_module.models as _foo2
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+9 | import odoo.addons.other_module as _other2
+  |

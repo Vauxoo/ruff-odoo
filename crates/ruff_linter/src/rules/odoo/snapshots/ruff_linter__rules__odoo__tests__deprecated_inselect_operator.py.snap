@@ -1,0 +1,20 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8149 The domain operator 'inselect' is deprecated in Odoo 18.0+. Use 'in' SQL or 'not in' SQL instead
+ --> deprecated_inselect_operator.py:1:18
+  |
+1 | domain = [("id", "inselect", (query, params))]
+  |                  ^^^^^^^^^^
+2 | domain2 = [("id", "not inselect", (query, params))]
+3 | domain3 = [("id", "in", ids)]
+  |
+
+ODE8149 The domain operator 'not inselect' is deprecated in Odoo 18.0+. Use 'in' SQL or 'not in' SQL instead
+ --> deprecated_inselect_operator.py:2:19
+  |
+1 | domain = [("id", "inselect", (query, params))]
+2 | domain2 = [("id", "not inselect", (query, params))]
+  |                   ^^^^^^^^^^^^^^
+3 | domain3 = [("id", "in", ids)]
+  |

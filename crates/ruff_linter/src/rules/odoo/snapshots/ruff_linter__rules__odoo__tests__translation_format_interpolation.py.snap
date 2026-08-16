@@ -1,0 +1,45 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8302 Use lazy % formatting in odoo._ functions instead of str.format
+ --> translation_format_interpolation.py:7:9
+  |
+5 | class Model:
+6 |     def method(self, var):
+7 |         _("Hello {}").format(var)  # ODW8302
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |         self.env._("Hello {}").format(var)  # ODW8302
+9 |         _("Hello {}".format(var))  # ODW8302
+  |
+
+ODW8302 Use lazy % formatting in odoo._ functions instead of str.format
+  --> translation_format_interpolation.py:8:9
+   |
+ 6 |     def method(self, var):
+ 7 |         _("Hello {}").format(var)  # ODW8302
+ 8 |         self.env._("Hello {}").format(var)  # ODW8302
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |         _("Hello {}".format(var))  # ODW8302
+10 |         self.env._("Hello {x}".format(x=var))  # ODW8302
+   |
+
+ODW8302 Use lazy % formatting in odoo._ functions instead of str.format
+  --> translation_format_interpolation.py:9:9
+   |
+ 7 |         _("Hello {}").format(var)  # ODW8302
+ 8 |         self.env._("Hello {}").format(var)  # ODW8302
+ 9 |         _("Hello {}".format(var))  # ODW8302
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |         self.env._("Hello {x}".format(x=var))  # ODW8302
+   |
+
+ODW8302 Use lazy % formatting in odoo._ functions instead of str.format
+  --> translation_format_interpolation.py:10:9
+   |
+ 8 |         self.env._("Hello {}").format(var)  # ODW8302
+ 9 |         _("Hello {}".format(var))  # ODW8302
+10 |         self.env._("Hello {x}".format(x=var))  # ODW8302
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 |         # No diagnostic: a non-empty format spec is too complex to convert.
+   |

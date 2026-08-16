@@ -1,0 +1,62 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8106 Wrong Version Format "8_0.1.0.0" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+ --> __manifest__.py:4:5
+  |
+2 |     "name": "Wrong version formats",
+3 |     # Flagged: the series separator is an underscore, not a dot.
+4 |     "version": "8_0.1.0.0",
+  |     ^^^^^^^^^
+5 | }
+  |
+
+ODC8106 Wrong Version Format "1.0" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+  --> __manifest__.py:9:5
+   |
+ 7 | # Flagged: only two components.
+ 8 | {
+ 9 |     "version": "1.0",
+   |     ^^^^^^^^^
+10 | }
+   |
+
+ODC8106 Wrong Version Format "8.0.1.0.0foo" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+  --> __manifest__.py:14:5
+   |
+12 | # Flagged: trailing garbage after the last component.
+13 | {
+14 |     "version": "8.0.1.0.0foo",
+   |     ^^^^^^^^^
+15 | }
+   |
+
+ODC8106 Wrong Version Format "17.0.1.0" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+  --> __manifest__.py:19:5
+   |
+17 | # Flagged: four components, the module part is short one.
+18 | {
+19 |     "version": "17.0.1.0",
+   |     ^^^^^^^^^
+20 | }
+   |
+
+ODC8106 Wrong Version Format "17.0.1.0.0.1" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+  --> __manifest__.py:24:5
+   |
+22 | # Flagged: six components.
+23 | {
+24 |     "version": "17.0.1.0.0.1",
+   |     ^^^^^^^^^
+25 | }
+   |
+
+ODC8106 Wrong Version Format "17..1.0.0" in manifest file. Regex to match: "\d+\.\d+\.\d+\.\d+\.\d+$"
+  --> __manifest__.py:29:5
+   |
+27 | # Flagged: an empty component.
+28 | {
+29 |     "version": "17..1.0.0",
+   |     ^^^^^^^^^
+30 | }
+   |

@@ -53,7 +53,7 @@ impl Violation for CategoryAllowed {
     }
 }
 
-/// ODOO065
+/// ODC8114
 pub(crate) fn category_allowed(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     let allowed = &checker.settings().odoo.category_allowed;
     if allowed.is_empty() {

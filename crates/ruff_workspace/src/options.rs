@@ -3185,7 +3185,7 @@ impl McCabeOptions {
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct OdooOptions {
-    /// A list of method names whose override is prohibited (`ODOO055`). A method
+    /// A list of method names whose override is prohibited (`ODW8107`). A method
     /// counts as an override when its body delegates to `super().<method>(...)`.
     #[option(
         default = r#"[]"#,
@@ -3207,7 +3207,7 @@ pub struct OdooOptions {
         "#
     )]
     pub odoo_version: Option<OdooVersion>,
-    /// A list of categories allowed in a module's manifest (`ODOO065`). While the list is
+    /// A list of categories allowed in a module's manifest (`ODC8114`). While the list is
     /// empty the rule is inert, so a project only opts in by naming its categories.
     #[option(
         default = r#"[]"#,
@@ -3218,7 +3218,7 @@ pub struct OdooOptions {
         "#
     )]
     pub category_allowed: Option<Vec<String>>,
-    /// A list of files every Odoo module must ship (`ODOO066`), as paths relative to the
+    /// A list of files every Odoo module must ship (`ODC8115`), as paths relative to the
     /// module directory. While the list is empty the rule is inert.
     #[option(
         default = r#"[]"#,

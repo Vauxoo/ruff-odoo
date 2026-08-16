@@ -46,7 +46,7 @@ impl Violation for PreferEnvTranslation {
     }
 }
 
-/// ODOO024
+/// ODW8161
 pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
     if !odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
         return;

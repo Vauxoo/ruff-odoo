@@ -73,7 +73,7 @@ fn is_exempt_from_relative_import(path: &Path, module_dir: &Path) -> bool {
     in_tests_dir || in_migrations_dir
 }
 
-/// ODOO023
+/// ODW8150
 pub(crate) fn odoo_addons_relative_import(
     checker: &Checker,
     import_from: &ast::StmtImportFrom,
@@ -85,7 +85,7 @@ pub(crate) fn odoo_addons_relative_import(
     check_odoo_addons_relative_import(checker, module_name, path, import_from.range());
 }
 
-/// ODOO023
+/// ODW8150
 ///
 /// Unlike `odoo_addons_relative_import`, this covers plain `import odoo.addons.my_module`
 /// statements (as opposed to `from odoo.addons.my_module import ...`), which pylint-odoo's

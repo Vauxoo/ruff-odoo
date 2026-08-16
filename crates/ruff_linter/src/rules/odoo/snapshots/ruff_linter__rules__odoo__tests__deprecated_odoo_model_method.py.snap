@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8160 fields_view_get has been deprecated by Odoo. Please look for alternatives.
+ --> deprecated_odoo_model_method.py:7:9
+  |
+5 |     _inherit = "my.model"
+6 |
+7 |     def fields_view_get(self, view_id=None, view_type="form", **kwargs):
+  |         ^^^^^^^^^^^^^^^
+8 |         return {}
+  |

@@ -37,7 +37,7 @@ impl Violation for BadBuiltinGroupby {
     }
 }
 
-/// ODOO019
+/// ODW8155
 pub(crate) fn bad_builtin_groupby(checker: &Checker, call: &ast::ExprCall) {
     if checker
         .semantic()

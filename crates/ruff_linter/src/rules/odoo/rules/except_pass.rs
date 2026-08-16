@@ -40,7 +40,7 @@ impl Violation for ExceptPass {
     }
 }
 
-/// ODOO004
+/// ODW8138
 pub(crate) fn except_pass(checker: &Checker, handlers: &[ExceptHandler]) {
     for handler in handlers {
         let ExceptHandler::ExceptHandler(ast::ExceptHandlerExceptHandler { name, body, .. }) =

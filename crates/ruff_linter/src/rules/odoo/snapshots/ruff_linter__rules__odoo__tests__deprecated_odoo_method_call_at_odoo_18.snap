@@ -1,8 +1,8 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODOO068 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed.
-  --> ODOO068.py:8:14
+ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed.
+  --> deprecated_odoo_method_call.py:8:14
    |
  7 |     def deprecated_in_18(self):
  8 |         self.check_access_rights("read")
@@ -11,8 +11,8 @@ ODOO068 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` 
 10 |         self._filter_access_rules("read")
    |
 
-ODOO068 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead.
-  --> ODOO068.py:9:14
+ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead.
+  --> deprecated_odoo_method_call.py:9:14
    |
  7 |     def deprecated_in_18(self):
  8 |         self.check_access_rights("read")
@@ -30,8 +30,8 @@ help: Replace with `check_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO068 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead.
-  --> ODOO068.py:10:14
+ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead.
+  --> deprecated_odoo_method_call.py:10:14
    |
  8 |         self.check_access_rights("read")
  9 |         self.check_access_rule("write")
@@ -49,8 +49,8 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO068 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead.
-  --> ODOO068.py:11:14
+ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead.
+  --> deprecated_odoo_method_call.py:11:14
    |
  9 |         self.check_access_rule("write")
 10 |         self._filter_access_rules("read")
@@ -68,8 +68,8 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO068 `_check_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
-  --> ODOO068.py:12:14
+ODW8502 `_check_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
+  --> deprecated_odoo_method_call.py:12:14
    |
 10 |         self._filter_access_rules("read")
 11 |         self._filter_access_rules_python("read")
@@ -78,8 +78,8 @@ ODOO068 `_check_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(..
 13 |         self._check_m2m_recursion("child_ids")
    |
 
-ODOO068 `_check_m2m_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
-  --> ODOO068.py:13:14
+ODW8502 `_check_m2m_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
+  --> deprecated_odoo_method_call.py:13:14
    |
 11 |         self._filter_access_rules_python("read")
 12 |         self._check_recursion()

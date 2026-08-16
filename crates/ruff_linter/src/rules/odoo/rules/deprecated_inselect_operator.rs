@@ -39,7 +39,7 @@ impl Violation for DeprecatedInselectOperator {
     }
 }
 
-/// ODOO044
+/// ODE8149
 pub(crate) fn deprecated_inselect_operator(checker: &Checker, string: &ast::ExprStringLiteral) {
     // `inselect`/`not inselect` were only removed in Odoo 18.0.
     if !odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {

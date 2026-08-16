@@ -1,0 +1,34 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8306 Not enough arguments for odoo._ format string
+ --> translation_too_few_args.py:6:9
+  |
+4 | class Model:
+5 |     def method(self, name, count):
+6 |         _("%s of %s", count)  # ODE8306
+  |         ^^^^^^^^^^^^^^^^^^^^
+7 |         self.env._("%s of %s", count)  # ODE8306
+8 |         _("%s: %.*f", name)  # ODE8306 (`.*` consumes an extra value)
+  |
+
+ODE8306 Not enough arguments for odoo._ format string
+ --> translation_too_few_args.py:7:9
+  |
+5 |     def method(self, name, count):
+6 |         _("%s of %s", count)  # ODE8306
+7 |         self.env._("%s of %s", count)  # ODE8306
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |         _("%s: %.*f", name)  # ODE8306 (`.*` consumes an extra value)
+  |
+
+ODE8306 Not enough arguments for odoo._ format string
+  --> translation_too_few_args.py:8:9
+   |
+ 6 |         _("%s of %s", count)  # ODE8306
+ 7 |         self.env._("%s of %s", count)  # ODE8306
+ 8 |         _("%s: %.*f", name)  # ODE8306 (`.*` consumes an extra value)
+   |         ^^^^^^^^^^^^^^^^^^^
+ 9 |
+10 |         # No diagnostic: counts match.
+   |

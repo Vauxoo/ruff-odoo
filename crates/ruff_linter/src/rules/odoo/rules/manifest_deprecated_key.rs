@@ -50,7 +50,7 @@ impl Violation for ManifestDeprecatedKey {
     }
 }
 
-/// ODOO002
+/// ODC8103
 pub(crate) fn manifest_deprecated_key(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

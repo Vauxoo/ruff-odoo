@@ -41,7 +41,7 @@ impl Violation for NoSearchAll {
     }
 }
 
-/// ODOO038
+/// ODW8163
 pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall) {
     let method = match call.func.as_ref() {
         Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),

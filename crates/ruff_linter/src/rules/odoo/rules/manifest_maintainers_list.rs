@@ -37,7 +37,7 @@ impl Violation for ManifestMaintainersList {
     }
 }
 
-/// ODOO011
+/// ODE8104
 pub(crate) fn manifest_maintainers_list(
     checker: &Checker,
     dict: &ast::ExprDict,

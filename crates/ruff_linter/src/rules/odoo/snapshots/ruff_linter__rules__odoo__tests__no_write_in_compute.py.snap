@@ -1,0 +1,55 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8135 Compute method calling `write`. Use `update` instead.
+  --> no_write_in_compute.py:12:9
+   |
+11 |     def _compute_total(self):
+12 |         self.write({"total": 10})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |
+14 |     def _compute_count(self):
+   |
+
+ODE8135 Compute method calling `write`. Use `update` instead.
+  --> no_write_in_compute.py:16:13
+   |
+14 |     def _compute_count(self):
+15 |         for record in self.search([]):
+16 |             record.write({"count": 1})
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |         browsed = self.browse(self.ids)
+18 |         browsed.write({"count": 2})
+   |
+
+ODE8135 Compute method calling `write`. Use `update` instead.
+  --> no_write_in_compute.py:18:9
+   |
+16 |             record.write({"count": 1})
+17 |         browsed = self.browse(self.ids)
+18 |         browsed.write({"count": 2})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 |     def _compute_active_count(self):
+   |
+
+ODE8135 Compute method calling `write`. Use `update` instead.
+  --> no_write_in_compute.py:23:13
+   |
+21 |         users = self.env["res.users"].browse([1, 2, 3])
+22 |         for user in users:
+23 |             user.write({"active_count": 1})
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |         users.write({"active_count": 2})
+   |
+
+ODE8135 Compute method calling `write`. Use `update` instead.
+  --> no_write_in_compute.py:24:9
+   |
+22 |         for user in users:
+23 |             user.write({"active_count": 1})
+24 |         users.write({"active_count": 2})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 |
+26 |     def action_do(self):
+   |

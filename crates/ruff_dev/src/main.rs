@@ -64,7 +64,7 @@ enum Command {
     GenerateCliHelp(generate_cli_help::Args),
     /// Generate Markdown docs.
     GenerateDocs(generate_docs::Args),
-    /// Generate the Markdown sources for the `ODOO`/`OAPP` documentation site.
+    /// Generate the Markdown sources for the `OD`/`OAPP` documentation site.
     GenerateOdooDocs(generate_odoo_docs::Args),
     /// Print the AST for a given Python file.
     PrintAST(print_ast::Args),

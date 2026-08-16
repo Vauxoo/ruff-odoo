@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8103 Translation method _("string") in fields is not necessary
+ --> translation_field.py:4:31
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     name = fields.Char(string=_("Name"))
+  |                               ^^^^^^^^^
+5 |     label = fields.Char("Label")
+  |

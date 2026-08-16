@@ -64,7 +64,7 @@ impl Violation for PreferEnvAttribute {
 /// The deprecated shortcut and the `env` attribute it forwards to.
 const ENV_SHORTCUTS: &[(&str, &str)] = &[("_cr", "cr"), ("_uid", "uid"), ("_context", "context")];
 
-/// ODOO067
+/// ODW8165
 pub(crate) fn prefer_env_attribute(checker: &Checker, attribute: &ast::ExprAttribute) {
     // The three shortcuts were only deprecated in Odoo 19.0.
     if !odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None) {

@@ -41,7 +41,7 @@ markdown_extensions:
       anchorlink_class: "toclink"
   - pymdownx.magiclink:
   # `attr_list` is not optional: the generated rule tables carry per-row anchors
-  # (`ODOO001 { #ODOO001 }`) and column scopes that render as literal text without it.
+  # (`ODC8102 { #ODC8102 }`) and column scopes that render as literal text without it.
   - attr_list:
   - md_in_html:
   - pymdownx.highlight:

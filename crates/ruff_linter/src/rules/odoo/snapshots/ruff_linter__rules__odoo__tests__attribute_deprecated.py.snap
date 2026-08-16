@@ -1,0 +1,33 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8105 attribute "_defaults" deprecated
+ --> attribute_deprecated.py:4:5
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     _defaults = {"active": True}
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     _columns = {}
+6 |     length = 10
+  |
+
+ODW8105 attribute "_columns" deprecated
+ --> attribute_deprecated.py:5:5
+  |
+4 |     _defaults = {"active": True}
+5 |     _columns = {}
+  |     ^^^^^^^^^^^^^
+6 |     length = 10
+7 |     normal_attr = 5
+  |
+
+ODW8105 attribute "length" deprecated
+ --> attribute_deprecated.py:6:5
+  |
+4 |     _defaults = {"active": True}
+5 |     _columns = {}
+6 |     length = 10
+  |     ^^^^^^^^^^^
+7 |     normal_attr = 5
+  |

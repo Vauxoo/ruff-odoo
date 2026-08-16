@@ -1,9 +1,9 @@
-//! Generate the Markdown sources for this fork's `ODOO`/`OAPP` documentation site.
+//! Generate the Markdown sources for this fork's `OD`/`OAPP` documentation site.
 //!
 //! Upstream's `generate-docs` renders a page for every rule Ruff ships, which is what
 //! <https://docs.astral.sh/ruff/> needs. This fork publishes a much smaller site that
 //! covers only the Odoo rules it adds, so that Odoo developers migrating from
-//! `pylint-odoo` land on 69 rules rather than on a thousand.
+//! `pylint-odoo` land on 70 rules rather than on a thousand.
 //!
 //! The generated tree is deliberately laid out like upstream's `docs/`:
 //!
@@ -76,7 +76,7 @@ pub(crate) fn main(args: &Args) -> Result<()> {
         bail!("`{SETTINGS_GROUP}` is not an option group; has it been renamed?");
     };
     let settings_page = format!(
-        "# Settings\n\nOptions read by the `ODOO` rules. Every other Ruff option is \
+        "# Settings\n\nOptions read by the `OD` rules. Every other Ruff option is \
          documented at [docs.astral.sh/ruff/settings](https://docs.astral.sh/ruff/settings/).\n\n\
          {options}"
     );

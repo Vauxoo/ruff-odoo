@@ -37,7 +37,7 @@ impl Violation for ManifestAuthorString {
     }
 }
 
-/// ODOO009
+/// ODE8101
 pub(crate) fn manifest_author_string(
     checker: &Checker,
     dict: &ast::ExprDict,

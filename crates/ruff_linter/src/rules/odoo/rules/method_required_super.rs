@@ -59,7 +59,7 @@ const METHODS_REQUIRING_SUPER: &[&str] = &[
     "write",
 ];
 
-/// ODOO005
+/// ODW8106
 pub(crate) fn method_required_super(checker: &Checker, function_def: &ast::StmtFunctionDef) {
     if !checker.semantic().current_scope().kind.is_class() {
         return;

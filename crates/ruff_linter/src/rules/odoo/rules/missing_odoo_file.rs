@@ -36,7 +36,7 @@ impl Violation for MissingOdooFile {
     }
 }
 
-/// ODOO066
+/// ODC8115
 pub(crate) fn missing_odoo_file(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     let required_files = &checker.settings().odoo.odoo_required_files;
     if required_files.is_empty() {

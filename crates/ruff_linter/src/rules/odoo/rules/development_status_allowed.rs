@@ -45,7 +45,7 @@ impl Violation for DevelopmentStatusAllowed {
 
 const DEVELOPMENT_STATUS_ALLOWED: &[&str] = &["Alpha", "Beta", "Mature", "Production/Stable"];
 
-/// ODOO013
+/// ODC8111
 pub(crate) fn development_status_allowed(
     checker: &Checker,
     dict: &ast::ExprDict,

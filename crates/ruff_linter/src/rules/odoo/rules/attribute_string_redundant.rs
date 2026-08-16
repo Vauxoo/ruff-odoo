@@ -90,7 +90,7 @@ fn inferred_label(field_name: &str) -> String {
     python_title_case(&trimmed.replace('_', " "))
 }
 
-/// ODOO007
+/// ODW8113
 pub(crate) fn attribute_string_redundant(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;

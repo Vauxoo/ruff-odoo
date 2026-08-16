@@ -15,100 +15,190 @@ mod tests {
     use crate::settings::LinterSettings;
     use crate::test::test_path;
 
-    #[test_case(Rule::ManifestRequiredKey, Path::new("ODOO001/__manifest__.py"))]
-    #[test_case(Rule::ManifestDeprecatedKey, Path::new("ODOO002/__manifest__.py"))]
-    #[test_case(Rule::UseVimComment, Path::new("ODOO003.py"))]
-    #[test_case(Rule::ExceptPass, Path::new("ODOO004.py"))]
-    #[test_case(Rule::MethodRequiredSuper, Path::new("ODOO005.py"))]
-    #[test_case(Rule::UnusedLogger, Path::new("ODOO006_0.py"))]
-    #[test_case(Rule::UnusedLogger, Path::new("ODOO006_1.py"))]
-    #[test_case(Rule::AttributeStringRedundant, Path::new("ODOO007.py"))]
-    #[test_case(Rule::ManifestRequiredAuthor, Path::new("ODOO008/__manifest__.py"))]
-    #[test_case(Rule::ManifestAuthorString, Path::new("ODOO009/__manifest__.py"))]
-    #[test_case(Rule::LicenseAllowed, Path::new("ODOO010/__manifest__.py"))]
-    #[test_case(Rule::ManifestMaintainersList, Path::new("ODOO011/__manifest__.py"))]
-    #[test_case(Rule::ManifestSummaryMultiline, Path::new("ODOO012/__manifest__.py"))]
-    #[test_case(Rule::DevelopmentStatusAllowed, Path::new("ODOO013/__manifest__.py"))]
+    #[test_case(
+        Rule::ManifestRequiredKey,
+        Path::new("manifest_required_key/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestDeprecatedKey,
+        Path::new("manifest_deprecated_key/__manifest__.py")
+    )]
+    #[test_case(Rule::UseVimComment, Path::new("use_vim_comment.py"))]
+    #[test_case(Rule::ExceptPass, Path::new("except_pass.py"))]
+    #[test_case(Rule::MethodRequiredSuper, Path::new("method_required_super.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_0.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_1.py"))]
+    #[test_case(
+        Rule::AttributeStringRedundant,
+        Path::new("attribute_string_redundant.py")
+    )]
+    #[test_case(
+        Rule::ManifestRequiredAuthor,
+        Path::new("manifest_required_author/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestAuthorString,
+        Path::new("manifest_author_string/__manifest__.py")
+    )]
+    #[test_case(Rule::LicenseAllowed, Path::new("license_allowed/__manifest__.py"))]
+    #[test_case(
+        Rule::ManifestMaintainersList,
+        Path::new("manifest_maintainers_list/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestSummaryMultiline,
+        Path::new("manifest_summary_multiline/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::DevelopmentStatusAllowed,
+        Path::new("development_status_allowed/__manifest__.py")
+    )]
     #[test_case(
         Rule::WebsiteManifestKeyNotValidUri,
-        Path::new("ODOO014/__manifest__.py")
+        Path::new("website_manifest_key_not_valid_uri/__manifest__.py")
     )]
-    #[test_case(Rule::InvalidEmail, Path::new("ODOO015/__manifest__.py"))]
-    #[test_case(Rule::MissingReadme, Path::new("ODOO016/missing/__manifest__.py"))]
-    #[test_case(Rule::MissingReadme, Path::new("ODOO016/present/__manifest__.py"))]
-    #[test_case(Rule::InvalidCommit, Path::new("ODOO017.py"))]
-    #[test_case(Rule::ContextOverridden, Path::new("ODOO018.py"))]
-    #[test_case(Rule::BadBuiltinGroupby, Path::new("ODOO019.py"))]
-    #[test_case(Rule::OdooExceptionWarning, Path::new("ODOO020.py"))]
-    #[test_case(Rule::AttributeDeprecated, Path::new("ODOO021.py"))]
-    #[test_case(Rule::MissingReturn, Path::new("ODOO022.py"))]
+    #[test_case(Rule::InvalidEmail, Path::new("invalid_email/__manifest__.py"))]
     #[test_case(
-        Rule::OdooAddonsRelativeImport,
-        Path::new("ODOO023/my_module/models/foo.py")
+        Rule::MissingReadme,
+        Path::new("missing_readme/missing/__manifest__.py")
     )]
     #[test_case(
+        Rule::MissingReadme,
+        Path::new("missing_readme/present/__manifest__.py")
+    )]
+    #[test_case(Rule::InvalidCommit, Path::new("invalid_commit.py"))]
+    #[test_case(Rule::ContextOverridden, Path::new("context_overridden.py"))]
+    #[test_case(Rule::BadBuiltinGroupby, Path::new("bad_builtin_groupby.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning.py"))]
+    #[test_case(Rule::AttributeDeprecated, Path::new("attribute_deprecated.py"))]
+    #[test_case(Rule::MissingReturn, Path::new("missing_return.py"))]
+    #[test_case(
         Rule::OdooAddonsRelativeImport,
-        Path::new("ODOO023/my_module/tests/test_foo.py")
+        Path::new("odoo_addons_relative_import/my_module/models/foo.py")
     )]
     #[test_case(
         Rule::OdooAddonsRelativeImport,
-        Path::new("ODOO023/my_module/migrations/16.0.1.0/pre-migrate.py")
+        Path::new("odoo_addons_relative_import/my_module/tests/test_foo.py")
     )]
-    #[test_case(Rule::PreferEnvTranslation, Path::new("ODOO024.py"))]
-    #[test_case(Rule::ManifestSuperfluousKey, Path::new("ODOO025/__manifest__.py"))]
-    #[test_case(Rule::HeaderComments, Path::new("ODOO026.py"))]
-    #[test_case(Rule::HeaderComments, Path::new("ODOO026_comments_only.py"))]
-    #[test_case(Rule::MethodCompute, Path::new("ODOO027.py"))]
-    #[test_case(Rule::MethodSearch, Path::new("ODOO028.py"))]
-    #[test_case(Rule::MethodInverse, Path::new("ODOO029.py"))]
-    #[test_case(Rule::RenamedFieldParameter, Path::new("ODOO030.py"))]
-    #[test_case(Rule::TranslationField, Path::new("ODOO031.py"))]
-    #[test_case(Rule::InheritableMethodString, Path::new("ODOO032.py"))]
-    #[test_case(Rule::InheritableMethodLambda, Path::new("ODOO033.py"))]
-    #[test_case(Rule::DeprecatedNameGet, Path::new("ODOO034.py"))]
-    #[test_case(Rule::SuperMethodMismatch, Path::new("ODOO036.py"))]
-    #[test_case(Rule::DeprecatedOdooModelMethod, Path::new("ODOO037.py"))]
-    #[test_case(Rule::NoSearchAll, Path::new("ODOO038.py"))]
-    #[test_case(Rule::NoRaiseUnlink, Path::new("ODOO039.py"))]
-    #[test_case(Rule::NoWriteInCompute, Path::new("ODOO040.py"))]
-    #[test_case(Rule::TranslationContainsVariable, Path::new("ODOO041.py"))]
-    #[test_case(Rule::TranslationPositionalUsed, Path::new("ODOO042.py"))]
-    #[test_case(Rule::TranslationInjection, Path::new("ODOO043.py"))]
-    #[test_case(Rule::DeprecatedInselectOperator, Path::new("ODOO044.py"))]
-    #[test_case(Rule::TestFolderImported, Path::new("ODOO045/__init__.py"))]
-    #[test_case(Rule::ManifestExternalAssets, Path::new("ODOO046/__manifest__.py"))]
-    #[test_case(Rule::PylintDisableComment, Path::new("ODOO047.py"))]
-    #[test_case(Rule::ManifestDataDuplicated, Path::new("ODOO048/__manifest__.py"))]
-    #[test_case(Rule::TranslationRequired, Path::new("ODOO049.py"))]
+    #[test_case(
+        Rule::OdooAddonsRelativeImport,
+        Path::new("odoo_addons_relative_import/my_module/migrations/16.0.1.0/pre-migrate.py")
+    )]
+    #[test_case(Rule::PreferEnvTranslation, Path::new("prefer_env_translation.py"))]
+    #[test_case(
+        Rule::ManifestSuperfluousKey,
+        Path::new("manifest_superfluous_key/__manifest__.py")
+    )]
+    #[test_case(Rule::HeaderComments, Path::new("header_comments.py"))]
+    #[test_case(Rule::HeaderComments, Path::new("header_comments_comments_only.py"))]
+    #[test_case(Rule::MethodCompute, Path::new("method_compute.py"))]
+    #[test_case(Rule::MethodSearch, Path::new("method_search.py"))]
+    #[test_case(Rule::MethodInverse, Path::new("method_inverse.py"))]
+    #[test_case(Rule::RenamedFieldParameter, Path::new("renamed_field_parameter.py"))]
+    #[test_case(Rule::TranslationField, Path::new("translation_field.py"))]
+    #[test_case(
+        Rule::InheritableMethodString,
+        Path::new("inheritable_method_string.py")
+    )]
+    #[test_case(
+        Rule::InheritableMethodLambda,
+        Path::new("inheritable_method_lambda.py")
+    )]
+    #[test_case(Rule::DeprecatedNameGet, Path::new("deprecated_name_get.py"))]
+    #[test_case(Rule::SuperMethodMismatch, Path::new("super_method_mismatch.py"))]
+    #[test_case(
+        Rule::DeprecatedOdooModelMethod,
+        Path::new("deprecated_odoo_model_method.py")
+    )]
+    #[test_case(Rule::NoSearchAll, Path::new("no_search_all.py"))]
+    #[test_case(Rule::NoRaiseUnlink, Path::new("no_raise_unlink.py"))]
+    #[test_case(Rule::NoWriteInCompute, Path::new("no_write_in_compute.py"))]
+    #[test_case(
+        Rule::TranslationContainsVariable,
+        Path::new("translation_contains_variable.py")
+    )]
+    #[test_case(
+        Rule::TranslationPositionalUsed,
+        Path::new("translation_positional_used.py")
+    )]
+    #[test_case(Rule::TranslationInjection, Path::new("translation_injection.py"))]
+    #[test_case(
+        Rule::DeprecatedInselectOperator,
+        Path::new("deprecated_inselect_operator.py")
+    )]
+    #[test_case(
+        Rule::TestFolderImported,
+        Path::new("test_folder_imported/__init__.py")
+    )]
+    #[test_case(
+        Rule::ManifestExternalAssets,
+        Path::new("manifest_external_assets/__manifest__.py")
+    )]
+    #[test_case(Rule::PylintDisableComment, Path::new("pylint_disable_comment.py"))]
+    #[test_case(
+        Rule::ManifestDataDuplicated,
+        Path::new("manifest_data_duplicated/__manifest__.py")
+    )]
+    #[test_case(Rule::TranslationRequired, Path::new("translation_required.py"))]
     #[test_case(
         Rule::TranslationRequired,
-        Path::new("ODOO049/tests/test_translation.py")
-    )]
-    #[test_case(Rule::NoWizardInModels, Path::new("ODOO050/models/sale_import.py"))]
-    #[test_case(Rule::NoWizardInModels, Path::new("ODOO050/wizards/sale_import.py"))]
-    #[test_case(Rule::ExternalRequestTimeout, Path::new("ODOO051.py"))]
-    #[test_case(Rule::SqlInjection, Path::new("ODOO052.py"))]
-    #[test_case(Rule::ResourceNotExist, Path::new("ODOO053/__manifest__.py"))]
-    #[test_case(
-        Rule::ManifestBehindMigrations,
-        Path::new("ODOO054/behind/__manifest__.py")
+        Path::new("translation_required/tests/test_translation.py")
     )]
     #[test_case(
-        Rule::ManifestBehindMigrations,
-        Path::new("ODOO054/ok/__manifest__.py")
+        Rule::NoWizardInModels,
+        Path::new("no_wizard_in_models/models/sale_import.py")
     )]
-    #[test_case(Rule::TranslationFormatInterpolation, Path::new("ODOO056.py"))]
-    #[test_case(Rule::TranslationFormatTruncated, Path::new("ODOO057.py"))]
-    #[test_case(Rule::TranslationFstringInterpolation, Path::new("ODOO058.py"))]
-    #[test_case(Rule::TranslationNotLazy, Path::new("ODOO059.py"))]
-    #[test_case(Rule::TranslationTooFewArgs, Path::new("ODOO060.py"))]
-    #[test_case(Rule::TranslationTooManyArgs, Path::new("ODOO061.py"))]
-    #[test_case(Rule::TranslationUnsupportedFormat, Path::new("ODOO062.py"))]
-    #[test_case(Rule::ManifestVersionFormat, Path::new("ODOO064/__manifest__.py"))]
-    #[test_case(Rule::PreferEnvAttribute, Path::new("ODOO067.py"))]
-    #[test_case(Rule::DeprecatedOdooMethodCall, Path::new("ODOO068.py"))]
+    #[test_case(
+        Rule::NoWizardInModels,
+        Path::new("no_wizard_in_models/wizards/sale_import.py")
+    )]
+    #[test_case(Rule::ExternalRequestTimeout, Path::new("external_request_timeout.py"))]
+    #[test_case(Rule::SqlInjection, Path::new("sql_injection.py"))]
+    #[test_case(
+        Rule::ResourceNotExist,
+        Path::new("resource_not_exist/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestBehindMigrations,
+        Path::new("manifest_behind_migrations/behind/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::ManifestBehindMigrations,
+        Path::new("manifest_behind_migrations/ok/__manifest__.py")
+    )]
+    #[test_case(
+        Rule::TranslationFormatInterpolation,
+        Path::new("translation_format_interpolation.py")
+    )]
+    #[test_case(
+        Rule::TranslationFormatTruncated,
+        Path::new("translation_format_truncated.py")
+    )]
+    #[test_case(
+        Rule::TranslationFstringInterpolation,
+        Path::new("translation_fstring_interpolation.py")
+    )]
+    #[test_case(Rule::TranslationNotLazy, Path::new("translation_not_lazy.py"))]
+    #[test_case(Rule::TranslationTooFewArgs, Path::new("translation_too_few_args.py"))]
+    #[test_case(
+        Rule::TranslationTooManyArgs,
+        Path::new("translation_too_many_args.py")
+    )]
+    #[test_case(
+        Rule::TranslationUnsupportedFormat,
+        Path::new("translation_unsupported_format.py")
+    )]
+    #[test_case(
+        Rule::ManifestVersionFormat,
+        Path::new("manifest_version_format/__manifest__.py")
+    )]
+    #[test_case(Rule::PreferEnvAttribute, Path::new("prefer_env_attribute.py"))]
+    #[test_case(
+        Rule::DeprecatedOdooMethodCall,
+        Path::new("deprecated_odoo_method_call.py")
+    )]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
-        let snapshot = format!("{}_{}", rule_code.noqa_code(), path.to_string_lossy());
+        let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
             Path::new("odoo").join(path).as_path(),
             &LinterSettings::for_rule(rule_code),
@@ -121,7 +211,7 @@ mod tests {
     fn prefer_env_attribute_suppressed_before_odoo_19() -> Result<()> {
         let snapshot = "prefer_env_attribute_suppressed_before_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO067.py"),
+            Path::new("odoo/prefer_env_attribute.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
@@ -138,7 +228,7 @@ mod tests {
     fn prefer_env_attribute_enabled_at_odoo_19() -> Result<()> {
         let snapshot = "prefer_env_attribute_enabled_at_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO067.py"),
+            Path::new("odoo/prefer_env_attribute.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
@@ -158,7 +248,7 @@ mod tests {
     fn deprecated_odoo_method_call_at_odoo_18() -> Result<()> {
         let snapshot = "deprecated_odoo_method_call_at_odoo_18".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO068.py"),
+            Path::new("odoo/deprecated_odoo_method_call.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
@@ -177,7 +267,7 @@ mod tests {
     fn prefer_env_translation_suppressed_before_odoo_18() -> Result<()> {
         let snapshot = "prefer_env_translation_suppressed_before_odoo_18".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO024.py"),
+            Path::new("odoo/prefer_env_translation.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
@@ -197,7 +287,7 @@ mod tests {
     fn translation_required_suggests_bare_underscore_before_odoo_18() -> Result<()> {
         let snapshot = "translation_required_suggests_bare_underscore_before_odoo_18".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO049.py"),
+            Path::new("odoo/translation_required.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
@@ -216,7 +306,7 @@ mod tests {
     fn manifest_version_format_checks_the_configured_series() -> Result<()> {
         let snapshot = "manifest_version_format_checks_the_configured_series".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO064/__manifest__.py"),
+            Path::new("odoo/manifest_version_format/__manifest__.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
@@ -234,7 +324,7 @@ mod tests {
     fn category_allowed_is_inert_without_configuration() -> Result<()> {
         let snapshot = "category_allowed_is_inert_without_configuration".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO065/__manifest__.py"),
+            Path::new("odoo/category_allowed/__manifest__.py"),
             &LinterSettings::for_rule(Rule::CategoryAllowed),
         )?;
         assert_diagnostics!(snapshot, diagnostics);
@@ -245,7 +335,7 @@ mod tests {
     fn category_allowed() -> Result<()> {
         let snapshot = "category_allowed".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO065/__manifest__.py"),
+            Path::new("odoo/category_allowed/__manifest__.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     category_allowed: vec!["Accounting".to_string(), "Sales".to_string()],
@@ -263,7 +353,7 @@ mod tests {
     fn missing_odoo_file_is_inert_without_configuration() -> Result<()> {
         let snapshot = "missing_odoo_file_is_inert_without_configuration".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO066/missing/__manifest__.py"),
+            Path::new("odoo/missing_odoo_file/missing/__manifest__.py"),
             &LinterSettings::for_rule(Rule::MissingOdooFile),
         )?;
         assert_diagnostics!(snapshot, diagnostics);
@@ -275,7 +365,7 @@ mod tests {
     fn missing_odoo_file(module: &str) -> Result<()> {
         let snapshot = format!("missing_odoo_file_{module}");
         let diagnostics = test_path(
-            Path::new("odoo/ODOO066")
+            Path::new("odoo/missing_odoo_file")
                 .join(module)
                 .join("__manifest__.py")
                 .as_path(),
@@ -292,12 +382,12 @@ mod tests {
     }
 
     /// A standalone `# pylint: disable` is only rewritten when the rules it names are part of
-    /// the run, so this fixture is linted with those rules enabled alongside `ODOO047`.
+    /// the run, so this fixture is linted with those rules enabled alongside `ODC8502`.
     #[test]
     fn pylint_disable_comment_standalone() -> Result<()> {
         let snapshot = "pylint_disable_comment_standalone".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO047_standalone.py"),
+            Path::new("odoo/pylint_disable_comment_standalone.py"),
             &LinterSettings::for_rules([
                 Rule::PylintDisableComment,
                 Rule::MethodRequiredSuper,
@@ -313,7 +403,7 @@ mod tests {
     fn prohibited_method_override() -> Result<()> {
         let snapshot = "prohibited_method_override".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/ODOO055.py"),
+            Path::new("odoo/prohibited_method_override.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     prohibited_override_methods: vec![

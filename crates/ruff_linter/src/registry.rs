@@ -169,7 +169,7 @@ pub enum Linter {
     #[prefix = "NPY"]
     Numpy,
     /// [odoo](https://pypi.org/project/pylint-odoo/)
-    #[prefix = "ODOO"]
+    #[prefix = "OD"]
     Odoo,
     /// [odoo-app](https://github.com/Vauxoo/ruff-odoo/tree/main/crates/ruff_linter/src/rules/odoo_app)
     #[prefix = "OAPP"]
@@ -370,14 +370,14 @@ impl Rule {
 
     /// The documentation site that hosts this rule's page.
     ///
-    /// Vauxoo fork: the `ODOO`/`OAPP` rules exist only here, so their pages are published
+    /// Vauxoo fork: the `OD`/`OAPP` rules exist only here, so their pages are published
     /// to this fork's own site rather than to `docs.astral.sh/ruff`, which is what the
     /// workspace `homepage` points at. Routing per rule — instead of repointing that
     /// `homepage` — is what keeps the ~1000 upstream rules linking to the upstream site,
     /// where their pages actually are.
     fn documentation_site(self) -> &'static str {
         match self.noqa_code().prefix() {
-            "ODOO" | "OAPP" => "https://vauxoo.github.io/ruff-odoo",
+            "OD" | "OAPP" => "https://vauxoo.github.io/ruff-odoo",
             _ => env!("CARGO_PKG_HOMEPAGE"),
         }
     }
@@ -491,7 +491,7 @@ mod tests {
         for rule in Rule::iter() {
             let url = rule.url().expect("every rule is documented");
             let expected = match rule.noqa_code().prefix() {
-                "ODOO" | "OAPP" => "https://vauxoo.github.io/ruff-odoo/rules/",
+                "OD" | "OAPP" => "https://vauxoo.github.io/ruff-odoo/rules/",
                 _ => "https://docs.astral.sh/ruff/rules/",
             };
             assert_eq!(
@@ -507,7 +507,7 @@ mod tests {
     #[test]
     fn rule_naming_convention() {
         // The disallowed rule names are defined in a separate file so that they can also be picked up by add_rule.py.
-        // This fork deliberately keeps the list empty: the `ODOO`/`OAPP` rules are ports of
+        // This fork deliberately keeps the list empty: the `OD`/`OAPP` rules are ports of
         // pylint-odoo and OCA odoo-pre-commit-hooks checks, and users select and suppress them
         // by the names those tools already use (`use-vim-comment`, `prefer-env-translation`,
         // `consider-merging-classes-inherited`, ...). Renaming them to satisfy the upstream

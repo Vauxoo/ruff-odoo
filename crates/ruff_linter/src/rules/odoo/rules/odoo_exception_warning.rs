@@ -33,7 +33,7 @@ impl Violation for OdooExceptionWarning {
     }
 }
 
-/// ODOO020
+/// ODR8101
 pub(crate) fn odoo_exception_warning(checker: &Checker, import_from: &ast::StmtImportFrom) {
     if import_from.module.as_deref() != Some("odoo.exceptions") {
         return;

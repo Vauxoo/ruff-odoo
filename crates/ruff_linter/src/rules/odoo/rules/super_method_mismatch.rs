@@ -40,7 +40,7 @@ impl Violation for SuperMethodMismatch {
     }
 }
 
-/// ODOO036
+/// ODW8164
 pub(crate) fn super_method_mismatch(checker: &Checker, call: &ast::ExprCall) {
     let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {
         return;

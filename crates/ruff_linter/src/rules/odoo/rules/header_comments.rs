@@ -75,7 +75,7 @@ fn file_is_comments_only(locator: &Locator, comment_ranges: &CommentRanges) -> b
         .is_empty()
 }
 
-/// ODOO026
+/// ODC8501
 pub(crate) fn header_comments(
     context: &LintContext,
     locator: &Locator,

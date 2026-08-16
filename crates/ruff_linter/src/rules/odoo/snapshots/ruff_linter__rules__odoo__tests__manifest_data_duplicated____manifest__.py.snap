@@ -1,0 +1,53 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8125 [*] The file "views/res_partner_views.xml" is duplicated in manifest key "data"
+ --> __manifest__.py:5:9
+  |
+3 |     "data": [
+4 |         "views/res_partner_views.xml",
+5 |         "views/res_partner_views.xml",
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |         "security/ir.model.access.csv",
+7 |         "views/templates.xml",
+  |
+help: Remove the duplicated entry
+  |
+4 |         "views/res_partner_views.xml",
+  -         "views/res_partner_views.xml",
+5 |         "security/ir.model.access.csv",
+  |
+
+ODW8125 [*] The file "security/ir.model.access.csv" is duplicated in manifest key "data"
+  --> __manifest__.py:8:9
+   |
+ 6 |         "security/ir.model.access.csv",
+ 7 |         "views/templates.xml",
+ 8 |         "security/ir.model.access.csv",
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |     ],
+10 |     "demo": [
+   |
+help: Remove the duplicated entry
+  |
+7 |         "views/templates.xml",
+  -         "security/ir.model.access.csv",
+8 |     ],
+  |
+
+ODW8125 [*] The file "tests/test_flow.yml" is duplicated in manifest key "test"
+  --> __manifest__.py:13:37
+   |
+11 |         "demo/res_partner_demo.xml",
+12 |     ],
+13 |     "test": ["tests/test_flow.yml", "tests/test_flow.yml"],
+   |                                     ^^^^^^^^^^^^^^^^^^^^^
+14 | }
+   |
+help: Remove the duplicated entry
+   |
+12 |     ],
+   -     "test": ["tests/test_flow.yml", "tests/test_flow.yml"],
+13 +     "test": ["tests/test_flow.yml"],
+14 | }
+   |

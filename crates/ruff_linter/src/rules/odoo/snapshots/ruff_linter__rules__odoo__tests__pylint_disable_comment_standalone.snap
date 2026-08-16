@@ -1,8 +1,8 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODOO005 Missing `super` call in "unlink" method
-  --> ODOO047_standalone.py:13:9
+ODW8106 Missing `super` call in "unlink" method
+  --> pylint_disable_comment_standalone.py:13:9
    |
 11 |     _inherit = "sale.order"
 12 |
@@ -12,8 +12,8 @@ ODOO005 Missing `super` call in "unlink" method
 15 |         # The pragma is the first line of the body, so it also covers the `def` header,
    |
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO005`
-  --> ODOO047_standalone.py:14:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8106`
+  --> pylint_disable_comment_standalone.py:14:9
    |
 13 |     def unlink(self):
 14 |         # pylint: disable=method-required-super
@@ -21,18 +21,18 @@ ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO005`
 15 |         # The pragma is the first line of the body, so it also covers the `def` header,
 16 |         # which is where `method-required-super` is reported.
    |
-help: Replace with `# noqa: ODOO005`
+help: Replace with `# noqa: ODW8106`
    |
 12 |
    -     def unlink(self):
    -         # pylint: disable=method-required-super
-13 +     def unlink(self):  # noqa: ODOO005
+13 +     def unlink(self):  # noqa: ODW8106
 14 |         # The pragma is the first line of the body, so it also covers the `def` header,
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO018`
-  --> ODOO047_standalone.py:20:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8121`
+  --> pylint_disable_comment_standalone.py:20:9
    |
 19 |     def create_address(self, values):
 20 |         # pylint: disable=context-overridden
@@ -40,19 +40,19 @@ ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO018`
 21 |         context = {"lang": "en_US"}
 22 |         return self.env["res.partner"].with_context(context).create(values)
    |
-help: Replace with `# noqa: ODOO018`
+help: Replace with `# noqa: ODW8121`
    |
 19 |     def create_address(self, values):
    -         # pylint: disable=context-overridden
 20 |         context = {"lang": "en_US"}
    -         return self.env["res.partner"].with_context(context).create(values)
-21 +         return self.env["res.partner"].with_context(context).create(values)  # noqa: ODOO018
+21 +         return self.env["res.partner"].with_context(context).create(values)  # noqa: ODW8121
 22 |
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO018 Context overridden using dict. Better using kwargs `with_context(**context)` or `with_context(key=value)`
-  --> ODOO047_standalone.py:22:16
+ODW8121 Context overridden using dict. Better using kwargs `with_context(**context)` or `with_context(key=value)`
+  --> pylint_disable_comment_standalone.py:22:16
    |
 20 |         # pylint: disable=context-overridden
 21 |         context = {"lang": "en_US"}
@@ -62,8 +62,8 @@ ODOO018 Context overridden using dict. Better using kwargs `with_context(**conte
 24 |     def obsolete(self):
    |
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047_standalone.py:25:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+  --> pylint_disable_comment_standalone.py:25:9
    |
 24 |     def obsolete(self):
 25 |         # pylint: disable=invalid-commit
@@ -71,7 +71,7 @@ ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
 26 |         # Nothing in this block commits, so the pragma only has to be removed.
 27 |         return True
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODE8102`
    |
 24 |     def obsolete(self):
    -         # pylint: disable=invalid-commit
@@ -79,43 +79,43 @@ help: Replace with `# noqa: ODOO017`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047_standalone.py:30:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+  --> pylint_disable_comment_standalone.py:30:9
    |
 29 |     def already_suppressed(self):
 30 |         # pylint: disable=invalid-commit
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-31 |         self.env.cr.commit()  # noqa: ODOO017
+31 |         self.env.cr.commit()  # noqa: ODE8102
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODE8102`
    |
 29 |     def already_suppressed(self):
    -         # pylint: disable=invalid-commit
-30 |         self.env.cr.commit()  # noqa: ODOO017
+30 |         self.env.cr.commit()  # noqa: ODE8102
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047_standalone.py:34:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+  --> pylint_disable_comment_standalone.py:34:9
    |
 33 |     def partially_mapped(self):
 34 |         # pylint: disable=invalid-commit,some-custom-check
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 35 |         self.env.cr.commit()
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODE8102`
    |
 33 |     def partially_mapped(self):
    -         # pylint: disable=invalid-commit,some-custom-check
    -         self.env.cr.commit()
 34 +         # pylint: disable=some-custom-check
-35 +         self.env.cr.commit()  # noqa: ODOO017
+35 +         self.env.cr.commit()  # noqa: ODE8102
 36 |
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO017 Use of cr.commit() directly
-  --> ODOO047_standalone.py:35:9
+ODE8102 Use of cr.commit() directly
+  --> pylint_disable_comment_standalone.py:35:9
    |
 33 |     def partially_mapped(self):
 34 |         # pylint: disable=invalid-commit,some-custom-check
@@ -125,8 +125,8 @@ ODOO017 Use of cr.commit() directly
 37 |     def disable_next(self):
    |
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047_standalone.py:38:9
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+  --> pylint_disable_comment_standalone.py:38:9
    |
 37 |     def disable_next(self):
 38 |         # pylint: disable-next=invalid-commit
@@ -134,18 +134,18 @@ ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
 39 |         self.env.cr.commit()
 40 |         self.env.cr.commit()
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODE8102`
    |
 37 |     def disable_next(self):
    -         # pylint: disable-next=invalid-commit
    -         self.env.cr.commit()
-38 +         self.env.cr.commit()  # noqa: ODOO017
+38 +         self.env.cr.commit()  # noqa: ODE8102
 39 |         self.env.cr.commit()
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO017 Use of cr.commit() directly
-  --> ODOO047_standalone.py:39:9
+ODE8102 Use of cr.commit() directly
+  --> pylint_disable_comment_standalone.py:39:9
    |
 37 |     def disable_next(self):
 38 |         # pylint: disable-next=invalid-commit
@@ -154,16 +154,16 @@ ODOO017 Use of cr.commit() directly
 40 |         self.env.cr.commit()
    |
 
-ODOO017 Use of cr.commit() directly
-  --> ODOO047_standalone.py:40:9
+ODE8102 Use of cr.commit() directly
+  --> pylint_disable_comment_standalone.py:40:9
    |
 38 |         # pylint: disable-next=invalid-commit
 39 |         self.env.cr.commit()
 40 |         self.env.cr.commit()
    |         ^^^^^^^^^^^^^^^^^^^^
 
-ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
-  --> ODOO047_standalone.py:45:1
+ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+  --> pylint_disable_comment_standalone.py:45:1
    |
 43 | # A module-level pragma runs to the end of the file in pylint, even though it reads as if
 44 | # it only applied to the function below it — so the function after it is covered too.
@@ -172,31 +172,31 @@ ODOO047 [*] `pylint: disable` comment should be migrated to `# noqa: ODOO017`
 46 | def module_level(cr):
 47 |     cr.commit()
    |
-help: Replace with `# noqa: ODOO017`
+help: Replace with `# noqa: ODE8102`
    |
 44 | # it only applied to the function below it — so the function after it is covered too.
    - # pylint: disable=invalid-commit
 45 | def module_level(cr):
    -     cr.commit()
-46 +     cr.commit()  # noqa: ODOO017
+46 +     cr.commit()  # noqa: ODE8102
 47 |
 48 |
 49 | def also_covered(cr):
    -     cr.commit()
-50 +     cr.commit()  # noqa: ODOO017
+50 +     cr.commit()  # noqa: ODE8102
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODOO017 Use of cr.commit() directly
-  --> ODOO047_standalone.py:47:5
+ODE8102 Use of cr.commit() directly
+  --> pylint_disable_comment_standalone.py:47:5
    |
 45 | # pylint: disable=invalid-commit
 46 | def module_level(cr):
 47 |     cr.commit()
    |     ^^^^^^^^^^^
 
-ODOO017 Use of cr.commit() directly
-  --> ODOO047_standalone.py:51:5
+ODE8102 Use of cr.commit() directly
+  --> pylint_disable_comment_standalone.py:51:5
    |
 50 | def also_covered(cr):
 51 |     cr.commit()

@@ -1,0 +1,11 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8102 Use of cr.commit() directly
+ --> invalid_commit.py:5:9
+  |
+4 |     def write(self, vals):
+5 |         self.env.cr.commit()
+  |         ^^^^^^^^^^^^^^^^^^^^
+6 |         return super().write(vals)
+  |

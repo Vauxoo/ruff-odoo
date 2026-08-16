@@ -50,7 +50,7 @@ fn has_url_scheme(url: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
 }
 
-/// ODOO046
+/// ODW8162
 pub(crate) fn manifest_external_assets(
     checker: &Checker,
     dict: &ast::ExprDict,

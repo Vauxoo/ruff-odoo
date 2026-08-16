@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8164 `super().create` mismatch but defined method is `write`
+ --> super_method_mismatch.py:5:16
+  |
+4 |     def write(self, vals):
+5 |         return super().create(vals)
+  |                ^^^^^^^^^^^^^^^^^^^^
+6 |
+7 |     def create(self, vals):
+  |

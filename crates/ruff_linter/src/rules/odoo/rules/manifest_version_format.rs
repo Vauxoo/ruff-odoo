@@ -91,7 +91,7 @@ fn version_matches(version: &str, series: Option<(u16, u16)>) -> bool {
     parts.next().is_none()
 }
 
-/// ODOO064
+/// ODC8106
 pub(crate) fn manifest_version_format(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

@@ -1,0 +1,21 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8115 Translatable term contains variables. Interpolate outside the translation call
+ --> translation_contains_variable.py:1:1
+  |
+1 | _("Hello %s" % name)
+  | ^^^^^^^^^^^^^^^^^^^^
+2 | _("Hello {}".format(name))
+3 | _("Hello %s") % name
+  |
+
+ODW8115 Translatable term contains variables. Interpolate outside the translation call
+ --> translation_contains_variable.py:2:1
+  |
+1 | _("Hello %s" % name)
+2 | _("Hello {}".format(name))
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 | _("Hello %s") % name
+4 | _("Plain text")
+  |

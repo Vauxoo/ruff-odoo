@@ -1,0 +1,44 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8202 [*] Use of vim comment
+ --> use_vim_comment.py:1:1
+  |
+1 | # vim: fileencoding=utf-8
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+2 | import os
+  |
+help: Remove vim comment
+  |
+  - # vim: fileencoding=utf-8
+1 | import os
+  |
+
+ODW8202 Use of vim comment
+ --> use_vim_comment.py:4:8
+  |
+2 | import os
+3 |
+4 | x = 1  # vim: set ts=4 sw=4 et:
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^
+5 |
+6 | # VIM:fdm=marker
+  |
+help: Remove vim comment
+
+ODW8202 [*] Use of vim comment
+ --> use_vim_comment.py:6:1
+  |
+4 | x = 1  # vim: set ts=4 sw=4 et:
+5 |
+6 | # VIM:fdm=marker
+  | ^^^^^^^^^^^^^^^^
+7 |
+8 | # A regular comment
+  |
+help: Remove vim comment
+  |
+5 |
+  - # VIM:fdm=marker
+6 |
+  |

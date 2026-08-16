@@ -386,7 +386,7 @@ fn noqa_comment_suppresses_rule(comment: &str) -> bool {
     }
     rest[1..]
         .split(|char: char| char == ',' || char.is_ascii_whitespace())
-        .any(|code| code.eq_ignore_ascii_case("ODOO063"))
+        .any(|code| code.eq_ignore_ascii_case("ODR8180"))
 }
 
 fn line_has_pylint_disable(source: &str, range: TextRange) -> bool {

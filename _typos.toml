@@ -26,6 +26,7 @@ BA = "BA" # acronym for "Bad Allowed", used in testing.
 jod = "jod" # e.g., `jod-thread`
 Numer = "Numer" # Library name 'NumerBlox' in "Who's Using Ruff?"
 CPY = "CPY"  # it's a Ruff rule category
+ODF = "ODF"  # `ODF8101`, this fork's code for pylint-odoo's fatal `F8101`; typos reads it as `OF`
 
 [default]
 extend-ignore-re = [

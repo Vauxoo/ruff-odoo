@@ -68,7 +68,7 @@ fn is_default_value(key: &str, value: &Expr) -> bool {
     }
 }
 
-/// ODOO025
+/// ODC8116
 pub(crate) fn manifest_superfluous_key(
     checker: &Checker,
     dict: &ast::ExprDict,

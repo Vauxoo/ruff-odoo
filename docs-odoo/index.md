@@ -10,7 +10,7 @@ upstream and is documented at [docs.astral.sh/ruff](https://docs.astral.sh/ruff/
 
 | Group  | Rules | Ported from                                                              |
 | ------ | ----- | ------------------------------------------------------------------------ |
-| `ODOO` | 66    | `pylint-odoo`                                                            |
+| `OD`   | 67    | `pylint-odoo` and `odoo-pre-commit-hooks`                                |
 | `OAPP` | 3     | the app-store variants of those checks, which only apply to paid modules |
 
 Start at the [rules index](rules.md).
@@ -55,13 +55,13 @@ without it silently reports nothing:
 preview = true
 
 [tool.ruff.lint]
-extend-select = ["ODOO", "OAPP"]
+extend-select = ["OD", "OAPP"]
 ```
 
 Or, without a config file:
 
 ```shell
-ruff-odoo check --preview --select ODOO,OAPP .
+ruff-odoo check --preview --select OD,OAPP .
 ```
 
 Some rules only make sense against a whole Odoo module rather than a single file — the
@@ -100,10 +100,21 @@ ruff-odoo 0.16.2.16+3 (b45cfcb38 2026-08-15)
 ## Migrating from pylint-odoo
 
 Rule names are unchanged. A check that was `sql-injection` in `pylint-odoo` is
-`sql-injection` here too, so existing knowledge, tickets and grep patterns keep working —
-only the code changes (`E8103` becomes `ODOO052`).
+`sql-injection` here too, so existing knowledge, tickets and grep patterns keep working.
+
+Codes are unchanged too, apart from an `OD` prefix that keeps them from colliding with
+upstream Ruff's own `C`, `E`, `F`, `R` and `W` codes: `E8103` becomes `ODE8103`, `C8101`
+becomes `ODC8101`, `R8180` becomes `ODR8180`. The category letter is part of the code, so
+`--select ODC` selects every convention check, `--select ODE` every error, and `--select OD` the whole group.
+
+Two exceptions. The three paid-app checks (`C8117`, `C8118`, `C8119`) live in their own
+`OAPP` group, numbered `OAPP001`–`OAPP003`, so that a project can select them separately
+from the rest. And the rules with no `pylint-odoo` counterpart — the ports of
+`odoo-pre-commit-hooks` checks and the rules invented here — are numbered in an `85xx`
+block of their own (`ODC8501`, `ODW8501`, …), which is why no `pylint-odoo` code maps to
+them.
 
 Suppression comments do change: Ruff honors `# noqa`, not `# pylint: disable`. The
-[`pylint-disable-comment`](rules/pylint-disable-comment.md) rule (`ODOO047`) finds the
+[`pylint-disable-comment`](rules/pylint-disable-comment.md) rule (`ODC8502`) finds the
 leftover pragmas and rewrites them, resolving each name — or each old message code such as
 `E8102` — to the rule that replaced it.

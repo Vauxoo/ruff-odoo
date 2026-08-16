@@ -384,7 +384,7 @@ from odoo import models
 
 
 class SuppressedNoqaA(models.Model):
-    _inherit = "res.users"  # noqa: ODOO063
+    _inherit = "res.users"  # noqa: ODR8180
 "#,
         )?;
         fs::write(
@@ -405,7 +405,7 @@ from odoo import models
 
 class SuppressedMultilineNoqaA(models.Model):
     _inherit = (
-        "res.groups"  # noqa: ODOO063
+        "res.groups"  # noqa: ODR8180
     )
 "#,
         )?;
@@ -484,7 +484,7 @@ class PerFilePair(models.Model):
         linter.per_file_ignores = CompiledPerFileIgnoreList::resolve(
             vec![PerFileIgnore::new(
                 "ignored_by_per_file.py".to_string(),
-                vec![UnresolvedRuleSelector::cli("ODOO063")],
+                vec![UnresolvedRuleSelector::cli("ODR8180")],
                 None,
             )],
             PreviewMode::Disabled,
@@ -522,7 +522,7 @@ class PerFilePair(models.Model):
                 (tempdir.path().to_str().unwrap(), "/home/ferris/project"),
             ]
         }, {
-            insta::assert_snapshot!("ODOO063_project_scan", messages);
+            insta::assert_snapshot!("consider_merging_classes_inherited_project_scan", messages);
         });
 
         Ok(())
@@ -656,7 +656,7 @@ class MixinB(models.Model):
                 (tempdir.path().to_str().unwrap(), "/home/ferris/project"),
             ]
         }, {
-            insta::assert_snapshot!("ODOO063_list_inherit", messages);
+            insta::assert_snapshot!("consider_merging_classes_inherited_list_inherit", messages);
         });
 
         Ok(())

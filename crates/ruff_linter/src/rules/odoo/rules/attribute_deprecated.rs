@@ -36,7 +36,7 @@ impl Violation for AttributeDeprecated {
 
 const DEPRECATED_ATTRIBUTES: &[&str] = &["_columns", "_defaults", "length"];
 
-/// ODOO021
+/// ODW8105
 pub(crate) fn attribute_deprecated(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;
