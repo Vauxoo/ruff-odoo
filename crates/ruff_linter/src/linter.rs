@@ -328,14 +328,12 @@ pub fn check_path(
         }
     }
 
-    // Migrate `# pylint: disable` pragmas. This runs last because rewriting a block-scoped
-    // pragma needs to know which diagnostics the other rules produced inside that block, but
-    // still before `noqa` enforcement below, so its own diagnostics stay suppressible.
+    // Migrate `# pylint: disable` pragmas. This runs before `noqa` enforcement below, so its
+    // own diagnostics stay suppressible.
     odoo::rules::pylint_disable_comment(
         &mut context,
         locator,
         comment_ranges,
-        &directives.noqa_line_for,
         parsed.has_valid_syntax().then(|| parsed.suite().as_slice()),
     );
 

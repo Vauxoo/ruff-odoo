@@ -115,7 +115,22 @@ from the rest. And the rules with no `pylint-odoo` counterpart — the ports of
 block of their own (`ODC8501`, `ODW8501`, …), which is why no `pylint-odoo` code maps to
 them.
 
-Suppression comments do change: Ruff honors `# noqa`, not `# pylint: disable`. The
+Suppression comments do change: Ruff does not read `# pylint: disable`. The
 [`pylint-disable-comment`](rules/pylint-disable-comment.md) rule (`ODC8502`) finds the
 leftover pragmas and rewrites them, resolving each name — or each old message code such as
-`E8102` — to the rule that replaced it.
+`E8102` — to the rule that replaced it. Because the rule names are the ones `pylint-odoo`
+already used, the rewrite keeps them, and the result reads the way the pragma did:
+
+```python
+env.cr.commit()  # pylint: disable=invalid-commit
+env.cr.commit()  # ruff: ignore[invalid-commit]
+```
+
+Each pragma has a suppression with the same scope, so nothing widens or narrows: an inline
+pragma becomes a trailing `# ruff: ignore[...]`, a `disable-next` becomes an own-line one,
+and a block-scoped `disable` becomes a `# ruff: disable[...]` / `# ruff: enable[...]` pair
+around that block.
+
+A name only resolves in a suppression comment while preview is on — with preview off, only
+codes do. That costs nothing here, since every rule on this site is a preview rule and does
+not fire without it either.
