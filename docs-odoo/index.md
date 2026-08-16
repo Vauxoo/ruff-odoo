@@ -40,7 +40,7 @@ from source:
 ```yaml
 repos:
   - repo: https://github.com/vauxoo/ruff-pre-commit
-    rev: 0.16.3.17
+    rev: 0.16.3.18
     hooks:
       - id: ruff-check
 ```
@@ -86,7 +86,7 @@ parse the output as a [PEP 440](https://peps.python.org/pep-0440/) version keep 
 
 ```console
 $ ruff-odoo --version
-ruff-odoo 0.16.3.17
+ruff-odoo 0.16.3.18
 ```
 
 The `version` subcommand is the detailed one, adding the number of commits since the
@@ -95,7 +95,7 @@ same information as a machine-readable object:
 
 ```console
 $ ruff-odoo version
-ruff-odoo 0.16.3.17+3 (b45cfcb38 2026-08-15)
+ruff-odoo 0.16.3.18+3 (b45cfcb38 2026-08-15)
 ```
 
 ## Migrating from pylint-odoo
