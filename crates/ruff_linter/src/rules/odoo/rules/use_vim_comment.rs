@@ -42,7 +42,7 @@ fn is_vim_comment(text: &str) -> bool {
         .starts_with("vim:")
 }
 
-/// ODOO003
+/// ODW8202
 pub(crate) fn use_vim_comment(context: &LintContext, locator: &Locator, comment_range: TextRange) {
     if !is_vim_comment(locator.slice(comment_range)) {
         return;

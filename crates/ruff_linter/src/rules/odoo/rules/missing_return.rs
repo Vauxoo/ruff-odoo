@@ -89,7 +89,7 @@ fn contains_return(body: &[Stmt]) -> bool {
     })
 }
 
-/// ODOO022
+/// ODW8110
 pub(crate) fn missing_return(checker: &Checker, function_def: &ast::StmtFunctionDef) {
     if !checker.semantic().current_scope().kind.is_class() {
         return;

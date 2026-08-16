@@ -5,11 +5,11 @@ description: "Use this skill to add a new custom Odoo lint rule (ported from pyl
 
 # Add a custom Odoo rule to this ruff fork
 
-Context: this fork adds a Vauxoo-specific `ODOO` rule plugin to Ruff, porting checks from
+Context: this fork adds a Vauxoo-specific `OD` rule plugin to Ruff, porting checks from
 `pylint-odoo` and OCA's `odoo-pre-commit-hooks` so they run natively in Ruff with real autofix.
-The rule group already exists (`crates/ruff_linter/src/rules/odoo/`, prefix `ODOO`, registered as
+The rule group already exists (`crates/ruff_linter/src/rules/odoo/`, prefix `OD`, registered as
 `Linter::Odoo` in `registry.rs`) — this skill is for adding one more rule to it, not for the
-one-time plugin scaffold (that was done via `scripts/add_plugin.py odoo --url ... --prefix ODOO`;
+one-time plugin scaffold (that was done via `scripts/add_plugin.py odoo --url ... --prefix OD`;
 only redo that if the `odoo` plugin directory has somehow been removed).
 
 ## Scope discipline — read this before starting
@@ -80,8 +80,8 @@ cross-module inference (see Scope discipline above).
      - a long call rewrite expands over `call.arguments.range()` with one argument per line and a
        **trailing comma** (magic trailing comma keeps `ruff format` from re-collapsing it),
        closing paren at the indentation of the call's line.
-     Worked examples: `manifest_summary_multiline.rs` (ODOO012) and
-     `translation_calls.rs::convert_to_named_placeholders` (ODOO042). Indentation comes from
+     Worked examples: `manifest_summary_multiline.rs` (ODC8120) and
+     `translation_calls.rs::convert_to_named_placeholders` (ODW8120). Indentation comes from
      `locator.line_start` + leading whitespace and `checker.stylist().indentation()`; when
      there's no usable indentation (inline dict, key not starting its own line), fall back to
      the single-line fix rather than guessing. Add fixture cases for both the fits-in-one-line
@@ -102,8 +102,17 @@ cross-module inference (see Scope discipline above).
    - `checkers/tokens.rs` — for comment/token-stream checks (e.g. vim modelines). Loop over
      `comment_ranges` like the neighboring `ambiguous_unicode_character_comment` call does.
 4. **`codes.rs`** — one line in the `// odoo` block:
-   `(Odoo, "NNN") => rules::odoo::rules::RuleName,`. Codes are assigned sequentially
-   (`ODOO001`, `ODOO002`, ...) — check the existing block for the next free number.
+   `(Odoo, "X8NNN") => rules::odoo::rules::RuleName,`, keeping the block sorted.
+   The code is **not** a new sequential number: it is the id the check already has in the
+   tool it came from, with its category letter, so `E8103 sql-injection` in pylint-odoo is
+   `(Odoo, "E8103")` here and renders as `ODE8103`. Two cases:
+   - **Ported from pylint-odoo** — reuse its code verbatim. Find it in that project's
+     `ODOO_MSGS` (or in the `MESSAGE_ALIASES` table in `pylint_disable_comment.rs`, which
+     lists every one of them).
+   - **Ported from odoo-pre-commit-hooks, or invented here** — there is no original code,
+     so take the next free number in the fork's own `85xx` block, under the letter that
+     matches the check's category (`C` convention, `E` error, `F` fatal, `R` refactor,
+     `W` warning). Never invent a number outside `85xx`: pylint-odoo may later claim it.
 5. **⚠️ The gotcha that costs the most debugging time**: if the rule is dispatched from
    `checkers/tokens.rs` (or `checkers/physical_lines.rs` / `checkers/filesystem.rs`), it is **not
    enough** to wire the dispatch call — you must also add the rule to the matching arm of
@@ -123,12 +132,13 @@ cross-module inference (see Scope discipline above).
    `[pandas-vet](...)`) — checked by the `linter_sorting` test. If a rebase moves things around,
    re-sort rather than appending at the end.
 8. **Test fixture + case**:
-   - `crates/ruff_linter/resources/test/fixtures/odoo/ODOONNN.py` (or `ODOONNN/__manifest__.py`
-     for manifest-file-gated rules — the file must literally be named `__manifest__.py` since
-     those rules check `checker.path().file_name()`; see `crates/ruff_linter/resources/test/fixtures/odoo/ODOO001/`
-     for the pattern of nesting a rule-code directory to get a specific filename, mirroring how
+   - `crates/ruff_linter/resources/test/fixtures/odoo/rule_name.py`, named after the rule in
+     snake_case rather than after its code (or `rule_name/__manifest__.py` for
+     manifest-file-gated rules — the file must literally be named `__manifest__.py` since
+     those rules check `checker.path().file_name()`; see `crates/ruff_linter/resources/test/fixtures/odoo/manifest_required_key/`
+     for the pattern of nesting a directory to get a specific filename, mirroring how
      `pep8_naming`'s `N999` tests do `Path::new("N999/module/flake9/__init__.py")`).
-   - One `#[test_case(Rule::RuleName, Path::new("ODOONNN.py"))]` per fixture in
+   - One `#[test_case(Rule::RuleName, Path::new("rule_name.py"))]` per fixture in
      `crates/ruff_linter/src/rules/odoo/mod.rs`'s `#[cfg(test)] mod tests` block, using
      `crate::assert_diagnostics` + `LinterSettings::for_rule` (this is the current convention —
      don't copy `scripts/add_plugin.py`'s generated test scaffold verbatim, it uses stale
@@ -193,7 +203,7 @@ cross-module inference (see Scope discipline above).
    don't rely on unit tests alone to validate the CLI-level experience:
    ```
    cargo build --bin ruff
-   target/debug/ruff check --select ODOO --preview --no-cache --fix <path>
+   target/debug/ruff check --select OD --preview --no-cache --fix <path>
    ```
 9. Coverage (optional but useful when adding a non-trivial rule):
    `cargo llvm-cov -p ruff_linter --lib --summary-only -- rules::odoo` (install once with `cargo

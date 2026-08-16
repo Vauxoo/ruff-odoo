@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8105 License "GPL" not allowed in manifest file
+ --> __manifest__.py:3:5
+  |
+1 | {
+2 |     "name": "My Module",
+3 |     "license": "GPL",
+  |     ^^^^^^^^^
+4 | }
+  |

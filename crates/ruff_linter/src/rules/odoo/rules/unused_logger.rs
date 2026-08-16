@@ -68,7 +68,7 @@ fn is_logger_usage(expr: &Expr) -> bool {
     )
 }
 
-/// ODOO006
+/// ODW8501
 pub(crate) fn unused_logger(checker: &Checker, suite: &Suite) {
     let Some(assign_stmt) = suite.iter().find(|stmt| {
         let Stmt::Assign(assign) = stmt else {

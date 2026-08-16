@@ -465,9 +465,9 @@ fn fstring_contains_printf(value: &ast::FStringValue) -> bool {
         .any(contains_printf)
 }
 
-/// ODOO056, ODOO057, ODOO058, ODOO059, ODOO060, ODOO061, ODOO062
+/// ODW8302, ODE8301, ODW8303, ODW8301, ODE8306, ODE8305, ODE8300
 pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
-    // ODOO056 on the translated result: `_("Hello {}").format(name)`.
+    // ODW8302 on the translated result: `_("Hello {}").format(name)`.
     if checker.is_rule_enabled(Rule::TranslationFormatInterpolation)
         && let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref()
         && attr == "format"
@@ -496,11 +496,11 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
     }
 
     match &call.arguments.args[0] {
-        // ODOO059: `_("Hello %s" % name)` or `_("Hello " + name)`.
+        // ODW8301: `_("Hello %s" % name)` or `_("Hello " + name)`.
         Expr::BinOp(binop) => {
             translation_not_lazy_term(checker, call, binop);
         }
-        // ODOO056 on the term: `_("Hello {}".format(name))`.
+        // ODW8302 on the term: `_("Hello {}".format(name))`.
         Expr::Call(inner) => {
             if checker.is_rule_enabled(Rule::TranslationFormatInterpolation)
                 && let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = inner.func.as_ref()
@@ -511,12 +511,12 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
                 checker.report_diagnostic(TranslationFormatInterpolation, call.range());
             }
         }
-        // ODOO057, ODOO060, ODOO061, ODOO062: the term is a plain literal, so its
+        // ODE8301, ODE8306, ODE8305, ODE8300: the term is a plain literal, so its
         // placeholders can be checked against the supplied arguments.
         Expr::StringLiteral(term) => {
             check_format_string(checker, call, term);
         }
-        // ODOO058: `_(f"Hello {name}")`.
+        // ODW8303: `_(f"Hello {name}")`.
         Expr::FString(fstring) => {
             if checker.is_rule_enabled(Rule::TranslationFstringInterpolation)
                 && !fstring_contains_printf(&fstring.value)
@@ -528,7 +528,7 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
     }
 }
 
-/// ODOO059 for interpolation inside the term: `_("Hello %s" % name)` and
+/// ODW8301 for interpolation inside the term: `_("Hello %s" % name)` and
 /// `_("Hello " + name)`.
 fn translation_not_lazy_term(checker: &Checker, call: &ast::ExprCall, binop: &ast::ExprBinOp) {
     if !checker.is_rule_enabled(Rule::TranslationNotLazy) {
@@ -562,7 +562,7 @@ fn translation_not_lazy_term(checker: &Checker, call: &ast::ExprCall, binop: &as
     }
 }
 
-/// ODOO059 for interpolation applied to the translated result: `_("Hello %s") % name`.
+/// ODW8301 for interpolation applied to the translated result: `_("Hello %s") % name`.
 ///
 /// pylint-odoo funnels the whole expression back through its call check, which only
 /// fires when the term is the call's lone argument, so the same restriction applies.
@@ -676,7 +676,7 @@ fn tuple_or_dict_arguments(checker: &Checker, rhs: &Expr) -> Option<String> {
     }
 }
 
-/// ODOO057, ODOO060, ODOO061, ODOO062: checks a literal term's printf placeholders
+/// ODE8301, ODE8306, ODE8305, ODE8300: checks a literal term's printf placeholders
 /// against the values supplied to the translation call, mirroring pylint's
 /// `_check_format_string` plus pylint-odoo's no-arguments exemption (a term without
 /// supplied values is used verbatim, so `_("100%")` is fine).

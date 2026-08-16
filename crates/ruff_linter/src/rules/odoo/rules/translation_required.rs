@@ -34,7 +34,7 @@ use crate::rules::odoo::settings::OdooVersion;
 ///
 /// The suggested translation call follows the configured `odoo-version`: `self.env._` from
 /// Odoo 18.0 on (and when no version is configured), the bare `_` before that. This keeps
-/// the suggestion consistent with `prefer-env-translation` (`ODOO024`), which only applies
+/// the suggestion consistent with `prefer-env-translation` (`ODW8161`), which only applies
 /// from 18.0.
 ///
 /// Files under a `tests/` directory are ignored, matching pylint-odoo.
@@ -82,7 +82,7 @@ const ODOO_EXCEPTIONS: &[&str] = &[
 /// The translation call to recommend for the configured Odoo version.
 ///
 /// `self.env._` replaced the bare `_` in Odoo 18.0. Recommending the bare `_` on a 18.0+
-/// codebase would immediately be flagged by `prefer-env-translation` (`ODOO024`), so the two
+/// codebase would immediately be flagged by `prefer-env-translation` (`ODW8161`), so the two
 /// rules have to agree on the cutoff.
 fn translation_method(checker: &Checker) -> &'static str {
     if odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
@@ -141,7 +141,7 @@ fn in_tests_dir(path: &Path) -> bool {
         == Some("tests")
 }
 
-/// ODOO049
+/// ODC8107
 pub(crate) fn translation_required(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     if in_tests_dir(path) {
         return;
@@ -186,7 +186,7 @@ pub(crate) fn translation_required(checker: &Checker, call: &ast::ExprCall, path
     }
 }
 
-/// ODOO049
+/// ODC8107
 ///
 /// The `raise UserError("...")` half of the check. Only the first positional argument is
 /// inspected, because for every Odoo exception in [`ODOO_EXCEPTIONS`] that argument is the

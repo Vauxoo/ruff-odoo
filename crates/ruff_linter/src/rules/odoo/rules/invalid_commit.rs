@@ -31,7 +31,7 @@ impl Violation for InvalidCommit {
 
 const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];
 
-/// ODOO017
+/// ODE8102
 pub(crate) fn invalid_commit(checker: &Checker, call: &ast::ExprCall) {
     let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {
         return;

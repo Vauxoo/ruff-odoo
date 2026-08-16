@@ -22,7 +22,14 @@ from _utils import ROOT_DIR, dir_name, get_indent, pascal_case, snake_case
 def main(*, name: str, prefix: str, code: str, linter: str) -> None:
     """Generate boilerplate for a new rule."""
     # Create a test fixture.
-    filestem = f"{prefix}{code}" if linter != "pylint" else snake_case(name)
+    # `pylint` and this fork's `odoo`/`odoo-app` groups name their fixtures after the rule,
+    # not its code: their codes carry a category letter that can be revised, and a fixture
+    # named after the rule survives that.
+    filestem = (
+        snake_case(name)
+        if linter in {"pylint", "odoo", "odoo-app"}
+        else f"{prefix}{code}"
+    )
     with (
         ROOT_DIR
         / "crates/ruff_linter/resources/test/fixtures"

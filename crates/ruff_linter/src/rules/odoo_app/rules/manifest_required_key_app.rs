@@ -49,7 +49,7 @@ impl Violation for ManifestRequiredKeyApp {
     }
 }
 
-// `license` is also required for apps, but ODOO001 already requires it for every module.
+// `license` is also required for apps, but ODC8102 already requires it for every module.
 const REQUIRED_KEYS_APP: &[&str] = &["currency", "images", "support"];
 
 /// OAPP003

@@ -55,7 +55,7 @@ fn version_tuple(version: &str) -> Option<Vec<u64>> {
     version.split('.').map(|part| part.parse().ok()).collect()
 }
 
-/// ODOO054
+/// ODE8145
 pub(crate) fn manifest_behind_migrations(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

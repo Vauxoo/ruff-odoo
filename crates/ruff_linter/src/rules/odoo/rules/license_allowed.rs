@@ -46,7 +46,7 @@ const LICENSE_ALLOWED: &[&str] = &[
     "Other proprietary",
 ];
 
-/// ODOO010
+/// ODC8105
 pub(crate) fn license_allowed(checker: &Checker, dict: &ast::ExprDict, path: &std::path::Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

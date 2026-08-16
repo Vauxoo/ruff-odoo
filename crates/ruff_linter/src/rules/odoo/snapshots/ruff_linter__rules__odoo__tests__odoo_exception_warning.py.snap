@@ -1,0 +1,11 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODR8101 `odoo.exceptions.Warning` is a deprecated alias to `odoo.exceptions.UserError`, use `from odoo.exceptions import UserError`
+ --> odoo_exception_warning.py:1:1
+  |
+1 | from odoo.exceptions import Warning
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 |
+3 | from odoo.exceptions import UserError
+  |

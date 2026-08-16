@@ -204,7 +204,7 @@ fn is_risky_query(checker: &Checker, expr: &Expr) -> bool {
     }
 }
 
-/// ODOO052
+/// ODE8103
 pub(crate) fn sql_injection(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     // Matching pylint-odoo: queries in test files often format constants on purpose.
     if path

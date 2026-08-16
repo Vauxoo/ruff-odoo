@@ -35,7 +35,7 @@ impl Violation for TestFolderImported {
     }
 }
 
-/// ODOO045
+/// ODE8130
 pub(crate) fn test_folder_imported(checker: &Checker, stmt: &Stmt, path: &Path) {
     if path.file_name().and_then(|name| name.to_str()) != Some("__init__.py") {
         return;

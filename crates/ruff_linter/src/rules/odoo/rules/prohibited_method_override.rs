@@ -43,7 +43,7 @@ impl Violation for ProhibitedMethodOverride {
     }
 }
 
-/// ODOO055
+/// ODW8107
 pub(crate) fn prohibited_method_override(checker: &Checker, function_def: &ast::StmtFunctionDef) {
     if !checker.semantic().current_scope().kind.is_class() {
         return;

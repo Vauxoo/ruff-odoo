@@ -142,7 +142,7 @@ impl<'a> Visitor<'a> for WriteCallCollector<'a> {
     }
 }
 
-/// ODOO040
+/// ODE8135
 pub(crate) fn no_write_in_compute(checker: &Checker, class_def: &ast::StmtClassDef) {
     if !is_odoo_model_class(checker.semantic(), class_def) {
         return;

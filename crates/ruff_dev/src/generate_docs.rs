@@ -29,7 +29,7 @@ pub(crate) struct Args {
 ///
 /// Rule pages carry three links that are repository-specific: the release the rule
 /// was introduced in, a search for related issues, and the rule's source file. This
-/// fork publishes a second docs site covering only its own `ODOO`/`OAPP` rules,
+/// fork publishes a second docs site covering only its own `OD`/`OAPP` rules,
 /// whose sources and issues live in `Vauxoo/ruff-odoo`; pointing those links at
 /// `astral-sh/ruff` would send readers to files and issues that don't exist there.
 #[derive(Copy, Clone)]
@@ -50,11 +50,11 @@ pub(crate) const UPSTREAM: Repository = Repository {
 
 pub(crate) fn main(args: &Args) -> Result<()> {
     for rule in Rule::iter() {
-        // The `ODOO`/`OAPP` rules appear on the upstream-shaped site too, but they
+        // The `OD`/`OAPP` rules appear on the upstream-shaped site too, but they
         // belong to the fork, so their links have to point there — an upstream
         // release tag for a four-component fork version does not exist.
         let repository = match rule.noqa_code().prefix() {
-            "ODOO" | "OAPP" => crate::generate_odoo_docs::FORK,
+            "OD" | "OAPP" => crate::generate_odoo_docs::FORK,
             _ => UPSTREAM,
         };
 

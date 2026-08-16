@@ -48,7 +48,7 @@ impl Violation for ResourceNotExist {
     }
 }
 
-/// ODOO053
+/// ODF8101
 pub(crate) fn resource_not_exist(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

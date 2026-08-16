@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8147 Use string method name `"_compute_total"` to preserve inheritability
+ --> inheritable_method_string.py:4:34
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     total = fields.Float(compute=_compute_total)
+  |                                  ^^^^^^^^^^^^^^
+5 |     other = fields.Float(compute="_compute_other")
+  |

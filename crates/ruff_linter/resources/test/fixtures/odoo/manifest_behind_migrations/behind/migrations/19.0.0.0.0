@@ -1,0 +1,2 @@
+# A plain file (not a directory): ignored by ODE8145 even though its name parses as a
+# version higher than the manifest's.

@@ -55,7 +55,7 @@ fn class_has_model_attributes(class_def: &ast::StmtClassDef) -> bool {
     })
 }
 
-/// ODOO039
+/// ODE8140
 pub(crate) fn no_raise_unlink(checker: &Checker, raise: &ast::StmtRaise) {
     // Deletion constraints only moved out of `unlink()` in Odoo 15.0.
     if !odoo_version_applies(checker, Some(OdooVersion::new(15, 0)), None) {

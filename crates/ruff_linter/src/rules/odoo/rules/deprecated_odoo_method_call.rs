@@ -137,7 +137,7 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
     },
 ];
 
-/// ODOO068
+/// ODW8502
 pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCall) {
     // A bare `read_group(...)` is a plain function, not an ORM call.
     let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {

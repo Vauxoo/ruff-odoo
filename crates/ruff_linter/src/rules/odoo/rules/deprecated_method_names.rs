@@ -67,7 +67,7 @@ impl Violation for DeprecatedOdooModelMethod {
 /// Model methods deprecated by Odoo (as of 16.0+, matching pylint-odoo's default set).
 const DEPRECATED_MODEL_METHODS: &[&str] = &["fields_view_get"];
 
-/// ODOO034, ODOO037
+/// ODE8146, ODW8160
 pub(crate) fn deprecated_method_names(checker: &Checker, function_def: &ast::StmtFunctionDef) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;

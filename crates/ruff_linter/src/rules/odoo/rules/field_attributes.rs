@@ -253,7 +253,7 @@ fn field_attribute_string_value(expr: &Expr) -> Option<Cow<'_, str>> {
     }
 }
 
-/// ODOO027, ODOO028, ODOO029, ODOO030, ODOO031, ODOO032, ODOO033
+/// ODC8108, ODC8109, ODC8110, ODW8111, ODW8103, ODE8147, ODE8148
 pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;

@@ -16,9 +16,6 @@ static REDIRECTS: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(
     HashMap::from_iter([
         // The following are here because we don't yet have the many-to-one mapping enabled.
         ("SIM111", "SIM110"),
-        // `deprecated-self-cr` grew to cover `self._uid` and `self._context` as well, and was
-        // renamed to `prefer-env-attribute` in the process.
-        ("ODOO035", "ODOO067"),
         // The following are deprecated.
         ("C9", "C90"),
         ("T1", "T10"),

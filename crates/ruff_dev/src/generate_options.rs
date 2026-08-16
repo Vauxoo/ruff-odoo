@@ -23,7 +23,7 @@ pub(crate) fn generate() -> String {
 /// Render the documentation for a single group of options, e.g. `lint.odoo`, exactly as
 /// it appears within the full settings page — same headings, same anchors.
 ///
-/// The fork's `ODOO`/`OAPP` docs site documents only the settings its own rules read;
+/// The fork's `OD`/`OAPP` docs site documents only the settings its own rules read;
 /// every other Ruff option stays documented upstream. Returns `None` if `path` doesn't
 /// name a group.
 pub(crate) fn generate_group(path: &str) -> Option<String> {

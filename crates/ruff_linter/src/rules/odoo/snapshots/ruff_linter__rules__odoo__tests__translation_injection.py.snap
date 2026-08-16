@@ -1,0 +1,10 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8151 Do not use str.format on translation methods. Use placeholders instead
+ --> translation_injection.py:1:1
+  |
+1 | _("Hello {}").format(name)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 | _("Hello %s") % name
+  |

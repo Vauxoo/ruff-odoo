@@ -1,0 +1,45 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+ --> translation_fstring_interpolation.py:7:9
+  |
+5 | class Model:
+6 |     def method(self, var):
+7 |         _(f"Hello {var}")  # ODW8303
+  |         ^^^^^^^^^^^^^^^^^
+8 |         self.env._(f"Hello {var}")  # ODW8303
+9 |         _(f"Hello")  # ODW8303
+  |
+
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:8:9
+   |
+ 6 |     def method(self, var):
+ 7 |         _(f"Hello {var}")  # ODW8303
+ 8 |         self.env._(f"Hello {var}")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |         _(f"Hello")  # ODW8303
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+   |
+
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:9:9
+   |
+ 7 |         _(f"Hello {var}")  # ODW8303
+ 8 |         self.env._(f"Hello {var}")  # ODW8303
+ 9 |         _(f"Hello")  # ODW8303
+   |         ^^^^^^^^^^^
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+   |
+
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:10:9
+   |
+ 8 |         self.env._(f"Hello {var}")  # ODW8303
+ 9 |         _(f"Hello")  # ODW8303
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 |         # No diagnostic: the `%` placeholders show the interpolation is printf's.
+   |

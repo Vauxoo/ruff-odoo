@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8106 Missing `super` call in "write" method
+ --> method_required_super.py:4:9
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     def write(self, vals):
+  |         ^^^^^
+5 |         return True
+  |

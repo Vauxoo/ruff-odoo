@@ -1,0 +1,13 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8145 Manifest version (18.0.1.0.0) is lower than migration scripts (18.0.1.0.1)
+ --> __manifest__.py:3:5
+  |
+1 | {
+2 |     "name": "Behind module",
+3 |     "version": "18.0.1.0.0",
+  |     ^^^^^^^^^
+4 |     "license": "LGPL-3",
+5 | }
+  |

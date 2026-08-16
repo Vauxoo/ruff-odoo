@@ -34,7 +34,7 @@ impl Violation for ManifestRequiredAuthor {
 
 const REQUIRED_AUTHORS: &[&str] = &["Odoo Community Association (OCA)"];
 
-/// ODOO008
+/// ODC8101
 pub(crate) fn manifest_required_author(
     checker: &Checker,
     dict: &ast::ExprDict,

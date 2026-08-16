@@ -68,7 +68,7 @@ impl AlwaysFixableViolation for ManifestSummaryMultiline {
     }
 }
 
-/// ODOO012
+/// ODC8120
 pub(crate) fn manifest_summary_multiline(
     checker: &Checker,
     dict: &ast::ExprDict,

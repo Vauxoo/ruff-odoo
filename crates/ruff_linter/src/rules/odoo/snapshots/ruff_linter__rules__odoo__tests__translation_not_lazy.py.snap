@@ -1,0 +1,277 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:8:9
+   |
+ 6 |     def method(self, var, name, count, total):
+ 7 |         # Interpolation applied to the translated result.
+ 8 |         _("Hello %s") % var  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^
+ 9 |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+   |
+help: Pass the interpolated values as arguments to the translation call
+  |
+7 |         # Interpolation applied to the translated result.
+  -         _("Hello %s") % var  # ODW8301 (fixable)
+8 +         _("Hello %s", var)  # ODW8301 (fixable)
+9 |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:9:9
+   |
+ 7 |         # Interpolation applied to the translated result.
+ 8 |         _("Hello %s") % var  # ODW8301 (fixable)
+ 9 |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+8  |         _("Hello %s") % var  # ODW8301 (fixable)
+   -         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+9  +         _("%s of %s", count, total)  # ODW8301 (fixable)
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:10:9
+   |
+ 8 |         _("Hello %s") % var  # ODW8301 (fixable)
+ 9 |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+9  |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+   -         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+10 +         _("Hello %(name)s", name=name)  # ODW8301 (fixable)
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:11:9
+   |
+ 9 |         _("%s of %s") % (count, total)  # ODW8301 (fixable)
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+13 |         _(name) % (count, total)  # ODW8301 (fixable: tuple converts for any term)
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+   -         self.env._("Hello %s") % var  # ODW8301 (fixable)
+11 +         self.env._("Hello %s", var)  # ODW8301 (fixable)
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:12:9
+   |
+10 |         _("Hello %(name)s") % {"name": name}  # ODW8301 (fixable)
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |         _(name) % (count, total)  # ODW8301 (fixable: tuple converts for any term)
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+   -         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+12 +         self.env._("Hello %s", var)  # ODW8301 (fixable)
+13 |         _(name) % (count, total)  # ODW8301 (fixable: tuple converts for any term)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:13:9
+   |
+11 |         self.env._("Hello %s") % var  # ODW8301 (fixable)
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+13 |         _(name) % (count, total)  # ODW8301 (fixable: tuple converts for any term)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 |         # Interpolation applied inside the term.
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+12 |         self.env._("Hello %s") % (var,)  # ODW8301 (fixable)
+   -         _(name) % (count, total)  # ODW8301 (fixable: tuple converts for any term)
+13 +         _(name, count, total)  # ODW8301 (fixable: tuple converts for any term)
+14 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:16:9
+   |
+15 |         # Interpolation applied inside the term.
+16 |         _("Hello %s" % var)  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+18 |         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+15 |         # Interpolation applied inside the term.
+   -         _("Hello %s" % var)  # ODW8301 (fixable)
+16 +         _("Hello %s", var)  # ODW8301 (fixable)
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:17:9
+   |
+15 |         # Interpolation applied inside the term.
+16 |         _("Hello %s" % var)  # ODW8301 (fixable)
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+19 |         _(name % var)  # ODW8301
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+16 |         _("Hello %s" % var)  # ODW8301 (fixable)
+   -         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+17 +         _("Hello %(name)s", name=name)  # ODW8301 (fixable)
+18 |         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 [*] Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:18:9
+   |
+16 |         _("Hello %s" % var)  # ODW8301 (fixable)
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+18 |         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |         _(name % var)  # ODW8301
+   |
+help: Pass the interpolated values as arguments to the translation call
+   |
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+   -         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+18 +         self.env._("Hello %s", var)  # ODW8301 (fixable)
+19 |         _(name % var)  # ODW8301
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:19:9
+   |
+17 |         _("Hello %(name)s" % {"name": name})  # ODW8301 (fixable)
+18 |         self.env._("Hello %s" % var)  # ODW8301 (fixable)
+19 |         _(name % var)  # ODW8301
+   |         ^^^^^^^^^^^^^
+20 |
+21 |         # Concatenation gluing a literal to a value.
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:22:9
+   |
+21 |         # Concatenation gluing a literal to a value.
+22 |         _("Hello " + var)  # ODW8301
+   |         ^^^^^^^^^^^^^^^^^
+23 |         _(var + " Hello")  # ODW8301
+24 |         _("Hello " + "dear " + var)  # ODW8301
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:23:9
+   |
+21 |         # Concatenation gluing a literal to a value.
+22 |         _("Hello " + var)  # ODW8301
+23 |         _(var + " Hello")  # ODW8301
+   |         ^^^^^^^^^^^^^^^^^
+24 |         _("Hello " + "dear " + var)  # ODW8301
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:24:9
+   |
+22 |         _("Hello " + var)  # ODW8301
+23 |         _(var + " Hello")  # ODW8301
+24 |         _("Hello " + "dear " + var)  # ODW8301
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 |
+26 |         # Diagnostics without a fix.
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:27:9
+   |
+26 |         # Diagnostics without a fix.
+27 |         _("Hello %(name)s") % name  # single value against a named placeholder
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+28 |         _("Hello") % var  # no placeholder consumes the value
+29 |         _("Hello %(class)s") % {"class": name}  # key is a Python keyword
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:28:9
+   |
+26 |         # Diagnostics without a fix.
+27 |         _("Hello %(name)s") % name  # single value against a named placeholder
+28 |         _("Hello") % var  # no placeholder consumes the value
+   |         ^^^^^^^^^^^^^^^^
+29 |         _("Hello %(class)s") % {"class": name}  # key is a Python keyword
+30 |         _("Hello %(source)s") % {"source": name}  # key taken by the signature
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:29:9
+   |
+27 |         _("Hello %(name)s") % name  # single value against a named placeholder
+28 |         _("Hello") % var  # no placeholder consumes the value
+29 |         _("Hello %(class)s") % {"class": name}  # key is a Python keyword
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |         _("Hello %(source)s") % {"source": name}  # key taken by the signature
+31 |         _("Hello %s") % (  # comment anchored inside the expression
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:30:9
+   |
+28 |         _("Hello") % var  # no placeholder consumes the value
+29 |         _("Hello %(class)s") % {"class": name}  # key is a Python keyword
+30 |         _("Hello %(source)s") % {"source": name}  # key taken by the signature
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 |         _("Hello %s") % (  # comment anchored inside the expression
+32 |             var,
+   |
+help: Pass the interpolated values as arguments to the translation call
+
+ODW8301 Use lazy % formatting in odoo._ functions
+  --> translation_not_lazy.py:31:9
+   |
+29 |           _("Hello %(class)s") % {"class": name}  # key is a Python keyword
+30 |           _("Hello %(source)s") % {"source": name}  # key taken by the signature
+31 | /         _("Hello %s") % (  # comment anchored inside the expression
+32 | |             var,
+33 | |         )
+   | |_________^
+34 |
+35 |           # No diagnostic: literal-only concatenation is one constant term.
+   |
+help: Pass the interpolated values as arguments to the translation call

@@ -27,7 +27,7 @@ impl Violation for MissingReadme {
 
 const README_FILES: &[&str] = &["README.rst", "README.md", "README.txt"];
 
-/// ODOO016
+/// ODC8112
 pub(crate) fn missing_readme(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;

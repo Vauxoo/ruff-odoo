@@ -66,7 +66,7 @@ const EXTERNAL_REQUEST_TIMEOUT_METHODS: &[&[&str]] = &[
     &["urllib", "request", "urlopen"],
 ];
 
-/// ODOO051
+/// ODE8106
 pub(crate) fn external_request_timeout(checker: &Checker, call: &ast::ExprCall) {
     if call.arguments.find_keyword("timeout").is_some() {
         return;

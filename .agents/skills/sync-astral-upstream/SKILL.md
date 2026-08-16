@@ -7,7 +7,7 @@ description: "Use this skill to rebase this Vauxoo ruff fork onto the latest ast
 
 This repo is a fork chain: `astral-sh/ruff` (remote `astral`) → `Vauxoo/ruff` (remote `stb`) →
 `Vauxoo-dev/ruff` (remote `dev`). Custom Odoo-specific lint rules live on top of this chain (see
-the `add-odoo-rule` skill) as a new `ODOO` rule plugin under `crates/ruff_linter/src/rules/odoo/`.
+the `add-odoo-rule` skill) as a new `OD` rule plugin under `crates/ruff_linter/src/rules/odoo/`.
 
 Because `astral-sh/ruff` moves fast (near-weekly releases, pre-1.0 so even patches can break
 things), the Odoo work branch drifts behind quickly. This skill brings it back up to date.

@@ -39,7 +39,7 @@ impl Violation for ContextOverridden {
     }
 }
 
-/// ODOO018
+/// ODW8121
 pub(crate) fn context_overridden(checker: &Checker, call: &ast::ExprCall) {
     let Expr::Attribute(ast::ExprAttribute { attr, .. }) = call.func.as_ref() else {
         return;

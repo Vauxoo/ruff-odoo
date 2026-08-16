@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8140 No exceptions should be raised inside unlink() functions
+ --> no_raise_unlink.py:6:13
+  |
+4 |     def unlink(self):
+5 |         if self.state == "done":
+6 |             raise UserError("Cannot delete a done record")
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |         return super().unlink()
+  |

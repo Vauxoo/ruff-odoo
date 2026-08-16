@@ -221,9 +221,9 @@ fn count_positional_format(text: &str) -> usize {
     count
 }
 
-/// ODOO041, ODOO042, ODOO043
+/// ODW8115, ODW8120, ODE8151
 pub(crate) fn translation_calls(checker: &Checker, call: &ast::ExprCall) {
-    // ODOO043: `_(...).format(...)` — format called on the translated result.
+    // ODE8151: `_(...).format(...)` — format called on the translated result.
     if checker.is_rule_enabled(Rule::TranslationInjection)
         && let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref()
         && attr == "format"

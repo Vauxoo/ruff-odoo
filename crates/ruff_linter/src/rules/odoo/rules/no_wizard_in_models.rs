@@ -63,7 +63,7 @@ fn inherits_with_prefix(class_def: &ast::StmtClassDef, prefix: &str) -> bool {
     })
 }
 
-/// ODOO050
+/// ODC8113
 pub(crate) fn no_wizard_in_models(checker: &Checker, class_def: &ast::StmtClassDef, path: &Path) {
     // Matching pylint-odoo: any directory name starting with "model" (models, model, ...).
     if !path

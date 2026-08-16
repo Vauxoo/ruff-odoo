@@ -1,7 +1,7 @@
 # ruff-odoo
 
 `ruff-odoo` is [Vauxoo](https://www.vauxoo.com/)'s fork of [Ruff](https://github.com/astral-sh/ruff),
-shipping every upstream linter and formatter rule plus the `ODOO` and `OAPP` rule groups, ported from
+shipping every upstream linter and formatter rule plus the `OD` and `OAPP` rule groups, ported from
 [pylint-odoo](https://github.com/OCA/pylint-odoo) and
 [odoo-pre-commit-hooks](https://github.com/OCA/odoo-pre-commit-hooks).
 

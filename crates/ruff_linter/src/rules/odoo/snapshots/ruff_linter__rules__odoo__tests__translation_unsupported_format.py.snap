@@ -1,0 +1,23 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8300 Unsupported odoo._ format character 'y' (0x79) at index 7
+ --> translation_unsupported_format.py:6:9
+  |
+4 | class Model:
+5 |     def method(self, var):
+6 |         _("Hello %y", var)  # ODE8300
+  |         ^^^^^^^^^^^^^^^^^^
+7 |         self.env._("Hello %y", var)  # ODE8300
+  |
+
+ODE8300 Unsupported odoo._ format character 'y' (0x79) at index 7
+ --> translation_unsupported_format.py:7:9
+  |
+5 |     def method(self, var):
+6 |         _("Hello %y", var)  # ODE8300
+7 |         self.env._("Hello %y", var)  # ODE8300
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |
+9 |         # No diagnostic: without supplied values the term is used verbatim.
+  |

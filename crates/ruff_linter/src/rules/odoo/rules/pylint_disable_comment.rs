@@ -37,7 +37,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// Use instead:
 /// ```python
 /// def action_confirm(env):
-///     env.cr.commit()  # noqa: ODOO017
+///     env.cr.commit()  # noqa: ODE8102
 /// ```
 ///
 /// ## Fix safety
@@ -357,12 +357,12 @@ impl<'a> Visitor<'a> for ChildStatements<'a> {
     }
 }
 
-/// ODOO047
+/// ODC8502
 ///
 /// Runs once per file, after every other rule, because migrating a standalone pragma needs to
 /// know which diagnostics actually fired inside the block it governs — see [`governed_region`].
-/// It still runs before `noqa` directives are enforced, so an `ODOO047` diagnostic can itself
-/// be suppressed with `# noqa: ODOO047`.
+/// It still runs before `noqa` directives are enforced, so an `ODC8502` diagnostic can itself
+/// be suppressed with `# noqa: ODC8502`.
 pub(crate) fn pylint_disable_comment(
     context: &mut LintContext,
     locator: &Locator,

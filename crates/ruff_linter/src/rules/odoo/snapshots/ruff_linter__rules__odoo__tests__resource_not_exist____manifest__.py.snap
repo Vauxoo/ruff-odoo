@@ -1,0 +1,24 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODF8101 File "data": "views/missing_views.xml" not found
+ --> __manifest__.py:5:9
+  |
+3 |     "data": [
+4 |         "views/res_partner_views.xml",
+5 |         "views/missing_views.xml",
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |     ],
+7 |     "demo": [
+  |
+
+ODF8101 File "demo": "data/missing_demo.xml" not found
+  --> __manifest__.py:9:9
+   |
+ 7 |     "demo": [
+ 8 |         "data/res_partner_demo.xml",
+ 9 |         "data/missing_demo.xml",
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+10 |     ],
+11 | }
+   |

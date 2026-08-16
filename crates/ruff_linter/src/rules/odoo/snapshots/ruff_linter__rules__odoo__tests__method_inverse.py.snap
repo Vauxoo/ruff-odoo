@@ -1,0 +1,23 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8110 Name of inverse method should start with "_inverse_"
+ --> method_inverse.py:4:34
+  |
+2 |     _inherit = "my.model"
+3 |
+4 |     total = fields.Float(inverse="_set_total")
+  |                                  ^^^^^^^^^^^^
+5 |     subtotal = fields.Float(inverse="_inverse_subtotal")
+6 |     grand_total = fields.Float(inverse=f"_set_grand_total")
+  |
+
+ODC8110 Name of inverse method should start with "_inverse_"
+ --> method_inverse.py:6:40
+  |
+4 |     total = fields.Float(inverse="_set_total")
+5 |     subtotal = fields.Float(inverse="_inverse_subtotal")
+6 |     grand_total = fields.Float(inverse=f"_set_grand_total")
+  |                                        ^^^^^^^^^^^^^^^^^^^
+7 |     net_total = fields.Float(inverse=f"_inverse_net_total")
+  |

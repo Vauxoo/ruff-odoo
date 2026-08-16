@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8121 Context overridden using dict. Better using kwargs `with_context(**ctx)` or `with_context(key=value)`
+ --> context_overridden.py:4:1
+  |
+3 | ctx = {"key": "value"}
+4 | self.with_context(ctx)
+  | ^^^^^^^^^^^^^^^^^^^^^^
+5 | self.with_context(key="value")
+6 | self.with_context(**ctx)
+  |
