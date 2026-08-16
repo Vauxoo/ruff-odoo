@@ -12,7 +12,7 @@ ODW8106 Missing `super` call in "unlink" method
 15 |         # The pragma is the first line of the body, so it also covers the `def` header,
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8106`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[method-required-super]`
   --> pylint_disable_comment_standalone.py:14:9
    |
 13 |     def unlink(self):
@@ -21,17 +21,20 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8106`
 15 |         # The pragma is the first line of the body, so it also covers the `def` header,
 16 |         # which is where `method-required-super` is reported.
    |
-help: Replace with `# noqa: ODW8106`
+help: Replace with `# ruff: ignore[method-required-super]`
    |
 12 |
-   -     def unlink(self):
+13 +     # ruff: disable[method-required-super]
+14 |     def unlink(self):
    -         # pylint: disable=method-required-super
-13 +     def unlink(self):  # noqa: ODW8106
-14 |         # The pragma is the first line of the body, so it also covers the `def` header,
+15 |         # The pragma is the first line of the body, so it also covers the `def` header,
+16 |         # which is where `method-required-super` is reported.
+17 |         return True
+18 +     # ruff: enable[method-required-super]
+19 |
    |
-note: This is an unsafe fix and may change runtime behavior
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8121`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[context-overridden]`
   --> pylint_disable_comment_standalone.py:20:9
    |
 19 |     def create_address(self, values):
@@ -40,16 +43,17 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8121`
 21 |         context = {"lang": "en_US"}
 22 |         return self.env["res.partner"].with_context(context).create(values)
    |
-help: Replace with `# noqa: ODW8121`
+help: Replace with `# ruff: ignore[context-overridden]`
    |
-19 |     def create_address(self, values):
+18 |
+19 +     # ruff: disable[context-overridden]
+20 |     def create_address(self, values):
    -         # pylint: disable=context-overridden
-20 |         context = {"lang": "en_US"}
-   -         return self.env["res.partner"].with_context(context).create(values)
-21 +         return self.env["res.partner"].with_context(context).create(values)  # noqa: ODW8121
-22 |
+21 |         context = {"lang": "en_US"}
+22 |         return self.env["res.partner"].with_context(context).create(values)
+23 +     # ruff: enable[context-overridden]
+24 |
    |
-note: This is an unsafe fix and may change runtime behavior
 
 ODW8121 Context overridden using dict. Better using kwargs `with_context(**context)` or `with_context(key=value)`
   --> pylint_disable_comment_standalone.py:22:16
@@ -62,7 +66,7 @@ ODW8121 Context overridden using dict. Better using kwargs `with_context(**conte
 24 |     def obsolete(self):
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment_standalone.py:25:9
    |
 24 |     def obsolete(self):
@@ -71,15 +75,19 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
 26 |         # Nothing in this block commits, so the pragma only has to be removed.
 27 |         return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
-24 |     def obsolete(self):
+23 |
+24 +     # ruff: disable[invalid-commit]
+25 |     def obsolete(self):
    -         # pylint: disable=invalid-commit
-25 |         # Nothing in this block commits, so the pragma only has to be removed.
+26 |         # Nothing in this block commits, so the pragma only has to be removed.
+27 |         return True
+28 +     # ruff: enable[invalid-commit]
+29 |
    |
-note: This is an unsafe fix and may change runtime behavior
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment_standalone.py:30:9
    |
 29 |     def already_suppressed(self):
@@ -87,15 +95,18 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 31 |         self.env.cr.commit()  # noqa: ODE8102
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
-29 |     def already_suppressed(self):
+28 |
+29 +     # ruff: disable[invalid-commit]
+30 |     def already_suppressed(self):
    -         # pylint: disable=invalid-commit
-30 |         self.env.cr.commit()  # noqa: ODE8102
+31 |         self.env.cr.commit()  # noqa: ODE8102
+32 +     # ruff: enable[invalid-commit]
+33 |
    |
-note: This is an unsafe fix and may change runtime behavior
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment_standalone.py:34:9
    |
 33 |     def partially_mapped(self):
@@ -103,16 +114,17 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 35 |         self.env.cr.commit()
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
-33 |     def partially_mapped(self):
+32 |
+33 +     # ruff: disable[invalid-commit]
+34 |     def partially_mapped(self):
    -         # pylint: disable=invalid-commit,some-custom-check
-   -         self.env.cr.commit()
-34 +         # pylint: disable=some-custom-check
-35 +         self.env.cr.commit()  # noqa: ODE8102
-36 |
+35 +         # pylint: disable=some-custom-check
+36 |         self.env.cr.commit()
+37 +     # ruff: enable[invalid-commit]
+38 |
    |
-note: This is an unsafe fix and may change runtime behavior
 
 ODE8102 Use of cr.commit() directly
   --> pylint_disable_comment_standalone.py:35:9
@@ -125,7 +137,7 @@ ODE8102 Use of cr.commit() directly
 37 |     def disable_next(self):
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment_standalone.py:38:9
    |
 37 |     def disable_next(self):
@@ -134,15 +146,13 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
 39 |         self.env.cr.commit()
 40 |         self.env.cr.commit()
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 37 |     def disable_next(self):
    -         # pylint: disable-next=invalid-commit
-   -         self.env.cr.commit()
-38 +         self.env.cr.commit()  # noqa: ODE8102
+38 +         # ruff: ignore[invalid-commit]
 39 |         self.env.cr.commit()
    |
-note: This is an unsafe fix and may change runtime behavior
 
 ODE8102 Use of cr.commit() directly
   --> pylint_disable_comment_standalone.py:39:9
@@ -162,7 +172,7 @@ ODE8102 Use of cr.commit() directly
 40 |         self.env.cr.commit()
    |         ^^^^^^^^^^^^^^^^^^^^
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment_standalone.py:45:1
    |
 43 | # A module-level pragma runs to the end of the file in pylint, even though it reads as if
@@ -172,20 +182,16 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
 46 | def module_level(cr):
 47 |     cr.commit()
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 44 | # it only applied to the function below it — so the function after it is covered too.
    - # pylint: disable=invalid-commit
-45 | def module_level(cr):
-   -     cr.commit()
-46 +     cr.commit()  # noqa: ODE8102
-47 |
-48 |
-49 | def also_covered(cr):
-   -     cr.commit()
-50 +     cr.commit()  # noqa: ODE8102
+45 + # ruff: disable[invalid-commit]
+46 | def module_level(cr):
+--------------------------------------------------------------------------------
+51 |     cr.commit()
+52 + # ruff: enable[invalid-commit]
    |
-note: This is an unsafe fix and may change runtime behavior
 
 ODE8102 Use of cr.commit() directly
   --> pylint_disable_comment_standalone.py:47:5

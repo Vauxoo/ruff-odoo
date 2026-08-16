@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
  --> pylint_disable_comment.py:5:22
   |
 4 | def inline_name(env):
@@ -9,15 +9,15 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 6 |     return True
   |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
   |
 4 | def inline_name(env):
   -     env.cr.commit()  # pylint: disable=invalid-commit
-5 +     env.cr.commit()  # noqa: ODE8102
+5 +     env.cr.commit()  # ruff: ignore[invalid-commit]
 6 |     return True
   |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:10:22
    |
  9 | def inline_code(env):
@@ -25,15 +25,15 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
    |                      ^^^^^^^^^^^^^^^^^^^^^^^
 11 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 9  | def inline_code(env):
    -     env.cr.commit()  # pylint: disable=E8102
-10 +     env.cr.commit()  # noqa: ODE8102
+10 +     env.cr.commit()  # ruff: ignore[invalid-commit]
 11 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:15:22
    |
 14 | def inline_no_spaces(env):
@@ -41,15 +41,15 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 16 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 14 | def inline_no_spaces(env):
    -     env.cr.commit()  #pylint:disable=invalid-commit
-15 +     env.cr.commit()  # noqa: ODE8102
+15 +     env.cr.commit()  # ruff: ignore[invalid-commit]
 16 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:20:22
    |
 19 | def inline_disable_msg(env):
@@ -57,123 +57,123 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 21 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 19 | def inline_disable_msg(env):
    -     env.cr.commit()  # pylint: disable-msg=invalid-commit
-20 +     env.cr.commit()  # noqa: ODE8102
+20 +     env.cr.commit()  # ruff: ignore[invalid-commit]
 21 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: C901, ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[complex-structure, invalid-commit]`
   --> pylint_disable_comment.py:24:27
    |
 24 | def multiple_names(env):  # pylint: disable=too-complex,invalid-commit
    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 25 |     return True
    |
-help: Replace with `# noqa: C901, ODE8102`
+help: Replace with `# ruff: ignore[complex-structure, invalid-commit]`
    |
 23 |
    - def multiple_names(env):  # pylint: disable=too-complex,invalid-commit
-24 + def multiple_names(env):  # noqa: C901, ODE8102
+24 + def multiple_names(env):  # ruff: ignore[complex-structure, invalid-commit]
 25 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODW8120`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[translation-positional-used]`
   --> pylint_disable_comment.py:28:28
    |
 28 | def renamed_message(env):  # pylint: disable=translation-positional-used
    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 29 |     return True
    |
-help: Replace with `# noqa: ODW8120`
+help: Replace with `# ruff: ignore[translation-positional-used]`
    |
 27 |
    - def renamed_message(env):  # pylint: disable=translation-positional-used
-28 + def renamed_message(env):  # noqa: ODW8120
+28 + def renamed_message(env):  # ruff: ignore[translation-positional-used]
 29 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODR8180`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[consider-merging-classes-inherited]`
   --> pylint_disable_comment.py:32:41
    |
 32 | def renamed_odoo_project_message(env):  # pylint: disable=consider-merging-classes-inherited
    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 33 |     return True
    |
-help: Replace with `# noqa: ODR8180`
+help: Replace with `# ruff: ignore[consider-merging-classes-inherited]`
    |
 31 |
    - def renamed_odoo_project_message(env):  # pylint: disable=consider-merging-classes-inherited
-32 + def renamed_odoo_project_message(env):  # noqa: ODR8180
+32 + def renamed_odoo_project_message(env):  # ruff: ignore[consider-merging-classes-inherited]
 33 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODR8180`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[consider-merging-classes-inherited]`
   --> pylint_disable_comment.py:36:38
    |
 36 | def renamed_odoo_project_code(env):  # pylint: disable=R8180
    |                                      ^^^^^^^^^^^^^^^^^^^^^^^
 37 |     return True
    |
-help: Replace with `# noqa: ODR8180`
+help: Replace with `# ruff: ignore[consider-merging-classes-inherited]`
    |
 35 |
    - def renamed_odoo_project_code(env):  # pylint: disable=R8180
-36 + def renamed_odoo_project_code(env):  # noqa: ODR8180
+36 + def renamed_odoo_project_code(env):  # ruff: ignore[consider-merging-classes-inherited]
 37 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:40:37
    |
 40 | def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 41 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 39 |
    - def duplicated_name_and_code(env):  # pylint: disable=invalid-commit,E8102
-40 + def duplicated_name_and_code(env):  # noqa: ODE8102
+40 + def duplicated_name_and_code(env):  # ruff: ignore[invalid-commit]
 41 |     return True
    |
 
-ODC8502 [*] `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:44:29
    |
 44 | def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 45 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
    |
 43 |
    - def partially_mapped(env):  # pylint: disable=invalid-commit,some-custom-check
-44 + def partially_mapped(env):  # pylint: disable=some-custom-check  # noqa: ODE8102
+44 + def partially_mapped(env):  # pylint: disable=some-custom-check  # ruff: ignore[invalid-commit]
 45 |     return True
    |
 
-ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:56:46
    |
 56 | def already_migrated(env):  # noqa: ODE8102  # pylint: disable=invalid-commit
    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 57 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
 
-ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:60:26
    |
 60 | def trailing_text(env):  # pylint: disable=invalid-commit  # avoid partial writes
    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 61 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
 
-ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:72:1
    |
 72 | # pylint: disable=invalid-commit
@@ -181,9 +181,18 @@ ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
 73 | def standalone_comment(env):
 74 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
+   |
+71 |
+   - # pylint: disable=invalid-commit
+72 + # ruff: disable[invalid-commit]
+73 | def standalone_comment(env):
+--------------------------------------------------------------------------------
+79 |     return True
+80 + # ruff: enable[invalid-commit]
+   |
 
-ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:77:1
    |
 77 | # pylint: disable-next=invalid-commit
@@ -191,4 +200,10 @@ ODC8502 `pylint: disable` comment should be migrated to `# noqa: ODE8102`
 78 | def disable_next(env):
 79 |     return True
    |
-help: Replace with `# noqa: ODE8102`
+help: Replace with `# ruff: ignore[invalid-commit]`
+   |
+76 |
+   - # pylint: disable-next=invalid-commit
+77 + # ruff: ignore[invalid-commit]
+78 | def disable_next(env):
+   |

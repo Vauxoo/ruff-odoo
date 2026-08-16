@@ -8,13 +8,12 @@ use ruff_text_size::{Ranged, TextLen, TextRange, TextSize};
 use crate::Locator;
 use crate::checkers::ast::LintContext;
 use crate::fix::edits::delete_comment;
-use crate::noqa::NoqaMapping;
 use crate::registry::Rule;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
 /// Checks for `# pylint: disable=...` comments that suppress checks Ruff now
-/// covers, so they can be migrated to Ruff's `# noqa: ...` format.
+/// covers, so they can be migrated to Ruff's `# ruff: ...` suppression comments.
 ///
 /// A message is considered covered when it matches a Ruff rule name (most
 /// pylint-odoo checks were ported under their original names, and many pylint
@@ -24,9 +23,8 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// ## Why is this bad?
 /// After migrating from pylint / pylint-odoo to Ruff, `# pylint: disable`
-/// comments have no effect: Ruff only honors `# noqa` directives, so the
-/// previously silenced diagnostics are reported again despite the suppression
-/// comment.
+/// comments have no effect: Ruff does not read them, so the previously silenced
+/// diagnostics are reported again despite the suppression comment.
 ///
 /// ## Example
 /// ```python
@@ -37,29 +35,44 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// Use instead:
 /// ```python
 /// def action_confirm(env):
-///     env.cr.commit()  # noqa: ODE8102
+///     env.cr.commit()  # ruff: ignore[invalid-commit]
 /// ```
 ///
-/// ## Fix safety
-/// An inline (trailing) `disable` pragma is rewritten in place and the fix is
-/// safe: an inline pylint `disable` and a `noqa` both suppress findings on that
-/// single line, so the rewrite preserves behavior.
+/// The suppression names the rule rather than its code, because a name is what a
+/// reader recognizes and, for every check ported here, it is the very name pylint
+/// used. Note that Ruff only resolves a rule *name* in a suppression comment when
+/// preview mode is on; with preview off only codes resolve. That is not a
+/// restriction in practice — every `OD`/`OAPP` rule is itself a preview rule, so
+/// preview is already on wherever these suppressions matter. The exception worth
+/// knowing is the handful of messages that map onto stable upstream rules
+/// (`print-used` to `print`, `too-complex` to `complex-structure`): those keep
+/// firing with preview off, and a name-based suppression stops covering them.
 ///
-/// A standalone `# pylint: disable` comment applies to the rest of the enclosing
-/// block, which no single `noqa` can express. Its fix deletes the pragma and puts
-/// a `# noqa` on each line inside that block where one of the named rules
-/// currently fires; a pragma that silences nothing is simply removed. That fix is
-/// marked unsafe, because code added to the block later is no longer covered by
-/// the suppression, and it is only offered when every rule the pragma names is
-/// enabled in the run — a rule that isn't selected can't be observed firing, so
-/// dropping its pragma could unsuppress it later.
+/// ## Fix safety
+/// Each pylint pragma has a Ruff suppression with the same scope, so all three
+/// rewrites preserve behavior and are safe:
+///
+/// - an inline (trailing) `disable` pragma becomes `# ruff: ignore[...]` on that
+///   same line;
+/// - a `disable-next` pragma becomes an own-line `# ruff: ignore[...]`, which
+///   applies to the statement below it;
+/// - a standalone `disable` pragma governs the rest of the enclosing block, which
+///   is what a `# ruff: disable[...]` / `# ruff: enable[...]` pair expresses. When
+///   the pragma opens a `def` body it also covers the `def` header, as pylint does
+///   for messages anchored there (`missing-return`, `method-required-super`, ...),
+///   so the `disable` is placed above the header.
+///
+/// One deliberate difference: `disable-next` applies to the next *line* in pylint
+/// and to the next *statement* in Ruff, so a multi-line statement ends up fully
+/// covered rather than only on its first line. Widening a suppression can hide a
+/// later diagnostic but never unsuppresses one.
 ///
 /// Messages without a Ruff equivalent are kept in a `# pylint: disable` comment
-/// next to the inserted `noqa`.
+/// next to the inserted suppression.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.3")]
 pub(crate) struct PylintDisableComment {
-    codes: String,
+    names: String,
 }
 
 impl Violation for PylintDisableComment {
@@ -67,13 +80,13 @@ impl Violation for PylintDisableComment {
 
     #[derive_message_formats]
     fn message(&self) -> String {
-        let PylintDisableComment { codes } = self;
-        format!("`pylint: disable` comment should be migrated to `# noqa: {codes}`")
+        let PylintDisableComment { names } = self;
+        format!("`pylint: disable` comment should be migrated to `# ruff: ignore[{names}]`")
     }
 
     fn fix_title(&self) -> Option<String> {
-        let PylintDisableComment { codes } = self;
-        Some(format!("Replace with `# noqa: {codes}`"))
+        let PylintDisableComment { names } = self;
+        Some(format!("Replace with `# ruff: ignore[{names}]`"))
     }
 }
 
@@ -252,21 +265,6 @@ fn parse_disable_pragma(text: &str) -> Option<DisablePragma<'_>> {
     })
 }
 
-/// A `noqa` line that a governed diagnostic needs, and the codes to put on it.
-struct NoqaTarget {
-    /// Start of the line the `noqa` comment has to be appended to.
-    line_start: TextSize,
-    codes: Vec<String>,
-}
-
-/// Where a diagnostic already reported for this file would need its `noqa` comment.
-struct ReportedDiagnostic {
-    code: String,
-    /// Start of the line resolved through the `noqa` line mapping, so a diagnostic inside a
-    /// multi-line string points at the line the directive actually has to sit on.
-    noqa_line_start: TextSize,
-}
-
 /// The source region a standalone `disable` pragma governs, mirroring pylint's "the rest of
 /// the enclosing block".
 ///
@@ -367,13 +365,11 @@ pub(crate) fn pylint_disable_comment(
     context: &mut LintContext,
     locator: &Locator,
     comment_ranges: &CommentRanges,
-    noqa_line_for: &NoqaMapping,
     suite: Option<&[Stmt]>,
 ) {
     if !context.is_rule_enabled(Rule::PylintDisableComment) {
         return;
     }
-    let reported = reported_diagnostics(context, noqa_line_for);
 
     for comment_range in comment_ranges {
         let text = locator.slice(comment_range);
@@ -384,24 +380,22 @@ pub(crate) fn pylint_disable_comment(
             continue;
         };
 
-        let mut rules: Vec<Rule> = Vec::new();
-        let mut codes: Vec<String> = Vec::new();
+        let mut names: Vec<String> = Vec::new();
         let mut unmapped: Vec<&str> = Vec::new();
         for name in &pragma.names {
             if let Some(rule) = rule_for_message(name) {
-                let code = rule.noqa_code().to_string();
-                if !codes.contains(&code) {
-                    rules.push(rule);
-                    codes.push(code);
+                let rule_name = rule.name().to_string();
+                if !names.contains(&rule_name) {
+                    names.push(rule_name);
                 }
             } else {
                 unmapped.push(name);
             }
         }
-        if codes.is_empty() {
+        if names.is_empty() {
             continue;
         }
-        let codes = codes.join(", ");
+        let names = names.join(", ");
 
         let (Ok(hash_start), Ok(names_end)) = (
             TextSize::try_from(pragma.hash_start),
@@ -416,7 +410,7 @@ pub(crate) fn pylint_disable_comment(
 
         let Some(mut diagnostic) = context.report_diagnostic_if_enabled(
             PylintDisableComment {
-                codes: codes.clone(),
+                names: names.clone(),
             },
             pragma_range,
         ) else {
@@ -432,139 +426,110 @@ pub(crate) fn pylint_disable_comment(
             continue;
         }
 
+        // Whatever replaces the pragma keeps the messages Ruff has no rule for, so they stay
+        // suppressed for whoever still runs pylint alongside.
+        let kept_pragma = |suppression: String| {
+            if unmapped.is_empty() {
+                suppression
+            } else {
+                format!("# pylint: disable={}  {suppression}", unmapped.join(","))
+            }
+        };
+
         let line_range = locator.full_line_range(comment_range.start());
         let before_comment =
             locator.slice(TextRange::new(line_range.start(), comment_range.start()));
         if !before_comment.trim().is_empty() {
-            // An inline `disable` pragma already has the same suppression scope as the
-            // `noqa` replacing it — its own line — so the rewrite is a straight swap.
+            // An inline pragma and a trailing `ignore` both suppress their own line, so the
+            // rewrite is a straight swap. `disable-next` written inline would refer to the
+            // next line, which a trailing comment cannot express.
             if pragma.kind != PragmaKind::Disable {
                 continue;
             }
-            let replacement = if unmapped.is_empty() {
-                format!("# noqa: {codes}")
-            } else {
-                format!("# pylint: disable={}  # noqa: {codes}", unmapped.join(","))
-            };
             diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
-                replacement,
+                kept_pragma(format!("# ruff: ignore[{names}]")),
                 comment_range,
             )));
             continue;
         }
 
-        // A standalone pragma suppresses a whole block, which no single `noqa` can express.
-        // Rebuild the suppression by putting a `noqa` on each line inside the block that the
-        // pragma is actually silencing. This is only sound when every rule it names is
-        // enabled: a rule left out of this run can't be observed firing, and dropping its
-        // pragma would silently unsuppress it the next time it is selected.
-        if !rules.iter().all(|rule| context.is_rule_enabled(*rule)) {
+        // An own-line `ignore` applies to the statement below it, which is what
+        // `disable-next` means.
+        if pragma.kind == PragmaKind::DisableNext {
+            diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
+                kept_pragma(format!("# ruff: ignore[{names}]")),
+                comment_range,
+            )));
             continue;
         }
-        let region = match (&pragma.kind, suite) {
-            // `disable-next` applies to exactly the line below the pragma.
-            (PragmaKind::DisableNext, _) => {
-                let next_line_start = locator.full_line_end(comment_range.start());
-                TextRange::new(next_line_start, locator.full_line_end(next_line_start))
-            }
-            (PragmaKind::Disable, Some(suite)) => governed_region(suite, comment_range, locator),
+
+        // A standalone `disable` governs the rest of the enclosing block, which is exactly
+        // what a `disable`/`enable` pair expresses.
+        let Some(suite) = suite else {
             // Without an AST (the file has a syntax error) the block can't be delimited.
-            (PragmaKind::Disable, None) => continue,
+            continue;
+        };
+        let region = governed_region(suite, comment_range, locator);
+        let comment_line_start = locator.line_start(comment_range.start());
+        let indent_before =
+            |offset: TextSize| locator.slice(TextRange::new(locator.line_start(offset), offset));
+
+        // `governed_region` pulls the start up to the compound statement's own header when the
+        // pragma opens its body, because that header is where pylint anchors messages about the
+        // statement itself. The `disable` has to go above that header to cover it.
+        let opens_a_body = region.start() != comment_line_start;
+        let indent = if opens_a_body {
+            indent_before(region.start())
+        } else {
+            before_comment
         };
 
-        // Messages Ruff has no rule for still need their pragma, so the comment is trimmed
-        // down to them rather than deleted outright.
-        let mut edits = vec![if unmapped.is_empty() {
-            delete_comment(comment_range, locator)
+        let mut edits = if opens_a_body {
+            vec![
+                Edit::insertion(
+                    format!("# ruff: disable[{names}]\n{indent}"),
+                    region.start(),
+                ),
+                if unmapped.is_empty() {
+                    delete_comment(comment_range, locator)
+                } else {
+                    Edit::range_replacement(
+                        format!("# pylint: disable={}", unmapped.join(",")),
+                        comment_range,
+                    )
+                },
+            ]
         } else {
-            Edit::range_replacement(
-                format!("# pylint: disable={}", unmapped.join(",")),
+            vec![Edit::range_replacement(
+                kept_pragma(format!("# ruff: disable[{names}]")),
                 comment_range,
+            )]
+        };
+
+        // A `disable` with no matching `enable` is itself a diagnostic
+        // (`unmatched-suppression-comment`), so the pair always closes.
+        let end = region.end();
+        edits.push(if end == locator.line_start(end) {
+            // The region ends on a line boundary (a module-level pragma runs to the end of the
+            // file), so the `enable` becomes the next line.
+            Edit::insertion(format!("{indent}# ruff: enable[{names}]\n"), end)
+        } else {
+            // The region ends at the last statement, which may be followed on that same line by
+            // a trailing comment — anchor past it, or the comment would be pushed onto the
+            // `enable` line.
+            Edit::insertion(
+                format!("\n{indent}# ruff: enable[{names}]"),
+                locator.line_end(end),
             )
-        }];
-        for target in noqa_targets(&reported, &codes_of(&rules), region, locator) {
-            let line_end = locator.line_end(target.line_start);
-            edits.push(Edit::insertion(
-                format!("  # noqa: {}", target.codes.join(", ")),
-                line_end,
-            ));
-        }
+        });
+
         let Some((first, rest)) = edits.split_first() else {
             continue;
         };
-        // Unsafe: pylint suppresses the rule for the whole block, Ruff only for the lines
-        // where it currently fires. Code added to the block later is no longer covered.
-        diagnostic.set_fix(Fix::unsafe_edits(first.clone(), rest.to_vec()));
+        // Safe: the pair covers the same block the pylint pragma did, including code added to
+        // it later.
+        diagnostic.set_fix(Fix::safe_edits(first.clone(), rest.to_vec()));
     }
-}
-
-fn codes_of(rules: &[Rule]) -> Vec<String> {
-    rules
-        .iter()
-        .map(|rule| rule.noqa_code().to_string())
-        .collect()
-}
-
-/// Snapshots the diagnostics reported so far, so the pragma rewrite can tell which lines
-/// inside a governed block actually need a `noqa`.
-fn reported_diagnostics(
-    context: &mut LintContext,
-    noqa_line_for: &NoqaMapping,
-) -> Vec<ReportedDiagnostic> {
-    context
-        .iter()
-        .filter_map(|diagnostic| {
-            let code = diagnostic.secondary_code()?.to_string();
-            let start = diagnostic.range()?.start();
-            Some(ReportedDiagnostic {
-                code,
-                noqa_line_start: noqa_line_for.resolve(start),
-            })
-        })
-        .collect()
-}
-
-/// Groups the diagnostics governed by a pragma into the `noqa` comments that would replace it.
-fn noqa_targets(
-    reported: &[ReportedDiagnostic],
-    codes: &[String],
-    region: TextRange,
-    locator: &Locator,
-) -> Vec<NoqaTarget> {
-    let mut targets: Vec<NoqaTarget> = Vec::new();
-    for diagnostic in reported {
-        if !region.contains(diagnostic.noqa_line_start) || !codes.contains(&diagnostic.code) {
-            continue;
-        }
-        let line_start = locator.line_start(diagnostic.noqa_line_start);
-        // A line that already carries a `noqa` needs no second one, and appending to it would
-        // produce two directives on one line.
-        if locator
-            .slice(TextRange::new(line_start, locator.line_end(line_start)))
-            .contains("noqa")
-        {
-            continue;
-        }
-        match targets
-            .iter_mut()
-            .find(|target| target.line_start == line_start)
-        {
-            Some(target) => {
-                if !target.codes.contains(&diagnostic.code) {
-                    target.codes.push(diagnostic.code.clone());
-                }
-            }
-            None => targets.push(NoqaTarget {
-                line_start,
-                codes: vec![diagnostic.code.clone()],
-            }),
-        }
-    }
-    targets.sort_by_key(|target| target.line_start);
-    for target in &mut targets {
-        target.codes.sort();
-    }
-    targets
 }
 
 #[cfg(test)]
