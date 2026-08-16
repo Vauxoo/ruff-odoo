@@ -13,9 +13,13 @@ on:
       plan:
         required: true
         type: string
-  pull_request:
-    paths:
-      - .github/workflows/build-docker.yml
+  # Vauxoo fork: upstream also runs this on pull_request when this very file changes.
+  # That trigger is dropped here because the fork does not publish Docker images -- it
+  # distributes through PyPI as `ruff-odoo` -- so the job only ever built an image nobody
+  # consumes. It also failed outright: RUFF_BASE_IMG below resolves to
+  # ghcr.io/${{ github.repository_owner }}/ruff, which is `ghcr.io/Vauxoo/ruff` here, and
+  # Docker requires a lowercase repository name. Every sync that touches this file would
+  # have hit the same red CI.
 
 env:
   RUFF_BASE_IMG: ghcr.io/${{ github.repository_owner }}/ruff
