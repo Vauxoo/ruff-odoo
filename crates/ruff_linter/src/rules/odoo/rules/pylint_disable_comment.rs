@@ -18,8 +18,18 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// A message is considered covered when it matches a Ruff rule name (most
 /// pylint-odoo checks were ported under their original names, and many pylint
 /// checks exist in Ruff under the same name, e.g. `too-many-branches`), a
-/// pylint-odoo message code (e.g. `E8102`), or a known rename (e.g. pylint's
-/// `too-complex` is Ruff's `complex-structure` / `C901`).
+/// pylint-odoo message code (e.g. `E8102`), or a known rename — either across
+/// linters, as pylint's `too-complex` becoming mccabe's `complex-structure`, or
+/// within Ruff's own Pylint rules, which keep pylint's code but not always its
+/// name (`C0415 import-outside-toplevel` is `PLC0415 import-outside-top-level`).
+///
+/// The pragma does not have to be alone in its comment. pylint reads a `#`
+/// followed by anything and then `pylint:`, so a codebase part-way through the
+/// migration usually looks like `# noqa: F401 pylint: disable=...`, and only the
+/// directive is rewritten, leaving the rest of the comment untouched. Prose that
+/// merely mentions a pragma (`# see pylint: disable=x for details`) is not one:
+/// what tells them apart is that a real pragma is followed by nothing, or by
+/// another comment, but never by more words.
 ///
 /// ## Why is this bad?
 /// After migrating from pylint / pylint-odoo to Ruff, `# pylint: disable`
@@ -67,6 +77,10 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// covered rather than only on its first line. Widening a suppression can hide a
 /// later diagnostic but never unsuppresses one.
 ///
+/// A standalone pragma sharing its comment with other text is the one case left
+/// without a fix: rebuilding it as a pair consumes the whole comment, which would
+/// take that text with it.
+///
 /// Messages without a Ruff equivalent are kept in a `# pylint: disable` comment
 /// next to the inserted suppression.
 #[derive(ViolationMetadata)]
@@ -105,6 +119,65 @@ const MESSAGE_ALIASES: &[(&str, &str)] = &[
     // `prefer-env-attribute` covers `self._uid` and `self._context` on top of pylint-odoo's
     // `self._cr`, so it doesn't keep the original message name.
     ("deprecated-self-cr", "prefer-env-attribute"),
+    // pylint checks Ruff implements under a different name. Ruff reuses pylint's own
+    // message code -- its `PLC0415` is pylint's `C0415` -- so pairing the two by code is
+    // exact and only the human-readable name drifted. Without these, a `disable=` naming
+    // one of them resolves to nothing and is silently left behind.
+    ("assigning-non-slot", "non-slot-assignment"), // PLE0237
+    ("bad-dunder-name", "bad-dunder-method-name"), // PLW3201
+    ("bad-format-character", "bad-string-format-character"), // PLE1300
+    ("chained-comparison", "boolean-chained-comparison"), // PLR1716
+    ("comparison-of-constants", "comparison-of-constant"), // PLR0133
+    ("consider-swap-variables", "swap-with-temporary-variable"), // PLR1712
+    (
+        "consider-using-augmented-assign",
+        "non-augmented-assignment",
+    ), // PLR6104
+    ("consider-using-dict-items", "dict-index-missing-items"), // PLC0206
+    ("consider-using-from-import", "manual-from-import"), // PLR0402
+    ("consider-using-in", "repeated-equality-comparison"), // PLR1714
+    ("consider-using-min-builtin", "if-stmt-min-max"), // PLR1730
+    ("consider-using-sys-exit", "sys-exit-alias"), // PLR1722
+    ("consider-using-ternary", "and-or-ternary"),  // PLR1706
+    ("else-if-used", "collapsible-else-if"),       // PLR5501
+    ("import-outside-toplevel", "import-outside-top-level"), // PLC0415
+    ("init-is-generator", "yield-in-init"),        // PLE0100
+    ("invalid-bool-returned", "invalid-bool-return-type"), // PLE0304
+    ("invalid-bytes-returned", "invalid-bytes-return-type"), // PLE0308
+    ("invalid-hash-returned", "invalid-hash-return-type"), // PLE0309
+    ("invalid-index-returned", "invalid-index-return-type"), // PLE0305
+    ("invalid-length-returned", "invalid-length-return-type"), // PLE0303
+    ("invalid-str-returned", "invalid-str-return-type"), // PLE0307
+    (
+        "pointless-exception-statement",
+        "useless-exception-statement",
+    ), // PLW0133
+    ("repeated-keyword", "repeated-keyword-argument"), // PLE1132
+    ("self-cls-assignment", "self-or-cls-assignment"), // PLW0642
+    ("single-string-used-for-slots", "single-string-slots"), // PLC0205
+    ("subprocess-run-check", "subprocess-run-without-check"), // PLW1510
+    (
+        "too-many-try-statements",
+        "too-many-statements-in-try-clause",
+    ), // PLW0717
+    ("typevar-double-variance", "type-bivariance"), // PLC0131
+    (
+        "typevar-name-incorrect-variance",
+        "type-name-incorrect-variance",
+    ), // PLC0105
+    ("typevar-name-mismatch", "type-param-name-mismatch"), // PLC0132
+    ("use-implicit-booleaness-not-len", "len-test"), // PLC1802
+    ("use-maxsplit-arg", "missing-maxsplit-arg"),  // PLC0207
+    ("use-sequence-for-iteration", "iteration-over-set"), // PLC0208
+    ("use-set-for-membership", "literal-membership"), // PLR6201
+    (
+        "used-prior-global-declaration",
+        "load-before-global-declaration",
+    ), // PLE0118
+    (
+        "yield-inside-async-function",
+        "yield-from-in-async-function",
+    ), // PLE1700
     // pylint-odoo message codes, in ODOO_MSGS order.
     ("C8101", "manifest-required-author"),
     ("C8102", "manifest-required-key"),
@@ -199,6 +272,10 @@ enum PragmaKind {
 struct DisablePragma<'a> {
     /// Byte offset, within the comment text, of the `#` introducing the pragma.
     hash_start: usize,
+    /// Byte offset, within the comment text, of the `pylint` keyword itself. It differs from
+    /// `hash_start` when the pragma shares its comment with other text, as in
+    /// `# noqa: F401 pylint: disable=...`.
+    directive_start: usize,
     /// Byte offset, within the comment text, just past the last message name.
     names_end: usize,
     kind: PragmaKind,
@@ -215,13 +292,10 @@ fn leading_whitespace_len(text: &str) -> usize {
 /// `=`, then message names running until `#`, `;`, or the end of the line.
 fn parse_disable_pragma(text: &str) -> Option<DisablePragma<'_>> {
     let pylint_start = text.find("pylint")?;
-    // The pragma must directly follow a `#` (plus optional whitespace), as
-    // pylint requires; `# see pylint: disable=x` is not a pragma.
-    let before = &text[..pylint_start];
-    let hash_start = before.rfind('#')?;
-    if !before[hash_start + 1..].trim().is_empty() {
-        return None;
-    }
+    // pylint's own grammar is `#`, anything, then `pylint:` (see `OPTION_RGX` in its
+    // `pragma_parser`), so anything between the two is allowed — most commonly a `noqa` added
+    // during the migration, as in `# noqa: F401 pylint: disable=...`.
+    let hash_start = text[..pylint_start].rfind('#')?;
 
     let mut cursor = pylint_start + "pylint".len();
     cursor += leading_whitespace_len(&text[cursor..]);
@@ -259,6 +333,7 @@ fn parse_disable_pragma(text: &str) -> Option<DisablePragma<'_>> {
 
     Some(DisablePragma {
         hash_start,
+        directive_start: pylint_start,
         names_end: cursor + names_region.trim_end().len(),
         kind,
         names,
@@ -380,6 +455,14 @@ pub(crate) fn pylint_disable_comment(
             continue;
         };
 
+        // Prose that merely mentions a pragma — `# see pylint: disable=x for details` — is not
+        // one. What separates the two is the words *after* the message names: a real pragma is
+        // followed by nothing, or by a new comment such as a `noqa`, never by more prose.
+        let after_names = text[pragma.names_end..].trim();
+        if !(after_names.is_empty() || after_names.starts_with('#')) {
+            continue;
+        }
+
         let mut names: Vec<String> = Vec::new();
         let mut unmapped: Vec<&str> = Vec::new();
         for name in &pragma.names {
@@ -417,14 +500,33 @@ pub(crate) fn pylint_disable_comment(
             continue;
         };
 
-        // Only rewrite when the pragma is the entire comment, so the replacement can't
-        // clobber unrelated text (including a pre-existing `noqa`, which always sits before
-        // or after the pragma within the comment).
-        if !text[..pragma.hash_start].trim().is_empty()
-            || !text[pragma.names_end..].trim().is_empty()
-        {
+        // Text the pragma shares its comment with has to survive the rewrite, so the
+        // replacement narrows to the directive itself. When something precedes the directive
+        // the replacement also lands mid-comment, and has to open a comment of its own for Ruff
+        // to read it as a suppression.
+        let leads_comment = text[..pragma.directive_start]
+            .trim_start()
+            .strip_prefix('#')
+            .is_some_and(|before| before.trim().is_empty());
+        let shares_comment = !leads_comment || !after_names.is_empty();
+        let Ok(directive_start) = TextSize::try_from(pragma.directive_start) else {
             continue;
-        }
+        };
+        let replaced = if shares_comment {
+            TextRange::new(
+                comment_range.start() + directive_start,
+                comment_range.start() + names_end,
+            )
+        } else {
+            comment_range
+        };
+        // The `#` is only already there when the directive opens the comment and the narrowed
+        // replacement leaves it standing; replacing the whole comment consumes it.
+        let hash = if shares_comment && leads_comment {
+            ""
+        } else {
+            "# "
+        };
 
         // Whatever replaces the pragma keeps the messages Ruff has no rule for, so they stay
         // suppressed for whoever still runs pylint alongside.
@@ -432,9 +534,13 @@ pub(crate) fn pylint_disable_comment(
             if unmapped.is_empty() {
                 suppression
             } else {
-                format!("# pylint: disable={}  {suppression}", unmapped.join(","))
+                format!(
+                    "{hash}pylint: disable={}  {suppression}",
+                    unmapped.join(",")
+                )
             }
         };
+        let ignore_comment = format!("{hash}ruff: ignore[{names}]");
 
         let line_range = locator.full_line_range(comment_range.start());
         let before_comment =
@@ -447,8 +553,8 @@ pub(crate) fn pylint_disable_comment(
                 continue;
             }
             diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
-                kept_pragma(format!("# ruff: ignore[{names}]")),
-                comment_range,
+                kept_pragma(ignore_comment),
+                replaced,
             )));
             continue;
         }
@@ -457,14 +563,18 @@ pub(crate) fn pylint_disable_comment(
         // `disable-next` means.
         if pragma.kind == PragmaKind::DisableNext {
             diagnostic.set_fix(Fix::safe_edit(Edit::range_replacement(
-                kept_pragma(format!("# ruff: ignore[{names}]")),
-                comment_range,
+                kept_pragma(ignore_comment),
+                replaced,
             )));
             continue;
         }
 
         // A standalone `disable` governs the rest of the enclosing block, which is exactly
-        // what a `disable`/`enable` pair expresses.
+        // what a `disable`/`enable` pair expresses. Rebuilding it consumes the whole comment,
+        // so a pragma sharing one is reported without a fix rather than losing that text.
+        if shares_comment {
+            continue;
+        }
         let Some(suite) = suite else {
             // Without an AST (the file has a syntax error) the block can't be delimited.
             continue;
