@@ -155,7 +155,7 @@ help: Replace with `# ruff: ignore[invalid-commit]`
 45 |     return True
    |
 
-ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:56:46
    |
 56 | def already_migrated(env):  # noqa: ODE8102  # pylint: disable=invalid-commit
@@ -163,8 +163,14 @@ ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-
 57 |     return True
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
+   |
+55 |
+   - def already_migrated(env):  # noqa: ODE8102  # pylint: disable=invalid-commit
+56 + def already_migrated(env):  # noqa: ODE8102  # # ruff: ignore[invalid-commit]
+57 |     return True
+   |
 
-ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:60:26
    |
 60 | def trailing_text(env):  # pylint: disable=invalid-commit  # avoid partial writes
@@ -172,6 +178,12 @@ ODC8502 `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-
 61 |     return True
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
+   |
+59 |
+   - def trailing_text(env):  # pylint: disable=invalid-commit  # avoid partial writes
+60 + def trailing_text(env):  # ruff: ignore[invalid-commit]  # avoid partial writes
+61 |     return True
+   |
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:72:1
@@ -188,8 +200,8 @@ help: Replace with `# ruff: ignore[invalid-commit]`
 72 + # ruff: disable[invalid-commit]
 73 | def standalone_comment(env):
 --------------------------------------------------------------------------------
-79 |     return True
-80 + # ruff: enable[invalid-commit]
+97 |     return sys
+98 + # ruff: enable[invalid-commit]
    |
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
@@ -206,4 +218,54 @@ help: Replace with `# ruff: ignore[invalid-commit]`
    - # pylint: disable-next=invalid-commit
 77 + # ruff: ignore[invalid-commit]
 78 | def disable_next(env):
+   |
+
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[import-outside-top-level]`
+  --> pylint_disable_comment.py:82:33
+   |
+82 | def renamed_pylint_check(env):  # pylint: disable=import-outside-toplevel
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+83 |     # Ruff reuses pylint's code for this check but not its name: `PLC0415` is
+84 |     # `import-outside-top-level`, with the extra hyphen.
+   |
+help: Replace with `# ruff: ignore[import-outside-top-level]`
+   |
+81 |
+   - def renamed_pylint_check(env):  # pylint: disable=import-outside-toplevel
+82 + def renamed_pylint_check(env):  # ruff: ignore[import-outside-top-level]
+83 |     # Ruff reuses pylint's code for this check but not its name: `PLC0415` is
+   |
+
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[import-outside-top-level, unused-import]`
+  --> pylint_disable_comment.py:89:16
+   |
+88 | def shares_comment_with_noqa(env):
+89 |     import os  # noqa: F401 pylint: disable=import-outside-toplevel,unused-import
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+90 |
+91 |     return os
+   |
+help: Replace with `# ruff: ignore[import-outside-top-level, unused-import]`
+   |
+88 | def shares_comment_with_noqa(env):
+   -     import os  # noqa: F401 pylint: disable=import-outside-toplevel,unused-import
+89 +     import os  # noqa: F401 # ruff: ignore[import-outside-top-level, unused-import]
+90 |
+   |
+
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[import-outside-top-level]`
+  --> pylint_disable_comment.py:95:17
+   |
+94 | def pragma_before_noqa(env):
+95 |     import sys  # pylint: disable=import-outside-toplevel  # noqa: F401
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+96 |
+97 |     return sys
+   |
+help: Replace with `# ruff: ignore[import-outside-top-level]`
+   |
+94 | def pragma_before_noqa(env):
+   -     import sys  # pylint: disable=import-outside-toplevel  # noqa: F401
+95 +     import sys  # ruff: ignore[import-outside-top-level]  # noqa: F401
+96 |
    |

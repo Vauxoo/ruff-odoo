@@ -77,3 +77,21 @@ def standalone_comment(env):
 # pylint: disable-next=invalid-commit
 def disable_next(env):
     return True
+
+
+def renamed_pylint_check(env):  # pylint: disable=import-outside-toplevel
+    # Ruff reuses pylint's code for this check but not its name: `PLC0415` is
+    # `import-outside-top-level`, with the extra hyphen.
+    return True
+
+
+def shares_comment_with_noqa(env):
+    import os  # noqa: F401 pylint: disable=import-outside-toplevel,unused-import
+
+    return os
+
+
+def pragma_before_noqa(env):
+    import sys  # pylint: disable=import-outside-toplevel  # noqa: F401
+
+    return sys
