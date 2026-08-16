@@ -2713,6 +2713,16 @@
             "type": "string"
           }
         },
+        "manifest-deprecated-keys": {
+          "description": "The manifest keys reported as deprecated (`ODC8103`). Setting it replaces the built-in\nlist — `active` and `description` for every version, plus `qweb` from Odoo 16.0 on —\nand the keys named here are then reported whatever the configured `odoo-version` is.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "odoo-required-files": {
           "description": "A list of files every Odoo module must ship (`ODC8115`), as paths relative to the\nmodule directory. While the list is empty the rule is inert.",
           "type": [

@@ -237,6 +237,7 @@ linter.odoo.prohibited_override_methods = []
 linter.odoo.odoo_version = none
 linter.odoo.category_allowed = []
 linter.odoo.odoo_required_files = []
+linter.odoo.manifest_deprecated_keys = default
 linter.pep8_naming.ignore_names = [
 	setUp,
 	tearDown,
