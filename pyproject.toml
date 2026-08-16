@@ -9,7 +9,7 @@ build-backend = "maturin"
 # installed alongside the upstream `ruff` package on the same machine — even in
 # the same environment — without colliding with its `ruff` entry point.
 name = "ruff-odoo"
-version = "0.16.2.17"
+version = "0.16.3.17"
 description = "An extremely fast Python linter and code formatter, written in Rust. Vauxoo fork with custom Odoo rules (ODOO group)."
 authors = [{ name = "Astral Software Inc.", email = "hey@astral.sh" }]
 maintainers = [{ name = "Vauxoo", email = "info@vauxoo.com" }]
@@ -66,7 +66,7 @@ exclude = [
 
 [dependency-groups]
 dev = [
-    "prek==0.4.11",
+    "prek==0.4.12",
 ]
 release = [
     "rooster==0.1.1",
