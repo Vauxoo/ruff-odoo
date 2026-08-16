@@ -14,6 +14,8 @@ pub struct Settings {
     pub category_allowed: Vec<String>,
     pub odoo_required_files: Vec<String>,
     pub manifest_deprecated_keys: ManifestDeprecatedKeys,
+    pub manifest_required_authors: ConfiguredList,
+    pub license_allowed: ConfiguredList,
 }
 
 impl Display for Settings {
@@ -27,6 +29,8 @@ impl Display for Settings {
                 self.category_allowed | array,
                 self.odoo_required_files | array,
                 self.manifest_deprecated_keys,
+                self.manifest_required_authors,
+                self.license_allowed,
             ]
         }
         Ok(())
@@ -51,6 +55,48 @@ impl Display for ManifestDeprecatedKeys {
             ManifestDeprecatedKeys::UserProvided(keys) => {
                 write!(f, "[{}]", keys.join(", "))
             }
+        }
+    }
+}
+
+/// A list of accepted values that a project can replace outright.
+///
+/// The fork ships the same list pylint-odoo defaults to, so a project that agrees with it
+/// configures nothing. A project that does not — Vauxoo accepts its own authors and the
+/// `OPL-1` license, for instance — names its own list, which replaces the built-in one rather
+/// than adding to it, exactly as the corresponding pylint-odoo option does.
+#[derive(Debug, Clone, Default, CacheKey)]
+pub enum ConfiguredList {
+    /// The list built into this fork.
+    #[default]
+    BuiltIn,
+    /// The exact list configured for the project.
+    UserProvided(Vec<String>),
+}
+
+impl ConfiguredList {
+    /// Whether `value` is in the list, given the built-in list to fall back to.
+    pub(crate) fn contains(&self, value: &str, built_in: &[&str]) -> bool {
+        match self {
+            ConfiguredList::BuiltIn => built_in.contains(&value),
+            ConfiguredList::UserProvided(entries) => entries.iter().any(|entry| entry == value),
+        }
+    }
+
+    /// The list in effect, rendered for a diagnostic message.
+    pub(crate) fn joined(&self, built_in: &[&str]) -> String {
+        match self {
+            ConfiguredList::BuiltIn => built_in.join(", "),
+            ConfiguredList::UserProvided(entries) => entries.join(", "),
+        }
+    }
+}
+
+impl Display for ConfiguredList {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            ConfiguredList::BuiltIn => f.write_str("default"),
+            ConfiguredList::UserProvided(entries) => write!(f, "[{}]", entries.join(", ")),
         }
     }
 }

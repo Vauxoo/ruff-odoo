@@ -2713,8 +2713,28 @@
             "type": "string"
           }
         },
+        "license-allowed": {
+          "description": "The licenses a manifest may declare (`ODC8105`). Setting it replaces the built-in list,\nwhich holds the licenses pylint-odoo accepts.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "manifest-deprecated-keys": {
           "description": "The manifest keys reported as deprecated (`ODC8103`). Setting it replaces the built-in\nlist — `active` and `description` for every version, plus `qweb` from Odoo 16.0 on —\nand the keys named here are then reported whatever the configured `odoo-version` is.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifest-required-authors": {
+          "description": "The authors a manifest must name at least one of (`ODC8101`). Setting it replaces the\nbuilt-in list, which holds the single author pylint-odoo requires.",
           "type": [
             "array",
             "null"

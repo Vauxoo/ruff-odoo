@@ -18,10 +18,17 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, 
 ///     "author": "Someone Else",
 /// }
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.manifest-required-authors`
+///
+/// The default is the single author pylint-odoo requires, `Odoo Community Association (OCA)`.
+/// A project with its own authors names them through the option, which replaces the default
+/// rather than adding to it.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct ManifestRequiredAuthor {
-    required: &'static str,
+    required: String,
 }
 
 impl Violation for ManifestRequiredAuthor {
@@ -52,14 +59,15 @@ pub(crate) fn manifest_required_author(
         None => (manifest_anchor_range(dict), ""),
     };
 
+    let required = &checker.settings().odoo.manifest_required_authors;
     let authors: std::collections::HashSet<&str> = author.split(',').map(str::trim).collect();
-    if !REQUIRED_AUTHORS
+    if !authors
         .iter()
-        .any(|required| authors.contains(required))
+        .any(|author| required.contains(author, REQUIRED_AUTHORS))
     {
         checker.report_diagnostic(
             ManifestRequiredAuthor {
-                required: REQUIRED_AUTHORS[0],
+                required: required.joined(REQUIRED_AUTHORS),
             },
             report_range,
         );

@@ -389,6 +389,48 @@ mod tests {
         Ok(())
     }
 
+    /// A project that accepts other authors names them, and the built-in list stops applying:
+    /// the module authored by the OCA alone is now the one reported.
+    #[test]
+    fn manifest_required_authors_configured() -> Result<()> {
+        let snapshot = "manifest_required_authors_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/manifest_required_author/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    manifest_required_authors: super::settings::ConfiguredList::UserProvided(vec![
+                        "Someone Else".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestRequiredAuthor)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Likewise for licenses: naming `GPL` accepts it and drops everything else, so the
+    /// `LGPL-3` module the built-in list allows is reported instead.
+    #[test]
+    fn license_allowed_configured() -> Result<()> {
+        let snapshot = "license_allowed_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/license_allowed/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    license_allowed: super::settings::ConfiguredList::UserProvided(vec![
+                        "GPL".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::LicenseAllowed)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     /// `missing-odoo-file` stays inert until the project lists its required files.
     #[test]
     fn missing_odoo_file_is_inert_without_configuration() -> Result<()> {

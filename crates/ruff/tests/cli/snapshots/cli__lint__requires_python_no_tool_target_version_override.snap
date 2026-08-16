@@ -240,6 +240,8 @@ linter.odoo.odoo_version = none
 linter.odoo.category_allowed = []
 linter.odoo.odoo_required_files = []
 linter.odoo.manifest_deprecated_keys = default
+linter.odoo.manifest_required_authors = default
+linter.odoo.license_allowed = default
 linter.pep8_naming.ignore_names = [
 	setUp,
 	tearDown,

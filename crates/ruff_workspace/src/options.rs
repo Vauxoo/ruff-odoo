@@ -3241,6 +3241,28 @@ pub struct OdooOptions {
         "#
     )]
     pub manifest_deprecated_keys: Option<Vec<String>>,
+    /// The authors a manifest must name at least one of (`ODC8101`). Setting it replaces the
+    /// built-in list, which holds the single author pylint-odoo requires.
+    #[option(
+        default = r#"["Odoo Community Association (OCA)"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Modules are ours, or the OCA's.
+            manifest-required-authors = ["Vauxoo", "Odoo Community Association (OCA)"]
+        "#
+    )]
+    pub manifest_required_authors: Option<Vec<String>>,
+    /// The licenses a manifest may declare (`ODC8105`). Setting it replaces the built-in list,
+    /// which holds the licenses pylint-odoo accepts.
+    #[option(
+        default = r#"["AGPL-3", "GPL-2", "GPL-2 or any later version", "GPL-3", "GPL-3 or any later version", "LGPL-3", "OEEL-1", "Other OSI approved licence", "Other proprietary"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # We also ship modules under the Odoo Proprietary License.
+            license-allowed = ["AGPL-3", "LGPL-3", "OEEL-1", "OPL-1"]
+        "#
+    )]
+    pub license_allowed: Option<Vec<String>>,
 }
 
 impl OdooOptions {
@@ -3253,6 +3275,14 @@ impl OdooOptions {
             manifest_deprecated_keys: match self.manifest_deprecated_keys {
                 Some(keys) => odoo::settings::ManifestDeprecatedKeys::UserProvided(keys),
                 None => odoo::settings::ManifestDeprecatedKeys::Default,
+            },
+            manifest_required_authors: match self.manifest_required_authors {
+                Some(authors) => odoo::settings::ConfiguredList::UserProvided(authors),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            license_allowed: match self.license_allowed {
+                Some(licenses) => odoo::settings::ConfiguredList::UserProvided(licenses),
+                None => odoo::settings::ConfiguredList::BuiltIn,
             },
         }
     }
