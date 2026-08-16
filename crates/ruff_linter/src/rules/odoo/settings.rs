@@ -16,6 +16,18 @@ pub struct Settings {
     pub manifest_deprecated_keys: ManifestDeprecatedKeys,
     pub manifest_required_authors: ConfiguredList,
     pub license_allowed: ConfiguredList,
+    pub manifest_required_keys: ConfiguredList,
+    pub manifest_keys_values_true: ConfiguredList,
+    pub development_status_allowed: ConfiguredList,
+    pub attribute_deprecated: ConfiguredList,
+    pub method_required_super: ConfiguredList,
+    pub no_missing_return: ConfiguredList,
+    pub cursor_expr: ConfiguredList,
+    pub odoo_exceptions: ConfiguredList,
+    pub external_request_timeout_methods: ConfiguredList,
+    pub deprecated_field_parameters: ConfiguredList,
+    pub deprecated_odoo_model_methods: ConfiguredList,
+    pub readme_template_url: Option<String>,
 }
 
 impl Display for Settings {
@@ -31,6 +43,18 @@ impl Display for Settings {
                 self.manifest_deprecated_keys,
                 self.manifest_required_authors,
                 self.license_allowed,
+                self.manifest_required_keys,
+                self.manifest_keys_values_true,
+                self.development_status_allowed,
+                self.attribute_deprecated,
+                self.method_required_super,
+                self.no_missing_return,
+                self.cursor_expr,
+                self.odoo_exceptions,
+                self.external_request_timeout_methods,
+                self.deprecated_field_parameters,
+                self.deprecated_odoo_model_methods,
+                self.readme_template_url | optional,
             ]
         }
         Ok(())
@@ -80,6 +104,62 @@ impl ConfiguredList {
         match self {
             ConfiguredList::BuiltIn => built_in.contains(&value),
             ConfiguredList::UserProvided(entries) => entries.iter().any(|entry| entry == value),
+        }
+    }
+
+    /// Every entry of the list in effect.
+    pub(crate) fn entries<'a>(
+        &'a self,
+        built_in: &'a [&'a str],
+    ) -> Box<dyn Iterator<Item = std::borrow::Cow<'a, str>> + 'a> {
+        match self {
+            ConfiguredList::BuiltIn => Box::new(
+                built_in
+                    .iter()
+                    .map(|entry| std::borrow::Cow::Borrowed(*entry)),
+            ),
+            ConfiguredList::UserProvided(entries) => Box::new(
+                entries
+                    .iter()
+                    .map(|entry| std::borrow::Cow::Borrowed(entry.as_str())),
+            ),
+        }
+    }
+
+    /// The dotted path in the list that `segments` spells, if any.
+    ///
+    /// The built-in list is written as segments because that is what the semantic model hands
+    /// back; a configured one is written the way a person would type it, `requests.get`.
+    pub(crate) fn matching_path(&self, segments: &[&str], built_in: &[&[&str]]) -> Option<String> {
+        match self {
+            ConfiguredList::BuiltIn => built_in
+                .iter()
+                .find(|path| segments == **path)
+                .map(|path| path.join(".")),
+            ConfiguredList::UserProvided(entries) => {
+                let dotted = segments.join(".");
+                entries.iter().find(|entry| **entry == dotted).cloned()
+            }
+        }
+    }
+
+    /// The replacement for `name`, if the list renames it.
+    ///
+    /// Configured entries are written `old:new`, as pylint-odoo's
+    /// `deprecated-field-parameters` takes them; one without a `:` renames nothing and is
+    /// ignored rather than read as a parameter with an empty replacement.
+    pub(crate) fn renamed(&self, name: &str, built_in: &[(&str, &str)]) -> Option<String> {
+        match self {
+            ConfiguredList::BuiltIn => built_in
+                .iter()
+                .find(|(old, _)| *old == name)
+                .map(|(_, new)| (*new).to_string()),
+            ConfiguredList::UserProvided(entries) => entries.iter().find_map(|entry| {
+                entry
+                    .split_once(':')
+                    .filter(|(old, _)| *old == name)
+                    .map(|(_, new)| new.to_string())
+            }),
         }
     }
 

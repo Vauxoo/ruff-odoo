@@ -1,0 +1,11 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8112 Missing ./README.rst file. Template here: https://github.com/Vauxoo/templates/blob/main/README.md
+ --> __manifest__.py:2:5
+  |
+1 | {
+2 |     "name": "My Module",
+  |     ^^^^^^
+3 | }
+  |

@@ -20,6 +20,11 @@ use crate::checkers::ast::Checker;
 ///
 ///     _defaults = {"active": True}
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.attribute-deprecated`
+///
+/// The default is the attributes the old API left behind.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct AttributeDeprecated {
@@ -59,7 +64,12 @@ pub(crate) fn attribute_deprecated(checker: &Checker, assign: &ast::StmtAssign) 
     let [Expr::Name(target)] = assign.targets.as_slice() else {
         return;
     };
-    if !DEPRECATED_ATTRIBUTES.contains(&target.id.as_str()) {
+    if !checker
+        .settings()
+        .odoo
+        .attribute_deprecated
+        .contains(target.id.as_str(), DEPRECATED_ATTRIBUTES)
+    {
         return;
     }
     checker.report_diagnostic(

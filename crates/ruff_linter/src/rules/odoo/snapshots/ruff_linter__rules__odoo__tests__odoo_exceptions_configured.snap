@@ -1,0 +1,100 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8107 String parameter on "message_post" requires translation. Use body=self.env._(...)
+  --> translation_required.py:10:32
+   |
+ 8 |     def action_confirm(self):
+ 9 |         # Flagged: plain literals and pre-translation interpolation.
+10 |         self.message_post(body="Order confirmed")
+   |                                ^^^^^^^^^^^^^^^^^
+11 |         self.message_post("Order confirmed positionally")
+12 |         self.message_post(subject="New quotation", body=_("Translated body"))
+   |
+
+ODC8107 String parameter on "message_post" requires translation. Use self.env._(...)
+  --> translation_required.py:11:27
+   |
+ 9 |         # Flagged: plain literals and pre-translation interpolation.
+10 |         self.message_post(body="Order confirmed")
+11 |         self.message_post("Order confirmed positionally")
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |         self.message_post(subject="New quotation", body=_("Translated body"))
+13 |         self.message_post(body="Order %s confirmed" % self.name)
+   |
+
+ODC8107 String parameter on "message_post" requires translation. Use subject=self.env._(...)
+  --> translation_required.py:12:35
+   |
+10 |         self.message_post(body="Order confirmed")
+11 |         self.message_post("Order confirmed positionally")
+12 |         self.message_post(subject="New quotation", body=_("Translated body"))
+   |                                   ^^^^^^^^^^^^^^^
+13 |         self.message_post(body="Order %s confirmed" % self.name)
+14 |         self.message_post(body="Order {} confirmed".format(self.name))
+   |
+
+ODC8107 String parameter on "message_post" requires translation. Use body=self.env._(...)
+  --> translation_required.py:13:32
+   |
+11 |         self.message_post("Order confirmed positionally")
+12 |         self.message_post(subject="New quotation", body=_("Translated body"))
+13 |         self.message_post(body="Order %s confirmed" % self.name)
+   |                                ^^^^^^^^^^^^^^^^^^^^
+14 |         self.message_post(body="Order {} confirmed".format(self.name))
+15 |         self.message_post(body=f"Order {self.name} confirmed")
+   |
+
+ODC8107 String parameter on "message_post" requires translation. Use body=self.env._(...)
+  --> translation_required.py:14:32
+   |
+12 |         self.message_post(subject="New quotation", body=_("Translated body"))
+13 |         self.message_post(body="Order %s confirmed" % self.name)
+14 |         self.message_post(body="Order {} confirmed".format(self.name))
+   |                                ^^^^^^^^^^^^^^^^^^^^
+15 |         self.message_post(body=f"Order {self.name} confirmed")
+16 |         # Not flagged: translated (interpolating a translation call is ODW8115's job).
+   |
+
+ODC8107 String parameter on "message_post" requires translation. Use body=self.env._(...)
+  --> translation_required.py:15:32
+   |
+13 |         self.message_post(body="Order %s confirmed" % self.name)
+14 |         self.message_post(body="Order {} confirmed".format(self.name))
+15 |         self.message_post(body=f"Order {self.name} confirmed")
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |         # Not flagged: translated (interpolating a translation call is ODW8115's job).
+17 |         self.message_post(body=_("Order confirmed"))
+   |
+
+ODC8107 String parameter on "UserError" requires translation. Use self.env._(...)
+  --> translation_required.py:26:25
+   |
+24 |     def action_cancel(self):
+25 |         # Flagged: the message of a raised Odoo exception, imported directly...
+26 |         raise UserError("Order cannot be cancelled")
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 |     def action_draft(self):
+   |
+
+ODC8107 String parameter on "UserError" requires translation. Use self.env._(...)
+  --> translation_required.py:34:25
+   |
+32 |     def action_lock(self):
+33 |         # ...and interpolated before translation.
+34 |         raise UserError("Order %s cannot be locked" % self.name)
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+35 |
+36 |     def action_unlock(self):
+   |
+
+ODC8107 String parameter on "UserError" requires translation. Use self.env._(...)
+  --> translation_required.py:40:25
+   |
+39 |     def action_done(self):
+40 |         raise UserError(f"Order {self.name} cannot be marked done")
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |
+42 |     def action_reset(self):
+   |

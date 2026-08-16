@@ -14,14 +14,25 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 /// ## Why is this bad?
 /// The README is what's shown on the module's Apps page and is the primary source of
 /// documentation for the module.
+///
+/// ## Options
+/// - `lint.odoo.readme-template-url`
+///
+/// Unset, the diagnostic just reports the missing file; set, it points at the template.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
-pub(crate) struct MissingReadme;
+pub(crate) struct MissingReadme {
+    /// The template a project points contributors at, when it configures one.
+    template_url: Option<String>,
+}
 
 impl Violation for MissingReadme {
     #[derive_message_formats]
     fn message(&self) -> String {
-        "Missing ./README.rst file".to_string()
+        match &self.template_url {
+            Some(url) => format!("Missing ./README.rst file. Template here: {url}"),
+            None => "Missing ./README.rst file".to_string(),
+        }
     }
 }
 
@@ -38,5 +49,10 @@ pub(crate) fn missing_readme(checker: &Checker, dict: &ast::ExprDict, path: &Pat
     if README_FILES.iter().any(|name| dir.join(name).is_file()) {
         return;
     }
-    checker.report_diagnostic(MissingReadme, manifest_anchor_range(dict));
+    checker.report_diagnostic(
+        MissingReadme {
+            template_url: checker.settings().odoo.readme_template_url.clone(),
+        },
+        manifest_anchor_range(dict),
+    );
 }

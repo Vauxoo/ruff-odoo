@@ -431,6 +431,255 @@ mod tests {
         Ok(())
     }
 
+    /// Requiring a second key reports it alongside the missing `license`.
+    #[test]
+    fn manifest_required_keys_configured() -> Result<()> {
+        let snapshot = "manifest_required_keys_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/manifest_required_key/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    manifest_required_keys: super::settings::ConfiguredList::UserProvided(vec![
+                        "license".to_string(),
+                        "author".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestRequiredKey)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Narrowing the statuses reports one the built-in list accepts.
+    #[test]
+    fn development_status_allowed_configured() -> Result<()> {
+        let snapshot = "development_status_allowed_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/development_status_allowed/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    development_status_allowed: super::settings::ConfiguredList::UserProvided(
+                        vec!["Production/Stable".to_string()],
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DevelopmentStatusAllowed)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Dropping `length` from the list stops it being reported.
+    #[test]
+    fn attribute_deprecated_configured() -> Result<()> {
+        let snapshot = "attribute_deprecated_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/attribute_deprecated.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    attribute_deprecated: super::settings::ConfiguredList::UserProvided(vec![
+                        "_columns".to_string(),
+                        "_defaults".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::AttributeDeprecated)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// A project that only cares about the ORM writes names them, and `read` goes quiet.
+    #[test]
+    fn method_required_super_configured() -> Result<()> {
+        let snapshot = "method_required_super_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/method_required_super.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    method_required_super: super::settings::ConfiguredList::UserProvided(vec![
+                        "create".to_string(),
+                        "write".to_string(),
+                        "unlink".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MethodRequiredSuper)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Exempting a method of the project's own stops `missing-return` reporting it.
+    #[test]
+    fn no_missing_return_configured() -> Result<()> {
+        let snapshot = "no_missing_return_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/missing_return.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    no_missing_return: super::settings::ConfiguredList::UserProvided(vec![
+                        "__init__".to_string(),
+                        "setUp".to_string(),
+                        "_setup_company".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingReturn)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Only `self.env.cr` counts as a cursor here, so the other spellings go quiet.
+    #[test]
+    fn cursor_expr_configured() -> Result<()> {
+        let snapshot = "cursor_expr_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/invalid_commit.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    cursor_expr: super::settings::ConfiguredList::UserProvided(vec![
+                        "self.env.cr".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::InvalidCommit)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Narrowing the exceptions leaves the ones dropped from the list untranslated in peace.
+    #[test]
+    fn odoo_exceptions_configured() -> Result<()> {
+        let snapshot = "odoo_exceptions_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/translation_required.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_exceptions: super::settings::ConfiguredList::UserProvided(vec![
+                        "UserError".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::TranslationRequired)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `installable` no longer counts as defaulting to `True`, so stating it stops being superfluous.
+    #[test]
+    fn manifest_keys_values_true_configured() -> Result<()> {
+        let snapshot = "manifest_keys_values_true_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/manifest_superfluous_key/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    manifest_keys_values_true: super::settings::ConfiguredList::UserProvided(vec![
+                        "active".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ManifestSuperfluousKey)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Only `requests.get` must carry a timeout, so the other calls stop being reported.
+    #[test]
+    fn external_request_timeout_methods_configured() -> Result<()> {
+        let snapshot = "external_request_timeout_methods_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/external_request_timeout.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    external_request_timeout_methods: super::settings::ConfiguredList::UserProvided(
+                        vec!["requests.get".to_string()],
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ExternalRequestTimeout)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Renaming a parameter of the project's own reports it; `select` is no longer listed.
+    #[test]
+    fn deprecated_field_parameters_configured() -> Result<()> {
+        let snapshot = "deprecated_field_parameters_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/renamed_field_parameter.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    deprecated_field_parameters: super::settings::ConfiguredList::UserProvided(
+                        vec![
+                            "digits_compute:digits".to_string(),
+                            "oldname:string".to_string(),
+                        ],
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RenamedFieldParameter)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// Naming the methods drops the built-in list, so `fields_view_get` stops being reported.
+    #[test]
+    fn deprecated_odoo_model_methods_configured() -> Result<()> {
+        let snapshot = "deprecated_odoo_model_methods_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_model_method.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    deprecated_odoo_model_methods: super::settings::ConfiguredList::UserProvided(
+                        vec!["get_formview_id".to_string()],
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooModelMethod)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The configured template is named in the diagnostic, as pylint-odoo's message does.
+    #[test]
+    fn readme_template_url_configured() -> Result<()> {
+        let snapshot = "readme_template_url_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/missing_readme/missing/__manifest__.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    readme_template_url: Some(
+                        "https://github.com/Vauxoo/templates/blob/main/README.md".to_string(),
+                    ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingReadme)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     /// `missing-odoo-file` stays inert until the project lists its required files.
     #[test]
     fn missing_odoo_file_is_inert_without_configuration() -> Result<()> {

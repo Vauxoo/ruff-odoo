@@ -291,3 +291,10 @@ fn remove_sequence_element(ranges: &[TextRange], target: TextRange, source: &str
         Ok(Edit::deletion(target.start(), end))
     }
 }
+
+/// The expressions that denote a database cursor, as pylint-odoo's `cursor-expr` defaults.
+///
+/// Shared by `invalid-commit` (`ODE8102`) and `sql-injection` (`ODE8103`): both answer "is this
+/// a cursor?", both read the same `cursor-expr` setting, and a default written twice is a
+/// default that eventually disagrees with itself.
+pub(crate) const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];

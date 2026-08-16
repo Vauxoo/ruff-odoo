@@ -29,10 +29,15 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 ///     "license": "LGPL-3",
 /// }
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.manifest-required-keys`
+///
+/// The default requires `license` alone, as pylint-odoo does.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct ManifestRequiredKey {
-    key: &'static str,
+    key: String,
 }
 
 impl Violation for ManifestRequiredKey {
@@ -43,21 +48,32 @@ impl Violation for ManifestRequiredKey {
     }
 }
 
+const REQUIRED_KEYS: &[&str] = &["license"];
+
 /// ODC8102
 pub(crate) fn manifest_required_key(checker: &Checker, dict: &ast::ExprDict, path: &Path) {
     if !is_manifest_root_dict(checker, dict, path) {
         return;
     }
 
-    let key = "license";
-    let has_key = dict.iter_keys().flatten().any(|dict_key| {
-        matches!(
-            dict_key,
-            ast::Expr::StringLiteral(ast::ExprStringLiteral { value, .. })
-                if value.to_str() == key
-        )
-    });
-    if !has_key {
-        checker.report_diagnostic(ManifestRequiredKey { key }, manifest_anchor_range(dict));
+    let declared: Vec<&str> = dict
+        .iter_keys()
+        .flatten()
+        .filter_map(|dict_key| match dict_key {
+            ast::Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => Some(value.to_str()),
+            _ => None,
+        })
+        .collect();
+
+    let required = &checker.settings().odoo.manifest_required_keys;
+    for key in required.entries(REQUIRED_KEYS) {
+        if !declared.contains(&key.as_ref()) {
+            checker.report_diagnostic(
+                ManifestRequiredKey {
+                    key: key.to_string(),
+                },
+                manifest_anchor_range(dict),
+            );
+        }
     }
 }

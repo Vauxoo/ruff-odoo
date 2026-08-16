@@ -24,6 +24,11 @@ use crate::checkers::ast::Checker;
 /// def write(self, vals):
 ///     return super().write(vals)
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.no-missing-return`
+///
+/// Names the methods exempt from returning, not the ones checked.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct MissingReturn {
@@ -94,7 +99,12 @@ pub(crate) fn missing_return(checker: &Checker, function_def: &ast::StmtFunction
     if !checker.semantic().current_scope().kind.is_class() {
         return;
     }
-    if NO_MISSING_RETURN.contains(&function_def.name.as_str()) {
+    if checker
+        .settings()
+        .odoo
+        .no_missing_return
+        .contains(function_def.name.as_str(), NO_MISSING_RETURN)
+    {
         return;
     }
 

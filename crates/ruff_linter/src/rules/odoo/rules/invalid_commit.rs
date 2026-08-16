@@ -4,7 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::dotted_name;
+use crate::rules::odoo::helpers::{CURSOR_EXPRS, dotted_name};
 
 /// ## What it does
 /// Checks for direct calls to `cr.commit()` (or `self.cr.commit()`, `self._cr.commit()`,
@@ -18,6 +18,11 @@ use crate::rules::odoo::helpers::dotted_name;
 /// ```python
 /// self.env.cr.commit()
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.cursor-expr`
+///
+/// Shared with `sql-injection` (`ODE8103`): both ask whether an expression is a cursor.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InvalidCommit;
@@ -28,8 +33,6 @@ impl Violation for InvalidCommit {
         "Use of cr.commit() directly".to_string()
     }
 }
-
-const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];
 
 /// ODE8102
 pub(crate) fn invalid_commit(checker: &Checker, call: &ast::ExprCall) {
@@ -42,7 +45,12 @@ pub(crate) fn invalid_commit(checker: &Checker, call: &ast::ExprCall) {
     let Some(cursor) = dotted_name(value) else {
         return;
     };
-    if CURSOR_EXPRS.contains(&cursor.as_str()) {
+    if checker
+        .settings()
+        .odoo
+        .cursor_expr
+        .contains(cursor.as_str(), CURSOR_EXPRS)
+    {
         checker.report_diagnostic(InvalidCommit, call.range());
     }
 }
