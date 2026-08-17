@@ -2703,6 +2703,16 @@
       "description": "Options for the `odoo` plugin.",
       "type": "object",
       "properties": {
+        "attribute-deprecated": {
+          "description": "The model attributes reported as deprecated (`ODW8105`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "category-allowed": {
           "description": "A list of categories allowed in a module's manifest (`ODC8114`). While the list is\nempty the rule is inert, so a project only opts in by naming its categories.",
           "type": [
@@ -2713,8 +2723,128 @@
             "type": "string"
           }
         },
+        "cursor-expr": {
+          "description": "The expressions that denote a database cursor (`ODE8102, ODE8103`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "deprecated-field-parameters": {
+          "description": "The renamed field parameters, each written as `old:new` (`ODW8111`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "deprecated-odoo-model-methods": {
+          "description": "The model methods reported as deprecated. Setting it drops the version gating the built-in list carries, so the methods named here are reported whatever the configured `odoo-version` is (`ODW8160`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "development-status-allowed": {
+          "description": "The values `development_status` may take (`ODC8111`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "external-request-timeout-methods": {
+          "description": "The calls that must pass a timeout, as dotted paths (`ODE8106`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "license-allowed": {
+          "description": "The licenses a manifest may declare (`ODC8105`). Setting it replaces the built-in list,\nwhich holds the licenses pylint-odoo accepts.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "manifest-deprecated-keys": {
           "description": "The manifest keys reported as deprecated (`ODC8103`). Setting it replaces the built-in\nlist — `active` and `description` for every version, plus `qweb` from Odoo 16.0 on —\nand the keys named here are then reported whatever the configured `odoo-version` is.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifest-keys-values-true": {
+          "description": "The manifest keys whose default value is `True`, so that spelling them out is superfluous (`ODC8116`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifest-required-authors": {
+          "description": "The authors a manifest must name at least one of (`ODC8101`). Setting it replaces the\nbuilt-in list, which holds the single author pylint-odoo requires.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifest-required-keys": {
+          "description": "The keys a manifest must declare (`ODC8102`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "method-required-super": {
+          "description": "The methods whose override must call `super()` (`ODW8106`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "no-missing-return": {
+          "description": "The methods exempt from returning the value of the `super()` call they make (`ODW8110`). Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "odoo-exceptions": {
+          "description": "The exceptions whose message must be translated (`ODC8107`). Setting it replaces the built-in list.",
           "type": [
             "array",
             "null"
@@ -2753,6 +2883,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "readme-template-url": {
+          "description": "The README template pointed at by `missing-readme` (`ODC8112`) when a module has none.\nUnset, the diagnostic just reports the missing file.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

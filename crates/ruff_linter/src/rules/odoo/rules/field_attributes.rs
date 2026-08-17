@@ -109,6 +109,11 @@ impl Violation for MethodInverse {
 /// ```python
 /// amount = fields.Float(digits=get_precision("Account"))
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.deprecated-field-parameters`
+///
+/// Each entry is written `old:new`.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct RenamedFieldParameter {
@@ -321,12 +326,16 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
         }
 
         if checker.is_rule_enabled(Rule::RenamedFieldParameter)
-            && let Some((old, new)) = RENAMED_PARAMETERS.iter().find(|(old, _)| *old == arg_name)
+            && let Some(new) = checker
+                .settings()
+                .odoo
+                .deprecated_field_parameters
+                .renamed(arg_name, RENAMED_PARAMETERS)
         {
             checker.report_diagnostic(
                 RenamedFieldParameter {
-                    old: (*old).to_string(),
-                    new: (*new).to_string(),
+                    old: arg_name.to_string(),
+                    new,
                 },
                 keyword.range(),
             );

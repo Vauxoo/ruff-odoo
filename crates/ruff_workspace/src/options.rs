@@ -3241,6 +3241,148 @@ pub struct OdooOptions {
         "#
     )]
     pub manifest_deprecated_keys: Option<Vec<String>>,
+    /// The authors a manifest must name at least one of (`ODC8101`). Setting it replaces the
+    /// built-in list, which holds the single author pylint-odoo requires.
+    #[option(
+        default = r#"["Odoo Community Association (OCA)"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Modules are ours, or the OCA's.
+            manifest-required-authors = ["Vauxoo", "Odoo Community Association (OCA)"]
+        "#
+    )]
+    pub manifest_required_authors: Option<Vec<String>>,
+    /// The licenses a manifest may declare (`ODC8105`). Setting it replaces the built-in list,
+    /// which holds the licenses pylint-odoo accepts.
+    #[option(
+        default = r#"["AGPL-3", "GPL-2", "GPL-2 or any later version", "GPL-3", "GPL-3 or any later version", "LGPL-3", "OEEL-1", "Other OSI approved licence", "Other proprietary"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # We also ship modules under the Odoo Proprietary License.
+            license-allowed = ["AGPL-3", "LGPL-3", "OEEL-1", "OPL-1"]
+        "#
+    )]
+    pub license_allowed: Option<Vec<String>>,
+    /// The keys a manifest must declare (`ODC8102`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["license"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Every module must declare who wrote it, too.
+            manifest-required-keys = ["license", "author"]
+        "#
+    )]
+    pub manifest_required_keys: Option<Vec<String>>,
+    /// The manifest keys whose default value is `True`, so that spelling them out is superfluous (`ODC8116`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["active", "installable"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # `installable` is worth stating explicitly in this project.
+            manifest-keys-values-true = ["active"]
+        "#
+    )]
+    pub manifest_keys_values_true: Option<Vec<String>>,
+    /// The values `development_status` may take (`ODC8111`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["Alpha", "Beta", "Mature", "Production/Stable"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # We never ship anything below Beta.
+            development-status-allowed = ["Beta", "Production/Stable"]
+        "#
+    )]
+    pub development_status_allowed: Option<Vec<String>>,
+    /// The model attributes reported as deprecated (`ODW8105`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["_columns", "_defaults", "length"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # `length` is still in use here.
+            attribute-deprecated = ["_columns", "_defaults"]
+        "#
+    )]
+    pub attribute_deprecated: Option<Vec<String>>,
+    /// The methods whose override must call `super()` (`ODW8106`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["copy", "create", "default_get", "read", "setUp", "setUpClass", "tearDown", "tearDownClass", "unlink", "write"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Only the ORM writes matter to us.
+            method-required-super = ["create", "write", "unlink"]
+        "#
+    )]
+    pub method_required_super: Option<Vec<String>>,
+    /// The methods exempt from returning the value of the `super()` call they make (`ODW8110`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["__init__", "_register_hook", "setUp", "setUpClass", "tearDown", "tearDownClass"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Our own setup helper never returns either.
+            no-missing-return = ["__init__", "setUp", "_setup_company"]
+        "#
+    )]
+    pub no_missing_return: Option<Vec<String>>,
+    /// The expressions that denote a database cursor (`ODE8102, ODE8103`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["cr", "self._cr", "self.cr", "self.env.cr"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # This codebase reaches the cursor through a helper.
+            cursor-expr = ["self.env.cr", "self._db.cursor"]
+        "#
+    )]
+    pub cursor_expr: Option<Vec<String>>,
+    /// The exceptions whose message must be translated (`ODC8107`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["AccessDenied", "AccessError", "CacheMiss", "MissingError", "RedirectWarning", "UserError", "ValidationError", "Warning", "except_orm"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Our own exception carries a user-facing message too.
+            odoo-exceptions = ["UserError", "ValidationError", "PaymentError"]
+        "#
+    )]
+    pub odoo_exceptions: Option<Vec<String>>,
+    /// The calls that must pass a timeout, as dotted paths (`ODE8106`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["ftplib.FTP", "http.client.HTTPConnection", "requests.get", "requests.post", "..."]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Our HTTP helper wraps requests and needs one as well.
+            external-request-timeout-methods = ["requests.get", "requests.post", "myaddon.http.fetch"]
+        "#
+    )]
+    pub external_request_timeout_methods: Option<Vec<String>>,
+    /// The renamed field parameters, each written as `old:new` (`ODW8111`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["digits_compute:digits", "select:index"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # A parameter our own base module renamed.
+            deprecated-field-parameters = ["digits_compute:digits", "select:index", "oldname:string"]
+        "#
+    )]
+    pub deprecated_field_parameters: Option<Vec<String>>,
+    /// The model methods reported as deprecated. Setting it drops the version gating the built-in list carries, so the methods named here are reported whatever the configured `odoo-version` is (`ODW8160`). Setting it replaces the built-in list.
+    #[option(
+        default = r#"["fields_view_get"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Also flag a method our own base module retired.
+            deprecated-odoo-model-methods = ["fields_view_get", "get_formview_id"]
+        "#
+    )]
+    pub deprecated_odoo_model_methods: Option<Vec<String>>,
+    /// The README template pointed at by `missing-readme` (`ODC8112`) when a module has none.
+    /// Unset, the diagnostic just reports the missing file.
+    #[option(
+        default = r#"null"#,
+        value_type = "str",
+        example = r#"
+            readme-template-url = "https://github.com/Vauxoo/templates/blob/main/README.md"
+        "#
+    )]
+    pub readme_template_url: Option<String>,
 }
 
 impl OdooOptions {
@@ -3254,6 +3396,59 @@ impl OdooOptions {
                 Some(keys) => odoo::settings::ManifestDeprecatedKeys::UserProvided(keys),
                 None => odoo::settings::ManifestDeprecatedKeys::Default,
             },
+            manifest_required_authors: match self.manifest_required_authors {
+                Some(authors) => odoo::settings::ConfiguredList::UserProvided(authors),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            license_allowed: match self.license_allowed {
+                Some(licenses) => odoo::settings::ConfiguredList::UserProvided(licenses),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            manifest_required_keys: match self.manifest_required_keys {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            manifest_keys_values_true: match self.manifest_keys_values_true {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            development_status_allowed: match self.development_status_allowed {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            attribute_deprecated: match self.attribute_deprecated {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            method_required_super: match self.method_required_super {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            no_missing_return: match self.no_missing_return {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            cursor_expr: match self.cursor_expr {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            odoo_exceptions: match self.odoo_exceptions {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            external_request_timeout_methods: match self.external_request_timeout_methods {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            deprecated_field_parameters: match self.deprecated_field_parameters {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            deprecated_odoo_model_methods: match self.deprecated_odoo_model_methods {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            readme_template_url: self.readme_template_url,
         }
     }
 }

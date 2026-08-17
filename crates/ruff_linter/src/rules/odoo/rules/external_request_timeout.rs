@@ -29,6 +29,11 @@ use crate::checkers::ast::Checker;
 /// `suds`, `urllib.request.urlopen` and Odoo's IAP `jsonrpc`, matching pylint-odoo's
 /// `external-request-timeout` default list — enable one of the two, not both, to avoid
 /// duplicated reports on `requests` calls.
+///
+/// ## Options
+/// - `lint.odoo.external-request-timeout-methods`
+///
+/// Written as dotted paths, e.g. `requests.get`.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct ExternalRequestTimeout {
@@ -74,16 +79,13 @@ pub(crate) fn external_request_timeout(checker: &Checker, call: &ast::ExprCall) 
     let Some(qualified_name) = checker.semantic().resolve_qualified_name(&call.func) else {
         return;
     };
-    let Some(method) = EXTERNAL_REQUEST_TIMEOUT_METHODS
-        .iter()
-        .find(|method| qualified_name.segments() == **method)
+    let Some(method) = checker
+        .settings()
+        .odoo
+        .external_request_timeout_methods
+        .matching_path(qualified_name.segments(), EXTERNAL_REQUEST_TIMEOUT_METHODS)
     else {
         return;
     };
-    checker.report_diagnostic(
-        ExternalRequestTimeout {
-            method: method.join("."),
-        },
-        call.range(),
-    );
+    checker.report_diagnostic(ExternalRequestTimeout { method }, call.range());
 }

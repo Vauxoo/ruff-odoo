@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8111 Manifest key development_status "Stable" not allowed. Use one of: Alpha, Beta, Mature, Production/Stable.
+ --> __manifest__.py:3:5
+  |
+1 | {
+2 |     "name": "My Module",
+3 |     "development_status": "Stable",
+  |     ^^^^^^^^^^^^^^^^^^^^
+4 | }
+  |

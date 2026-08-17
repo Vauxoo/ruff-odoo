@@ -1,0 +1,12 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE8106 Use of external request method `requests.get` without timeout. It could wait for a long time
+  --> external_request_timeout.py:10:1
+   |
+ 9 | # Flagged: no timeout.
+10 | requests.get("https://example.com")
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 | requests.request("GET", "https://example.com")
+12 | post("https://example.com", data={})
+   |

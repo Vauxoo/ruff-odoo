@@ -9,7 +9,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::dotted_name;
+use crate::rules::odoo::helpers::{CURSOR_EXPRS, dotted_name};
 
 /// ## What it does
 /// Checks for cursor `execute`/`executemany` calls whose query is built with string
@@ -33,6 +33,11 @@ use crate::rules::odoo::helpers::dotted_name;
 /// ```python
 /// self.env.cr.execute("SELECT id FROM res_partner WHERE name = %s", (name,))
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.cursor-expr`
+///
+/// Shared with `invalid-commit` (`ODE8102`): both ask whether an expression is a cursor.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct SqlInjection;
@@ -45,9 +50,6 @@ impl Violation for SqlInjection {
             .to_string()
     }
 }
-
-/// Same default list as pylint-odoo's `cursor-expr` option.
-const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];
 
 /// Returns the value assigned to `expr`, to check how a query variable was built
 /// (`query = "..." % name; cr.execute(query)`).
@@ -223,7 +225,12 @@ pub(crate) fn sql_injection(checker: &Checker, call: &ast::ExprCall, path: &Path
     let Some(cursor) = dotted_name(value) else {
         return;
     };
-    if !CURSOR_EXPRS.contains(&cursor.as_str()) {
+    if !checker
+        .settings()
+        .odoo
+        .cursor_expr
+        .contains(cursor.as_str(), CURSOR_EXPRS)
+    {
         return;
     }
     // A second positional argument means values are (probably) passed as parameters and

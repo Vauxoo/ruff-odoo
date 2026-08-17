@@ -1057,6 +1057,20 @@ linter.odoo.odoo_version = none
 linter.odoo.category_allowed = []
 linter.odoo.odoo_required_files = []
 linter.odoo.manifest_deprecated_keys = default
+linter.odoo.manifest_required_authors = default
+linter.odoo.license_allowed = default
+linter.odoo.manifest_required_keys = default
+linter.odoo.manifest_keys_values_true = default
+linter.odoo.development_status_allowed = default
+linter.odoo.attribute_deprecated = default
+linter.odoo.method_required_super = default
+linter.odoo.no_missing_return = default
+linter.odoo.cursor_expr = default
+linter.odoo.odoo_exceptions = default
+linter.odoo.external_request_timeout_methods = default
+linter.odoo.deprecated_field_parameters = default
+linter.odoo.deprecated_odoo_model_methods = default
+linter.odoo.readme_template_url = none
 linter.pep8_naming.ignore_names = [
 	setUp,
 	tearDown,

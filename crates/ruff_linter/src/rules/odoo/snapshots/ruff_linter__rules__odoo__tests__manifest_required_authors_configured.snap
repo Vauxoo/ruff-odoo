@@ -1,0 +1,11 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8101 One of the following authors must be present in manifest: 'Someone Else'
+  --> __manifest__.py:12:5
+   |
+11 | {
+12 |     "name": "Module Missing Author",
+   |     ^^^^^^
+13 | }
+   |

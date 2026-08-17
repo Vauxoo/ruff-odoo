@@ -38,6 +38,11 @@ use crate::rules::odoo::settings::OdooVersion;
 /// from 18.0.
 ///
 /// Files under a `tests/` directory are ignored, matching pylint-odoo.
+///
+/// ## Options
+/// - `lint.odoo.odoo-exceptions`
+///
+/// The default is the exceptions `odoo.exceptions` defines, whose messages reach the user.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct TranslationRequired {
@@ -204,7 +209,12 @@ pub(crate) fn translation_required_raise(checker: &Checker, raise: &ast::StmtRai
         Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
         _ => return,
     };
-    if !ODOO_EXCEPTIONS.contains(&func) {
+    if !checker
+        .settings()
+        .odoo
+        .odoo_exceptions
+        .contains(func, ODOO_EXCEPTIONS)
+    {
         return;
     }
     let Some(message) = call.arguments.args.first() else {

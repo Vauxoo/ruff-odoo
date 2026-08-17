@@ -50,6 +50,11 @@ impl Violation for DeprecatedNameGet {
 /// ```python
 /// def fields_view_get(self, view_id=None, view_type="form", **kwargs): ...
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.deprecated-odoo-model-methods`
+///
+/// Setting it drops the version gating the built-in list carries.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DeprecatedOdooModelMethod {
@@ -83,7 +88,11 @@ pub(crate) fn deprecated_method_names(checker: &Checker, function_def: &ast::Stm
 
     if checker.is_rule_enabled(Rule::DeprecatedOdooModelMethod)
         && is_odoo_model_class(checker.semantic(), class_def)
-        && DEPRECATED_MODEL_METHODS.contains(&function_def.name.as_str())
+        && checker
+            .settings()
+            .odoo
+            .deprecated_odoo_model_methods
+            .contains(function_def.name.as_str(), DEPRECATED_MODEL_METHODS)
     {
         checker.report_diagnostic(
             DeprecatedOdooModelMethod {

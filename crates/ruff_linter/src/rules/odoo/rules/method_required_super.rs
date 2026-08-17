@@ -32,6 +32,11 @@ use crate::checkers::ast::Checker;
 ///     def write(self, vals):
 ///         return super().write(vals)
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.method-required-super`
+///
+/// The default is the ORM and test methods whose override must chain.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.1")]
 pub(crate) struct MethodRequiredSuper {
@@ -64,7 +69,12 @@ pub(crate) fn method_required_super(checker: &Checker, function_def: &ast::StmtF
     if !checker.semantic().current_scope().kind.is_class() {
         return;
     }
-    if !METHODS_REQUIRING_SUPER.contains(&function_def.name.as_str()) {
+    if !checker
+        .settings()
+        .odoo
+        .method_required_super
+        .contains(function_def.name.as_str(), METHODS_REQUIRING_SUPER)
+    {
         return;
     }
 

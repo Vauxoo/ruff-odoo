@@ -20,6 +20,13 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 ///     "license": "GPL",
 /// }
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.license-allowed`
+///
+/// The default is the list pylint-odoo accepts. A project that allows others — a proprietary
+/// license such as `OPL-1`, say — names its own list through the option, which replaces the
+/// default rather than adding to it.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct LicenseAllowed {
@@ -55,7 +62,13 @@ pub(crate) fn license_allowed(checker: &Checker, dict: &ast::ExprDict, path: &st
     let Some((key, license)) = manifest_string_item(dict, "license") else {
         return;
     };
-    if license.is_empty() || LICENSE_ALLOWED.contains(&license) {
+    if license.is_empty()
+        || checker
+            .settings()
+            .odoo
+            .license_allowed
+            .contains(license, LICENSE_ALLOWED)
+    {
         return;
     }
     checker.report_diagnostic(

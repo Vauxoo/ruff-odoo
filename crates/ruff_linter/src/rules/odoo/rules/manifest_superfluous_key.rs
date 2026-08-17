@@ -4,6 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, remove_dict_item};
+use crate::rules::odoo::settings::ConfiguredList;
 use crate::{Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -25,6 +26,11 @@ use crate::{Fix, FixAvailability, Violation};
 /// ```python
 /// {}
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.manifest-keys-values-true`
+///
+/// Names the keys Odoo defaults to `True`, so that stating them is what counts as superfluous.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct ManifestSuperfluousKey {
@@ -50,8 +56,8 @@ impl Violation for ManifestSuperfluousKey {
 /// (`False`, `""`, `[]`, `{}`, `0`, or `None`).
 const DEFAULT_TRUE_KEYS: &[&str] = &["active", "installable"];
 
-fn is_default_value(key: &str, value: &Expr) -> bool {
-    let defaults_true = DEFAULT_TRUE_KEYS.contains(&key);
+fn is_default_value(defaults: &ConfiguredList, key: &str, value: &Expr) -> bool {
+    let defaults_true = defaults.contains(key, DEFAULT_TRUE_KEYS);
     match value {
         Expr::BooleanLiteral(ast::ExprBooleanLiteral { value, .. }) => *value == defaults_true,
         Expr::NoneLiteral(_) => !defaults_true,
@@ -85,7 +91,11 @@ pub(crate) fn manifest_superfluous_key(
             continue;
         };
         let key = key.to_str();
-        if !is_default_value(key, &item.value) {
+        if !is_default_value(
+            &checker.settings().odoo.manifest_keys_values_true,
+            key,
+            &item.value,
+        ) {
             continue;
         }
 

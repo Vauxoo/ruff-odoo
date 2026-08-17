@@ -1,0 +1,64 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC8102 Missing required key "license" in manifest file
+ --> __manifest__.py:2:5
+  |
+1 | {
+2 |     "name": "My Module",
+  |     ^^^^^^
+3 |     "version": "17.0.1.0.0",
+4 | }
+  |
+
+ODC8102 Missing required key "author" in manifest file
+ --> __manifest__.py:2:5
+  |
+1 | {
+2 |     "name": "My Module",
+  |     ^^^^^^
+3 |     "version": "17.0.1.0.0",
+4 | }
+  |
+
+ODC8102 Missing required key "author" in manifest file
+ --> __manifest__.py:7:5
+  |
+6 | {
+7 |     "name": "My Other Module",
+  |     ^^^^^^
+8 |     "license": "LGPL-3",
+9 | }
+  |
+
+ODC8102 Missing required key "license" in manifest file
+  --> __manifest__.py:11:1
+   |
+ 9 | }
+10 |
+11 | {
+   | ^
+12 |     "version": "18.0.1.0.0",
+13 | }
+   |
+
+ODC8102 Missing required key "author" in manifest file
+  --> __manifest__.py:11:1
+   |
+ 9 | }
+10 |
+11 | {
+   | ^
+12 |     "version": "18.0.1.0.0",
+13 | }
+   |
+
+ODC8102 Missing required key "author" in manifest file
+  --> __manifest__.py:16:5
+   |
+15 | {
+16 |     "name": "Module With Nested Dict",
+   |     ^^^^^^
+17 |     "license": "LGPL-3",
+18 |     "assets": {
+   |

@@ -27,6 +27,11 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 ///     "development_status": "Production/Stable",
 /// }
 /// ```
+///
+/// ## Options
+/// - `lint.odoo.development-status-allowed`
+///
+/// The default is the set of statuses Odoo itself documents.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct DevelopmentStatusAllowed {
@@ -58,7 +63,13 @@ pub(crate) fn development_status_allowed(
     let Some((key, status)) = manifest_string_item(dict, "development_status") else {
         return;
     };
-    if status.is_empty() || DEVELOPMENT_STATUS_ALLOWED.contains(&status) {
+    if status.is_empty()
+        || checker
+            .settings()
+            .odoo
+            .development_status_allowed
+            .contains(status, DEVELOPMENT_STATUS_ALLOWED)
+    {
         return;
     }
     checker.report_diagnostic(
