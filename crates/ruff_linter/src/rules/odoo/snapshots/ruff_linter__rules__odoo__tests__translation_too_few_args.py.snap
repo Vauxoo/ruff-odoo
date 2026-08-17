@@ -32,3 +32,35 @@ ODE8306 Not enough arguments for odoo._ format string
  9 |
 10 |         # No diagnostic: counts match.
    |
+
+ODE8306 Not enough arguments for odoo._ format string
+  --> translation_too_few_args.py:23:25
+   |
+21 |         # The lone argument of a raised exception can not be interpolated later, so the
+22 |         # placeholders left in the term are never filled.
+23 |         raise UserError(_("%s of %s"))  # ODE8306
+   |                         ^^^^^^^^^^^^^
+24 |
+25 |     def raising_odoo_exception(self, name):
+   |
+
+ODE8306 Not enough arguments for odoo._ format string
+  --> translation_too_few_args.py:26:31
+   |
+25 |     def raising_odoo_exception(self, name):
+26 |         raise ValidationError(_("record <%s: (%s)> is not valid"))  # ODE8306
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 |     def raising_ok(self, name, count):
+   |
+
+ODE8306 Not enough arguments for odoo._ format string
+  --> translation_too_few_args.py:42:25
+   |
+40 |     def raising_mixed(self, name):
+41 |         # ODE8306: the space-flagged conversion is prose, but the `%s` is unmistakable.
+42 |         raise UserError(_("%s got 100% off"))
+   |                         ^^^^^^^^^^^^^^^^^^^^
+43 |
+44 |     def raising_not_alone(self, name):
+   |
