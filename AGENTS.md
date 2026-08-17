@@ -250,6 +250,14 @@ nothing red to explain it. That is how `0.16.3.17` and `0.16.3.18` were tagged b
 PyPI. After a `sync-astral-upstream` rebase, re-check every `runs-on` in that file, and confirm
 a release actually published rather than assuming the tag was enough.
 
+The same fallback belongs on the dist-generated jobs of `release.yml`, which take their runner
+from `[dist.github-custom-runners]` in `dist-workspace.toml`. It is not only the release that
+suffers when it is missing: `pr-run-mode = "plan"` runs `Release / plan` on every pull request,
+so a bare Depot label leaves a check queued on each one, waiting on a runner that does not exist
+in this organization. The conditional lives in both files — the workflow, which is what runs
+today because `allow-dirty = ["ci"]` keeps dist from regenerating it, and the dist configuration,
+so a regeneration reproduces it instead of restoring the bare label.
+
 ## Development Guidelines
 
 - All significant changes must be tested. Add or update focused tests for semantic changes when existing coverage does not already establish the intended behavior.
