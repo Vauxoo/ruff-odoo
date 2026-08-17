@@ -194,15 +194,15 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[inva
 74 |     return True
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
-   |
-71 |
-   - # pylint: disable=invalid-commit
-72 + # ruff: disable[invalid-commit]
-73 | def standalone_comment(env):
+    |
+71  |
+    - # pylint: disable=invalid-commit
+72  + # ruff: disable[invalid-commit]
+73  | def standalone_comment(env):
 --------------------------------------------------------------------------------
-97 |     return sys
-98 + # ruff: enable[invalid-commit]
-   |
+110 |     env.company.name  # pylint: disable=expression-not-assigned
+111 + # ruff: enable[invalid-commit]
+    |
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:77:1
@@ -269,3 +269,33 @@ help: Replace with `# ruff: ignore[import-outside-top-level]`
 95 +     import sys  # ruff: ignore[import-outside-top-level]  # noqa: F401
 96 |
    |
+
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[builtin-variable-shadowing, builtin-argument-shadowing, builtin-import-shadowing]`
+   --> pylint_disable_comment.py:100:34
+    |
+100 | def shadows_builtins(id, type):  # pylint: disable=redefined-builtin
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+101 |     # pylint reports one message no matter what the shadowed builtin is; Ruff splits it
+102 |     # across `builtin-variable-shadowing`, `builtin-argument-shadowing` and
+    |
+help: Replace with `# ruff: ignore[builtin-variable-shadowing, builtin-argument-shadowing, builtin-import-shadowing]`
+    |
+99  |
+    - def shadows_builtins(id, type):  # pylint: disable=redefined-builtin
+100 + def shadows_builtins(id, type):  # ruff: ignore[builtin-variable-shadowing, builtin-argument-shadowing, builtin-import-shadowing]
+101 |     # pylint reports one message no matter what the shadowed builtin is; Ruff splits it
+    |
+
+ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[useless-expression]`
+   --> pylint_disable_comment.py:110:23
+    |
+108 |     # pylint's `expression-not-assigned` is flake8-bugbear's `useless-expression` in Ruff,
+109 |     # a rename across linters rather than within Ruff's own Pylint rules.
+110 |     env.company.name  # pylint: disable=expression-not-assigned
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Replace with `# ruff: ignore[useless-expression]`
+    |
+109 |     # a rename across linters rather than within Ruff's own Pylint rules.
+    -     env.company.name  # pylint: disable=expression-not-assigned
+110 +     env.company.name  # ruff: ignore[useless-expression]
+    |

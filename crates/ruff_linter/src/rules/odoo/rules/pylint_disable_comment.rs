@@ -23,6 +23,12 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// within Ruff's own Pylint rules, which keep pylint's code but not always its
 /// name (`C0415 import-outside-toplevel` is `PLC0415 import-outside-top-level`).
 ///
+/// One message can be covered by several rules, because pylint reported as a
+/// single message what Ruff splits up: `redefined-builtin` is
+/// `builtin-variable-shadowing`, `builtin-argument-shadowing` and
+/// `builtin-import-shadowing`. The suppression then names all of them, since
+/// leaving one out would let it report what the pragma used to silence.
+///
 /// The pragma does not have to be alone in its comment. pylint reads a `#`
 /// followed by anything and then `pylint:`, so a codebase part-way through the
 /// migration usually looks like `# noqa: F401 pylint: disable=...`, and only the
@@ -110,157 +116,381 @@ impl Violation for PylintDisableComment {
 /// flake8-print's `print`), and pylint-odoo message codes, which pylint accepts
 /// in `disable=` pragmas interchangeably with names.
 ///
+/// A message maps to *every* Ruff rule that took over part of it, because pylint
+/// grouped into one message what Ruff splits across several: `redefined-builtin`
+/// is `builtin-variable-shadowing`, `builtin-argument-shadowing` and
+/// `builtin-import-shadowing`, and suppressing only one of them would leave the
+/// other two reporting.
+///
+/// The set of messages worth mapping is the set pre-commit-vauxoo disables in its
+/// `.pylintrc` as migrated to Ruff: a message pylint still reports must keep its
+/// `# pylint: disable`, so mapping it here would trade one suppression for the
+/// other rather than migrate it.
+///
 /// Every other pylint-odoo check keeps its original name in this fork, so it
 /// resolves through [`Rule::from_name`] without an entry here. The
 /// `pylint_odoo_messages_are_all_mapped` test below keeps this list exhaustive.
-const MESSAGE_ALIASES: &[(&str, &str)] = &[
-    ("print-used", "print"),
-    ("too-complex", "complex-structure"),
+const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
+    ("print-used", &["print"]),
+    ("too-complex", &["complex-structure"]),
     // `prefer-env-attribute` covers `self._uid` and `self._context` on top of pylint-odoo's
     // `self._cr`, so it doesn't keep the original message name.
-    ("deprecated-self-cr", "prefer-env-attribute"),
-    // pylint checks Ruff implements under a different name. Ruff reuses pylint's own
-    // message code -- its `PLC0415` is pylint's `C0415` -- so pairing the two by code is
-    // exact and only the human-readable name drifted. Without these, a `disable=` naming
-    // one of them resolves to nothing and is silently left behind.
-    ("assigning-non-slot", "non-slot-assignment"), // PLE0237
-    ("bad-dunder-name", "bad-dunder-method-name"), // PLW3201
-    ("bad-format-character", "bad-string-format-character"), // PLE1300
-    ("chained-comparison", "boolean-chained-comparison"), // PLR1716
-    ("comparison-of-constants", "comparison-of-constant"), // PLR0133
-    ("consider-swap-variables", "swap-with-temporary-variable"), // PLR1712
+    ("deprecated-self-cr", &["prefer-env-attribute"]),
+    // pylint checks Ruff implements under a different name, either in its own Pylint linter --
+    // which keeps pylint's code but not always its name (`C0415 import-outside-toplevel` is
+    // `PLC0415 import-outside-top-level`) -- or in another linter altogether (`W0106
+    // expression-not-assigned` is flake8-bugbear's `B018 useless-expression`). Without these, a
+    // `disable=` naming one of them resolves to nothing and is silently left behind.
+    (
+        "anomalous-backslash-in-string",
+        &["invalid-escape-sequence"],
+    ), // W605
+    ("assert-on-tuple", &["assert-tuple"]),           // F631
+    ("assigning-non-slot", &["non-slot-assignment"]), // PLE0237
+    (
+        "bad-classmethod-argument",
+        &["invalid-first-argument-name-for-class-method"],
+    ), // N804
+    ("bad-docstring-quotes", &["triple-single-quotes"]), // D300
+    ("bad-dunder-name", &["bad-dunder-method-name"]), // PLW3201
+    ("bad-format-character", &["bad-string-format-character"]), // PLE1300
+    ("bad-format-string", &["string-dot-format-invalid-format"]), // F521
+    ("bad-indentation", &["indentation-with-invalid-multiple"]), // E111
+    ("chained-comparison", &["boolean-chained-comparison"]), // PLR1716
+    ("comparison-of-constants", &["comparison-of-constant"]), // PLR0133
+    (
+        "condition-evals-to-constant",
+        &[
+            "expr-and-not-expr",
+            "expr-or-not-expr",
+            "expr-or-true",
+            "expr-and-false",
+        ],
+    ), // SIM220,SIM221,SIM222,SIM223
+    ("consider-iterating-dictionary", &["in-dict-keys"]), // SIM118
+    (
+        "consider-merging-isinstance",
+        &["duplicate-isinstance-call"],
+    ), // SIM101
+    ("consider-swap-variables", &["swap-with-temporary-variable"]), // PLR1712
     (
         "consider-using-augmented-assign",
-        "non-augmented-assignment",
+        &["non-augmented-assignment"],
     ), // PLR6104
-    ("consider-using-dict-items", "dict-index-missing-items"), // PLC0206
-    ("consider-using-from-import", "manual-from-import"), // PLR0402
-    ("consider-using-in", "repeated-equality-comparison"), // PLR1714
-    ("consider-using-min-builtin", "if-stmt-min-max"), // PLR1730
-    ("consider-using-sys-exit", "sys-exit-alias"), // PLR1722
-    ("consider-using-ternary", "and-or-ternary"),  // PLR1706
-    ("else-if-used", "collapsible-else-if"),       // PLR5501
-    ("import-outside-toplevel", "import-outside-top-level"), // PLC0415
-    ("init-is-generator", "yield-in-init"),        // PLE0100
-    ("invalid-bool-returned", "invalid-bool-return-type"), // PLE0304
-    ("invalid-bytes-returned", "invalid-bytes-return-type"), // PLE0308
-    ("invalid-hash-returned", "invalid-hash-return-type"), // PLE0309
-    ("invalid-index-returned", "invalid-index-return-type"), // PLE0305
-    ("invalid-length-returned", "invalid-length-return-type"), // PLE0303
-    ("invalid-str-returned", "invalid-str-return-type"), // PLE0307
+    (
+        "consider-using-dict-comprehension",
+        &[
+            "unnecessary-generator-dict",
+            "unnecessary-list-comprehension-dict",
+        ],
+    ), // C402,C404
+    ("consider-using-dict-items", &["dict-index-missing-items"]), // PLC0206
+    ("consider-using-from-import", &["manual-from-import"]), // PLR0402
+    (
+        "consider-using-generator",
+        &["unnecessary-comprehension-in-call"],
+    ), // C419
+    ("consider-using-get", &["if-else-block-instead-of-dict-get"]), // SIM401
+    ("consider-using-in", &["repeated-equality-comparison"]), // PLR1714
+    ("consider-using-max-builtin", &["if-stmt-min-max"]), // PLR1730
+    ("consider-using-min-builtin", &["if-stmt-min-max"]), // PLR1730
+    (
+        "consider-using-set-comprehension",
+        &[
+            "unnecessary-generator-set",
+            "unnecessary-list-comprehension-set",
+        ],
+    ), // C401,C403
+    ("consider-using-sys-exit", &["sys-exit-alias"]), // PLR1722
+    ("consider-using-ternary", &["and-or-ternary"]),  // PLR1706
+    ("dangerous-default-value", &["mutable-argument-default"]), // B006
+    (
+        "docstring-first-line-empty",
+        &["multi-line-summary-first-line"],
+    ), // D212
+    ("duplicate-except", &["duplicate-try-block-exception"]), // B025
+    (
+        "duplicate-key",
+        &[
+            "multi-value-repeated-key-literal",
+            "multi-value-repeated-key-variable",
+        ],
+    ), // F601,F602
+    ("else-if-used", &["collapsible-else-if"]),       // PLR5501
+    ("eval-used", &["suspicious-eval-usage"]),        // S307
+    ("exec-used", &["exec-builtin"]),                 // S102
+    // pylint-odoo's own `except-pass` is deprecated in favor of the flake8-bandit rule that
+    // reports the same handler, so its pragmas migrate straight to the rule that stays.
+    ("except-pass", &["try-except-pass"]), // S110
+    ("expression-not-assigned", &["useless-expression"]), // B018
+    (
+        "f-string-without-interpolation",
+        &["f-string-missing-placeholders"],
+    ), // F541
+    ("forgotten-debug-statement", &["debugger"]), // T100
+    (
+        "format-combined-specification",
+        &["string-dot-format-mixing-automatic"],
+    ), // F525
+    ("format-needs-mapping", &["percent-format-expected-mapping"]), // F502
+    (
+        "implicit-str-concat",
+        &["single-line-implicit-string-concatenation"],
+    ), // ISC001
+    ("import-outside-toplevel", &["import-outside-top-level"]), // PLC0415
+    ("init-is-generator", &["yield-in-init"]), // PLE0100
+    ("invalid-bool-returned", &["invalid-bool-return-type"]), // PLE0304
+    ("invalid-bytes-returned", &["invalid-bytes-return-type"]), // PLE0308
+    ("invalid-hash-returned", &["invalid-hash-return-type"]), // PLE0309
+    ("invalid-index-returned", &["invalid-index-return-type"]), // PLE0305
+    ("invalid-length-returned", &["invalid-length-return-type"]), // PLE0303
+    ("invalid-str-returned", &["invalid-str-return-type"]), // PLE0307
+    ("literal-comparison", &["is-literal"]), // F632
+    ("logging-format-interpolation", &["logging-string-format"]), // G001
+    ("logging-fstring-interpolation", &["logging-f-string"]), // G004
+    (
+        "logging-not-lazy",
+        &["logging-percent-format", "logging-string-concat"],
+    ), // G002,G003
+    ("lost-exception", &["jump-statement-in-finally"]), // B012
+    ("method-cache-max-size-none", &["cached-instance-method"]), // B019
+    ("misplaced-future", &["late-future-import"]), // F404
+    ("missing-final-newline", &["missing-newline-at-end-of-file"]), // W292
+    (
+        "missing-format-argument-key",
+        &["string-dot-format-missing-arguments"],
+    ), // F524
+    (
+        "missing-format-string-key",
+        &["percent-format-missing-argument"],
+    ), // F505
+    (
+        "mixed-format-string",
+        &["percent-format-mixed-positional-and-named"],
+    ), // F506
+    ("multiple-imports", &["multiple-imports-on-one-line"]), // E401
+    (
+        "multiple-statements",
+        &[
+            "multiple-statements-on-one-line-colon",
+            "multiple-statements-on-one-line-semicolon",
+        ],
+    ), // E701,E702
+    ("no-else-break", &["superfluous-else-break"]), // RET508
+    ("no-else-continue", &["superfluous-else-continue"]), // RET507
+    ("no-else-raise", &["superfluous-else-raise"]), // RET506
+    ("no-else-return", &["superfluous-else-return"]), // RET505
+    (
+        "no-self-argument",
+        &["invalid-first-argument-name-for-method"],
+    ), // N805
+    ("non-ascii-module-import", &["non-ascii-import-name"]), // PLC2403
+    (
+        "nonexistent-operator",
+        &["unary-prefix-increment-decrement"],
+    ), // B002
+    (
+        "not-in-loop",
+        &["break-outside-loop", "continue-outside-loop"],
+    ), // F701,F702
+    ("notimplemented-raised", &["raise-not-implemented"]), // F901
     (
         "pointless-exception-statement",
-        "useless-exception-statement",
+        &["useless-exception-statement"],
     ), // PLW0133
-    ("repeated-keyword", "repeated-keyword-argument"), // PLE1132
-    ("self-cls-assignment", "self-or-cls-assignment"), // PLW0642
-    ("single-string-used-for-slots", "single-string-slots"), // PLC0205
-    ("subprocess-run-check", "subprocess-run-without-check"), // PLW1510
+    ("pointless-statement", &["useless-expression"]), // B018
+    (
+        "redefined-builtin",
+        &[
+            "builtin-variable-shadowing",
+            "builtin-argument-shadowing",
+            "builtin-import-shadowing",
+        ],
+    ), // A001,A002,A004
+    ("redundant-u-string-prefix", &["unicode-kind-prefix"]), // UP025
+    ("repeated-keyword", &["repeated-keyword-argument"]), // PLE1132
+    ("self-cls-assignment", &["self-or-cls-assignment"]), // PLW0642
+    (
+        "simplifiable-if-expression",
+        &["if-expr-with-true-false", "if-expr-with-false-true"],
+    ), // SIM210,SIM211
+    ("simplifiable-if-statement", &["needless-bool"]), // SIM103
+    ("single-string-used-for-slots", &["single-string-slots"]), // PLC0205
+    (
+        "singleton-comparison",
+        &["none-comparison", "true-false-comparison"],
+    ), // E711,E712
+    ("subprocess-run-check", &["subprocess-run-without-check"]), // PLW1510
+    ("super-with-arguments", &["super-call-with-parameters"]), // UP008
+    (
+        "too-few-format-args",
+        &["percent-format-positional-count-mismatch"],
+    ), // F507
+    (
+        "too-many-format-args",
+        &[
+            "percent-format-positional-count-mismatch",
+            "string-dot-format-extra-positional-arguments",
+        ],
+    ), // F507,F523
+    (
+        "too-many-star-expressions",
+        &["multiple-starred-expressions"],
+    ), // F622
     (
         "too-many-try-statements",
-        "too-many-statements-in-try-clause",
+        &["too-many-statements-in-try-clause"],
     ), // PLW0717
-    ("typevar-double-variance", "type-bivariance"), // PLC0131
+    ("trailing-comma-tuple", &["trailing-comma-on-bare-tuple"]), // COM818
+    ("trailing-newlines", &["too-many-newlines-at-end-of-file"]), // W391
+    (
+        "truncated-format-string",
+        &["percent-format-invalid-format"],
+    ), // F501
+    ("typevar-double-variance", &["type-bivariance"]), // PLC0131
     (
         "typevar-name-incorrect-variance",
-        "type-name-incorrect-variance",
+        &["type-name-incorrect-variance"],
     ), // PLC0105
-    ("typevar-name-mismatch", "type-param-name-mismatch"), // PLC0132
-    ("use-implicit-booleaness-not-len", "len-test"), // PLC1802
-    ("use-maxsplit-arg", "missing-maxsplit-arg"),  // PLC0207
-    ("use-sequence-for-iteration", "iteration-over-set"), // PLC0208
-    ("use-set-for-membership", "literal-membership"), // PLR6201
+    ("typevar-name-mismatch", &["type-param-name-mismatch"]), // PLC0132
+    ("undefined-all-variable", &["undefined-export"]), // F822
+    ("undefined-variable", &["undefined-name"]), // F821
+    ("unidiomatic-typecheck", &["type-comparison"]), // E721
+    ("unnecessary-ellipsis", &["unnecessary-placeholder"]), // PIE790
+    ("unnecessary-lambda-assignment", &["lambda-assignment"]), // E731
+    ("unnecessary-negation", &["double-negation"]), // SIM208
+    ("unnecessary-pass", &["unnecessary-placeholder"]), // PIE790
+    (
+        "unnecessary-semicolon",
+        &[
+            "multiple-statements-on-one-line-semicolon",
+            "useless-semicolon",
+        ],
+    ), // E702,E703
+    (
+        "unused-format-string-argument",
+        &["string-dot-format-extra-named-arguments"],
+    ), // F522
+    (
+        "unused-format-string-key",
+        &["percent-format-extra-named-arguments"],
+    ), // F504
+    ("use-a-generator", &["unnecessary-comprehension-in-call"]), // C419
+    ("use-dict-literal", &["unnecessary-collection-call"]), // C408
+    (
+        "use-implicit-booleaness-not-comparison-to-string",
+        &["compare-to-empty-string"],
+    ), // PLC1901
+    ("use-implicit-booleaness-not-len", &["len-test"]), // PLC1802
+    ("use-list-literal", &["unnecessary-collection-call"]), // C408
+    ("use-maxsplit-arg", &["missing-maxsplit-arg"]), // PLC0207
+    ("use-sequence-for-iteration", &["iteration-over-set"]), // PLC0208
+    ("use-set-for-membership", &["literal-membership"]), // PLR6201
+    ("use-yield-from", &["yield-in-for-loop"]), // UP028
     (
         "used-prior-global-declaration",
-        "load-before-global-declaration",
+        &["load-before-global-declaration"],
     ), // PLE0118
+    ("wildcard-import", &["undefined-local-with-import-star"]), // F403
     (
         "yield-inside-async-function",
-        "yield-from-in-async-function",
+        &["yield-from-in-async-function"],
     ), // PLE1700
     // pylint-odoo message codes, in ODOO_MSGS order.
-    ("C8101", "manifest-required-author"),
-    ("C8102", "manifest-required-key"),
-    ("C8103", "manifest-deprecated-key"),
-    ("C8105", "license-allowed"),
-    ("C8106", "manifest-version-format"),
-    ("C8107", "translation-required"),
-    ("C8108", "method-compute"),
-    ("C8109", "method-search"),
-    ("C8110", "method-inverse"),
-    ("C8111", "development-status-allowed"),
-    ("C8112", "missing-readme"),
-    ("C8113", "no-wizard-in-models"),
-    ("C8114", "category-allowed"),
-    ("C8115", "missing-odoo-file"),
-    ("C8116", "manifest-superfluous-key"),
-    ("C8117", "category-allowed-app"),
-    ("C8118", "missing-odoo-file-app"),
-    ("C8119", "manifest-required-key-app"),
-    ("C8120", "manifest-summary-multiline"),
-    ("E8101", "manifest-author-string"),
-    ("E8102", "invalid-commit"),
-    ("E8103", "sql-injection"),
-    ("E8104", "manifest-maintainers-list"),
-    ("E8106", "external-request-timeout"),
-    ("E8130", "test-folder-imported"),
-    ("E8135", "no-write-in-compute"),
-    ("E8140", "no-raise-unlink"),
-    ("E8145", "manifest-behind-migrations"),
-    ("E8146", "deprecated-name-get"),
-    ("E8147", "inheritable-method-string"),
-    ("E8148", "inheritable-method-lambda"),
-    ("E8149", "deprecated-inselect-operator"),
-    ("E8151", "translation-injection"),
-    ("F8101", "resource-not-exist"),
-    ("R8101", "odoo-exception-warning"),
-    ("R8180", "consider-merging-classes-inherited"),
-    ("R8181", "invalid-email"),
-    ("W8103", "translation-field"),
-    ("W8105", "attribute-deprecated"),
-    ("W8106", "method-required-super"),
-    ("W8107", "prohibited-method-override"),
-    ("W8110", "missing-return"),
-    ("W8111", "renamed-field-parameter"),
-    ("W8113", "attribute-string-redundant"),
-    ("W8114", "website-manifest-key-not-valid-uri"),
-    ("W8115", "translation-contains-variable"),
-    ("W8116", "print"),
-    ("W8120", "translation-positional-used"),
-    ("W8121", "context-overridden"),
-    ("W8125", "manifest-data-duplicated"),
-    ("W8138", "except-pass"),
-    ("W8150", "odoo-addons-relative-import"),
-    ("W8155", "bad-builtin-groupby"),
-    ("W8160", "deprecated-odoo-model-method"),
-    ("W8161", "prefer-env-translation"),
-    ("W8162", "manifest-external-assets"),
-    ("W8163", "no-search-all"),
-    ("W8164", "super-method-mismatch"),
-    ("W8165", "prefer-env-attribute"),
-    ("W8202", "use-vim-comment"),
-    // pylint-odoo's `custom_logging` checker re-publishes pylint's `logging-*`
-    // messages as `translation-*`, rewriting the first `12` of each code to `83`
-    // (`transform_msgs`), so `W1201` becomes `W8301` and so on.
-    ("E8300", "translation-unsupported-format"),
-    ("E8301", "translation-format-truncated"),
-    ("E8305", "translation-too-many-args"),
-    ("E8306", "translation-too-few-args"),
-    ("W8301", "translation-not-lazy"),
-    ("W8302", "translation-format-interpolation"),
-    ("W8303", "translation-fstring-interpolation"),
+    ("C8101", &["manifest-required-author"]),
+    ("C8102", &["manifest-required-key"]),
+    ("C8103", &["manifest-deprecated-key"]),
+    ("C8105", &["license-allowed"]),
+    ("C8106", &["manifest-version-format"]),
+    ("C8107", &["translation-required"]),
+    ("C8108", &["method-compute"]),
+    ("C8109", &["method-search"]),
+    ("C8110", &["method-inverse"]),
+    ("C8111", &["development-status-allowed"]),
+    ("C8112", &["missing-readme"]),
+    ("C8113", &["no-wizard-in-models"]),
+    ("C8114", &["category-allowed"]),
+    ("C8115", &["missing-odoo-file"]),
+    ("C8116", &["manifest-superfluous-key"]),
+    ("C8117", &["category-allowed-app"]),
+    ("C8118", &["missing-odoo-file-app"]),
+    ("C8119", &["manifest-required-key-app"]),
+    ("C8120", &["manifest-summary-multiline"]),
+    ("E8101", &["manifest-author-string"]),
+    ("E8102", &["invalid-commit"]),
+    ("E8103", &["sql-injection"]),
+    ("E8104", &["manifest-maintainers-list"]),
+    ("E8106", &["external-request-timeout"]),
+    ("E8130", &["test-folder-imported"]),
+    ("E8135", &["no-write-in-compute"]),
+    ("E8140", &["no-raise-unlink"]),
+    ("E8145", &["manifest-behind-migrations"]),
+    ("E8146", &["deprecated-name-get"]),
+    ("E8147", &["inheritable-method-string"]),
+    ("E8148", &["inheritable-method-lambda"]),
+    ("E8149", &["deprecated-inselect-operator"]),
+    ("E8151", &["translation-injection"]),
+    ("F8101", &["resource-not-exist"]),
+    ("R8101", &["odoo-exception-warning"]),
+    ("R8180", &["consider-merging-classes-inherited"]),
+    ("R8181", &["invalid-email"]),
+    ("W8103", &["translation-field"]),
+    ("W8105", &["attribute-deprecated"]),
+    ("W8106", &["method-required-super"]),
+    ("W8107", &["prohibited-method-override"]),
+    ("W8110", &["missing-return"]),
+    ("W8111", &["renamed-field-parameter"]),
+    ("W8113", &["attribute-string-redundant"]),
+    ("W8114", &["website-manifest-key-not-valid-uri"]),
+    ("W8115", &["translation-contains-variable"]),
+    ("W8116", &["print"]),
+    ("W8120", &["translation-positional-used"]),
+    ("W8121", &["context-overridden"]),
+    ("W8125", &["manifest-data-duplicated"]),
+    // `except-pass` is deprecated in favor of flake8-bandit's `try-except-pass`, which
+    // reports the same handler, so the pragma migrates straight to the rule that stays.
+    ("W8138", &["try-except-pass"]),
+    ("W8150", &["odoo-addons-relative-import"]),
+    ("W8155", &["bad-builtin-groupby"]),
+    ("W8160", &["deprecated-odoo-model-method"]),
+    ("W8161", &["prefer-env-translation"]),
+    ("W8162", &["manifest-external-assets"]),
+    ("W8163", &["no-search-all"]),
+    ("W8164", &["super-method-mismatch"]),
+    ("W8165", &["prefer-env-attribute"]),
+    ("W8202", &["use-vim-comment"]),
+    ("E8300", &["translation-unsupported-format"]),
+    ("E8301", &["translation-format-truncated"]),
+    ("E8305", &["translation-too-many-args"]),
+    ("E8306", &["translation-too-few-args"]),
+    ("W8301", &["translation-not-lazy"]),
+    ("W8302", &["translation-format-interpolation"]),
+    ("W8303", &["translation-fstring-interpolation"]),
 ];
 
-/// Resolves a pylint message name (or code) to the Ruff rule that covers it.
-fn rule_for_message(message: &str) -> Option<Rule> {
-    let name = MESSAGE_ALIASES
+/// Resolves a pylint message name (or code) to the Ruff rules that cover it.
+///
+/// The result is empty when no rule took the message over, and holds more than one
+/// when Ruff split what pylint reported as a single message.
+fn rules_for_message(message: &str) -> Vec<Rule> {
+    let names = MESSAGE_ALIASES
         .iter()
-        .find_map(|(alias, ruff_name)| (*alias == message).then_some(*ruff_name))
-        .unwrap_or(message);
-    let rule = Rule::from_name(name).ok()?;
-    // A removed rule's code would itself be flagged (e.g. by RUF102) if we
-    // migrated a suppression to it.
-    (!rule.is_removed()).then_some(rule)
+        .find_map(|(alias, ruff_names)| (*alias == message).then_some(*ruff_names))
+        .unwrap_or(&[]);
+    let names = if names.is_empty() {
+        std::slice::from_ref(&message)
+    } else {
+        names
+    };
+    names
+        .iter()
+        .filter_map(|name| {
+            let rule = Rule::from_name(name).ok()?;
+            // A removed rule's code would itself be flagged (e.g. by RUF102) if we
+            // migrated a suppression to it.
+            (!rule.is_removed()).then_some(rule)
+        })
+        .collect()
 }
 
 #[derive(PartialEq, Eq)]
@@ -466,13 +696,18 @@ pub(crate) fn pylint_disable_comment(
         let mut names: Vec<String> = Vec::new();
         let mut unmapped: Vec<&str> = Vec::new();
         for name in &pragma.names {
-            if let Some(rule) = rule_for_message(name) {
+            let rules = rules_for_message(name);
+            if rules.is_empty() {
+                unmapped.push(name);
+                continue;
+            }
+            // A message Ruff split across several rules needs all of them suppressed, or the
+            // ones left out keep reporting what the pylint pragma silenced.
+            for rule in rules {
                 let rule_name = rule.name().to_string();
                 if !names.contains(&rule_name) {
                     names.push(rule_name);
                 }
-            } else {
-                unmapped.push(name);
             }
         }
         if names.is_empty() {
@@ -644,7 +879,7 @@ pub(crate) fn pylint_disable_comment(
 
 #[cfg(test)]
 mod tests {
-    use super::{MESSAGE_ALIASES, rule_for_message};
+    use super::{MESSAGE_ALIASES, rules_for_message};
     use crate::registry::Rule;
 
     /// Every message pylint-odoo can emit, as `(code, name)`, taken from `ODOO_MSGS` in
@@ -725,19 +960,19 @@ mod tests {
     ];
 
     /// Both spellings pylint accepts in a `disable=` pragma — the message code and the
-    /// message name — must resolve to the same Ruff rule.
+    /// message name — must resolve to the same Ruff rules.
     #[test]
     fn pylint_odoo_messages_are_all_mapped() {
         for (code, name) in PYLINT_ODOO_MESSAGES {
-            let by_code = rule_for_message(code);
+            let by_code = rules_for_message(code);
             assert!(
-                by_code.is_some(),
+                !by_code.is_empty(),
                 "pylint-odoo code `{code}` ({name}) does not resolve to a Ruff rule; \
                  add it to MESSAGE_ALIASES"
             );
-            let by_name = rule_for_message(name);
+            let by_name = rules_for_message(name);
             assert!(
-                by_name.is_some(),
+                !by_name.is_empty(),
                 "pylint-odoo message `{name}` ({code}) does not resolve to a Ruff rule; \
                  add it to MESSAGE_ALIASES"
             );
@@ -749,13 +984,52 @@ mod tests {
     }
 
     /// A rename on the Ruff side must not leave an alias pointing at a name that no longer
-    /// exists — `rule_for_message` would silently treat it as unmapped.
+    /// exists — `rules_for_message` would silently treat it as unmapped.
     #[test]
     fn message_alias_targets_exist() {
-        for (alias, ruff_name) in MESSAGE_ALIASES {
+        for (alias, ruff_names) in MESSAGE_ALIASES {
             assert!(
-                Rule::from_name(ruff_name).is_ok(),
-                "MESSAGE_ALIASES maps `{alias}` to `{ruff_name}`, which is not a Ruff rule"
+                !ruff_names.is_empty(),
+                "MESSAGE_ALIASES maps `{alias}` to no Ruff rule at all"
+            );
+            for ruff_name in *ruff_names {
+                assert!(
+                    Rule::from_name(ruff_name).is_ok(),
+                    "MESSAGE_ALIASES maps `{alias}` to `{ruff_name}`, which is not a Ruff rule"
+                );
+            }
+        }
+    }
+
+    /// pylint reported as one message what Ruff splits across several rules, so those messages
+    /// have to resolve to every one of them — suppressing a subset leaves the rest reporting.
+    #[test]
+    fn messages_split_across_rules_resolve_to_all_of_them() {
+        for (message, expected) in [
+            (
+                "redefined-builtin",
+                &[
+                    "builtin-variable-shadowing",
+                    "builtin-argument-shadowing",
+                    "builtin-import-shadowing",
+                ][..],
+            ),
+            (
+                "singleton-comparison",
+                &["none-comparison", "true-false-comparison"][..],
+            ),
+            (
+                "logging-not-lazy",
+                &["logging-percent-format", "logging-string-concat"][..],
+            ),
+        ] {
+            let resolved: Vec<&str> = rules_for_message(message)
+                .iter()
+                .map(|rule| rule.name().as_str())
+                .collect();
+            assert_eq!(
+                resolved, expected,
+                "`{message}` does not resolve to every Ruff rule that took it over"
             );
         }
     }

@@ -6,6 +6,8 @@ use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
 use crate::codes::Rule;
+use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -13,6 +15,11 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// string concatenation (`_("Hello %s") % name`, `_("Hello %s" % name)`,
 /// `_("Hello " + name)`) instead of passing them as arguments to the translation
 /// function.
+///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
 ///
 /// ## Why is this bad?
 /// Since Odoo 14.0 the translation functions (`_`, `self.env._`) interpolate the values
@@ -64,6 +71,11 @@ impl Violation for TranslationNotLazy {
 /// (`_("Hello {}".format(name))`) or on the translated result
 /// (`_("Hello {}").format(name)`).
 ///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
+///
 /// ## Why is this bad?
 /// Since Odoo 14.0 the translation functions (`_`, `self.env._`) interpolate the values
 /// themselves using printf-style placeholders: `_("Hello %s", name)`. Formatting the
@@ -94,6 +106,11 @@ impl Violation for TranslationFormatInterpolation {
 /// ## What it does
 /// Checks for translation calls whose term is an f-string, e.g. `_(f"Hello {name}")`.
 ///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
+///
 /// ## Why is this bad?
 /// An f-string interpolates its values before the translation call runs, so the
 /// looked-up term contains the runtime values and never matches the exported
@@ -123,6 +140,11 @@ impl Violation for TranslationFstringInterpolation {
 /// ## What it does
 /// Checks for translation terms using a printf conversion that Python's `%` formatting
 /// does not support, e.g. `_("Hello %y", name)`.
+///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
 ///
 /// ## Why is this bad?
 /// The translation function formats the term with `%`, so an unsupported conversion
@@ -162,6 +184,11 @@ impl Violation for TranslationUnsupportedFormat {
 /// Checks for translation terms ending in the middle of a printf conversion specifier,
 /// e.g. `_("Hello %", name)`.
 ///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
+///
 /// ## Why is this bad?
 /// The translation function formats the term with `%`, so a truncated conversion
 /// specifier raises a `ValueError` at runtime.
@@ -190,6 +217,11 @@ impl Violation for TranslationFormatTruncated {
 /// Checks for translation calls passing more values than the term's printf placeholders
 /// consume, e.g. `_("Hello %s", name, extra)`.
 ///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
+///
 /// ## Why is this bad?
 /// The translation function formats the term with `%`, and `%` formatting raises a
 /// `TypeError` at runtime when arguments are left over.
@@ -217,6 +249,11 @@ impl Violation for TranslationTooManyArgs {
 /// ## What it does
 /// Checks for translation calls passing fewer values than the term's printf
 /// placeholders require, e.g. `_("%s of %s", count)`.
+///
+/// The rule only applies from Odoo 14.0 on, the version whose translation functions take
+/// the interpolation arguments themselves; up to 13.0 `translation-contains-variable`
+/// covers the eager interpolation instead. Configure the version with the `odoo-version`
+/// setting; without it the rule stays enabled.
 ///
 /// ## Why is this bad?
 /// The translation function formats the term with `%`, and `%` formatting raises a
@@ -247,7 +284,7 @@ impl Violation for TranslationTooFewArgs {
 ///
 /// `_lt` deliberately doesn't count: these rules mirror pylint-odoo's `translation-*`
 /// checks, which only inspect `_` (lazy translations wrap the interpolation themselves).
-fn is_translation_underscore(func: &Expr) -> bool {
+pub(crate) fn is_translation_underscore(func: &Expr) -> bool {
     match func {
         Expr::Name(ast::ExprName { id, .. }) => id == "_",
         Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr == "_",
@@ -465,8 +502,21 @@ fn fstring_contains_printf(value: &ast::FStringValue) -> bool {
         .any(contains_printf)
 }
 
+/// Returns `true` if the `translation-*` family applies to the configured Odoo version.
+///
+/// pylint-odoo builds this whole family by re-publishing pylint's `logging-*` checks
+/// (`custom_logging.py`), and its constructor sets `odoo_minversion = "14.0"` on every one
+/// of them: before 14.0 the terms were interpolated eagerly, which is what
+/// `translation-contains-variable` reports for versions up to 13.0 instead.
+fn translation_family_applies(checker: &Checker) -> bool {
+    odoo_version_applies(checker, Some(OdooVersion::new(14, 0)), None)
+}
+
 /// ODW8302, ODE8301, ODW8303, ODW8301, ODE8306, ODE8305, ODE8300
 pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
+    if !translation_family_applies(checker) {
+        return;
+    }
     // ODW8302 on the translated result: `_("Hello {}").format(name)`.
     if checker.is_rule_enabled(Rule::TranslationFormatInterpolation)
         && let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref()
@@ -567,7 +617,7 @@ fn translation_not_lazy_term(checker: &Checker, call: &ast::ExprCall, binop: &as
 /// pylint-odoo funnels the whole expression back through its call check, which only
 /// fires when the term is the call's lone argument, so the same restriction applies.
 pub(crate) fn translation_not_lazy_binop(checker: &Checker, binop: &ast::ExprBinOp) {
-    if !checker.is_rule_enabled(Rule::TranslationNotLazy) {
+    if !checker.is_rule_enabled(Rule::TranslationNotLazy) || !translation_family_applies(checker) {
         return;
     }
     if binop.op != Operator::Mod {

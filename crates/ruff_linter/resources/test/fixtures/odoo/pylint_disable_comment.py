@@ -95,3 +95,16 @@ def pragma_before_noqa(env):
     import sys  # pylint: disable=import-outside-toplevel  # noqa: F401
 
     return sys
+
+
+def shadows_builtins(id, type):  # pylint: disable=redefined-builtin
+    # pylint reports one message no matter what the shadowed builtin is; Ruff splits it
+    # across `builtin-variable-shadowing`, `builtin-argument-shadowing` and
+    # `builtin-import-shadowing`, so the suppression has to name every one of them.
+    return id, type
+
+
+def expression_not_assigned(env):
+    # pylint's `expression-not-assigned` is flake8-bugbear's `useless-expression` in Ruff,
+    # a rename across linters rather than within Ruff's own Pylint rules.
+    env.company.name  # pylint: disable=expression-not-assigned
