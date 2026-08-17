@@ -300,6 +300,77 @@ mod tests {
         Ok(())
     }
 
+    /// Every `translation-*` check and the fixture exercising it. pylint-odoo derives them all
+    /// from pylint's `logging-*` checks in `custom_logging.py`, whose constructor sets
+    /// `odoo_minversion = "14.0"` on the whole family.
+    const TRANSLATION_FAMILY: &[(Rule, &str)] = &[
+        (
+            Rule::TranslationFormatInterpolation,
+            "translation_format_interpolation.py",
+        ),
+        (
+            Rule::TranslationFormatTruncated,
+            "translation_format_truncated.py",
+        ),
+        (
+            Rule::TranslationFstringInterpolation,
+            "translation_fstring_interpolation.py",
+        ),
+        (Rule::TranslationNotLazy, "translation_not_lazy.py"),
+        (Rule::TranslationTooFewArgs, "translation_too_few_args.py"),
+        (Rule::TranslationTooManyArgs, "translation_too_many_args.py"),
+        (
+            Rule::TranslationUnsupportedFormat,
+            "translation_unsupported_format.py",
+        ),
+    ];
+
+    fn translation_family_diagnostics(rule: Rule, fixture: &str, series: u16) -> Result<usize> {
+        Ok(test_path(
+            Path::new("odoo").join(fixture).as_path(),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(series, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(rule)
+            },
+        )?
+        .len())
+    }
+
+    /// Before 14.0 the translation terms were interpolated eagerly, which is what
+    /// `translation-contains-variable` reports for those series instead, so none of the
+    /// family may fire there.
+    #[test]
+    fn translation_family_suppressed_before_odoo_14() -> Result<()> {
+        for (rule, fixture) in TRANSLATION_FAMILY {
+            let count = translation_family_diagnostics(*rule, fixture, 13)?;
+            assert_eq!(
+                count,
+                0,
+                "`{}` reported {count} diagnostics on Odoo 13.0, but pylint-odoo scopes the \
+                 translation family to 14.0 and up",
+                rule.name()
+            );
+        }
+        Ok(())
+    }
+
+    /// The counterpart of the test above: the gate must not silence the family outright.
+    #[test]
+    fn translation_family_enabled_at_odoo_14() -> Result<()> {
+        for (rule, fixture) in TRANSLATION_FAMILY {
+            let count = translation_family_diagnostics(*rule, fixture, 14)?;
+            assert!(
+                count > 0,
+                "`{}` reported nothing on Odoo 14.0, where it applies",
+                rule.name()
+            );
+        }
+        Ok(())
+    }
+
     /// With a configured series, a version for a different series is wrong even though its
     /// shape is right.
     #[test]
