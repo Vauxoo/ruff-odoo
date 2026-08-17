@@ -7,6 +7,7 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::registry::Rule;
+use crate::rules::odoo::rules::is_translation_underscore;
 use crate::rules::pyflakes::cformat::CFormatSummary;
 
 /// ## What it does
@@ -141,10 +142,23 @@ pub(crate) fn logging_call(checker: &Checker, call: &ast::ExprCall) {
         _ => return,
     }
 
-    let Some(Expr::StringLiteral(ast::ExprStringLiteral { value, .. })) =
-        call.arguments.find_positional(0)
-    else {
-        return;
+    // In Odoo the format string is usually wrapped in a translation call --
+    // `_logger.error(_("%s not found"), name)` -- so the term to check against the supplied
+    // arguments sits one level down. Only a `_()` handed nothing but the term is unwrapped:
+    // when it takes values of its own it interpolates them itself, and the `translation-*`
+    // checks own that call instead.
+    let value = match call.arguments.find_positional(0) {
+        Some(Expr::StringLiteral(ast::ExprStringLiteral { value, .. })) => value,
+        Some(Expr::Call(translation))
+            if is_translation_underscore(&translation.func)
+                && translation.arguments.keywords.is_empty() =>
+        {
+            match &*translation.arguments.args {
+                [Expr::StringLiteral(ast::ExprStringLiteral { value, .. })] => value,
+                _ => return,
+            }
+        }
+        _ => return,
     };
 
     let Ok(summary) = CFormatSummary::try_from(value.to_str()) else {
@@ -169,7 +183,10 @@ pub(crate) fn logging_call(checker: &Checker, call: &ast::ExprCall) {
     }
 
     if checker.is_rule_enabled(Rule::LoggingTooFewArgs) {
-        if num_message_args > 0 && num_keywords == 0 && summary.num_positional > num_message_args {
+        // A call supplying no values at all is reported too: `logging` leaves the term
+        // uninterpolated, so the placeholders reach the log verbatim. pylint exempted that case
+        // until it dropped the exemption in c23674554a7fac2fbb390cb67, and this follows suit.
+        if num_keywords == 0 && summary.num_positional > num_message_args {
             checker.report_diagnostic(LoggingTooFewArgs, call.func.range());
         }
     }

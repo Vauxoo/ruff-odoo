@@ -13,12 +13,66 @@ PLE1206 Not enough arguments for `logging` format string
   |
 
 PLE1206 Not enough arguments for `logging` format string
-  --> logging_too_few_args.py:33:1
+  --> logging_too_few_args.py:12:1
    |
-31 | from logging import error, info, warning
-32 |
-33 | warning("Hello %s %s", "World!")  # [logging-too-few-args]
+10 | # a call without any args is reported too: nothing interpolates the term, so the
+11 | # conversion (a `% d` here, space flag included) reaches the log verbatim
+12 | logging.info("100% dynamic")  # [logging-too-few-args]
+   | ^^^^^^^^^^^^
+13 |
+14 | # do not handle calls with *args
+   |
+
+PLE1206 Not enough arguments for `logging` format string
+  --> logging_too_few_args.py:34:1
+   |
+32 | from logging import error, info, warning
+33 |
+34 | warning("Hello %s %s", "World!")  # [logging-too-few-args]
    | ^^^^^^^
-34 |
-35 | # do not handle calls with kwargs (like pylint)
+35 |
+36 | # do not handle calls with kwargs (like pylint)
+   |
+
+PLE1206 Not enough arguments for `logging` format string
+  --> logging_too_few_args.py:42:1
+   |
+41 | # a call without any args is reported too (see above)
+42 | info("100% dynamic")  # [logging-too-few-args]
+   | ^^^^
+43 |
+44 | # do not handle calls with *args
+   |
+
+PLE1206 Not enough arguments for `logging` format string
+  --> logging_too_few_args.py:60:1
+   |
+58 | # the format string may be wrapped in an Odoo translation call, which leaves the
+59 | # interpolation to the logging call itself
+60 | logging.warning(_("Hello %s %s"), "World!")  # [logging-too-few-args]
+   | ^^^^^^^^^^^^^^^
+61 |
+62 | logging.warning(_("Hello %s"), "World!")
+   |
+
+PLE1206 Not enough arguments for `logging` format string
+  --> logging_too_few_args.py:64:1
+   |
+62 | logging.warning(_("Hello %s"), "World!")
+63 |
+64 | logging.warning(_("Hello %s %s"))  # [logging-too-few-args]
+   | ^^^^^^^^^^^^^^^
+65 |
+66 | logging.warning(self.env._("Hello %s %s"))  # [logging-too-few-args]
+   |
+
+PLE1206 Not enough arguments for `logging` format string
+  --> logging_too_few_args.py:66:1
+   |
+64 | logging.warning(_("Hello %s %s"))  # [logging-too-few-args]
+65 |
+66 | logging.warning(self.env._("Hello %s %s"))  # [logging-too-few-args]
+   | ^^^^^^^^^^^^^^^
+67 |
+68 | # a translation call given its own values interpolates them itself, so the
    |

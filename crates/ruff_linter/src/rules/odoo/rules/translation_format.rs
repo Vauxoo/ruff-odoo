@@ -284,7 +284,7 @@ impl Violation for TranslationTooFewArgs {
 ///
 /// `_lt` deliberately doesn't count: these rules mirror pylint-odoo's `translation-*`
 /// checks, which only inspect `_` (lazy translations wrap the interpolation themselves).
-fn is_translation_underscore(func: &Expr) -> bool {
+pub(crate) fn is_translation_underscore(func: &Expr) -> bool {
     match func {
         Expr::Name(ast::ExprName { id, .. }) => id == "_",
         Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr == "_",
