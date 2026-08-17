@@ -1,5 +1,5 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast::{self as ast, Expr, Operator};
+use ruff_python_ast::{self as ast, Expr, Operator, Stmt};
 use ruff_python_stdlib::identifiers::is_identifier;
 use ruff_python_stdlib::keyword::is_keyword;
 use ruff_text_size::{Ranged, TextRange};
@@ -268,6 +268,19 @@ impl Violation for TranslationTooManyArgs {
 /// ```python
 /// _("%s of %s", count, total)
 /// ```
+///
+/// A translation call given no values of its own is normally left alone: the term is used
+/// verbatim (`_("100%")`) or interpolated afterwards (`_("Hello %s") % name`). The exception
+/// is the lone argument of a raised exception, where neither can happen and the placeholders
+/// reach the user as they are:
+///
+/// ```python
+/// raise UserError(_("record <%s: (%s)> can not be sent"))
+/// ```
+///
+/// There the count is all that is checked, and only placeholders that are unmistakably
+/// placeholders count: `_("100% off")` reads as prose even though `% o` is a valid
+/// space-flagged conversion.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationTooFewArgs;
@@ -301,6 +314,11 @@ enum PrintfFormat {
         /// Number of values consumed by positional conversions, including `*`
         /// width/precision.
         required_args: usize,
+        /// Of those, how many are written without the space flag. `"100% off"` is a
+        /// conversion to `%` formatting -- a space-flagged `%o` -- but prose far more
+        /// often than not, so telling the two apart matters where the diagnostic rests
+        /// on the conversion alone.
+        unambiguous_args: usize,
     },
     /// A conversion uses a character `%` formatting doesn't support (char index given).
     UnsupportedChar(usize),
@@ -314,6 +332,7 @@ fn parse_printf_format(text: &str) -> PrintfFormat {
     let chars: Vec<char> = text.chars().collect();
     let mut has_keywords = false;
     let mut required_args = 0;
+    let mut unambiguous_args = 0;
     let mut i = 0;
 
     let next = |i: &mut usize| -> Option<char> {
@@ -351,7 +370,9 @@ fn parse_printf_format(text: &str) -> PrintfFormat {
             has_key = i - 1 > key_start;
         }
         // The conversion flags (optional).
+        let mut space_flagged = false;
         while matches!(char, '#' | '0' | '-' | ' ' | '+') {
+            space_flagged |= char == ' ';
             let Some(next_char) = next(&mut i) else {
                 return PrintfFormat::Truncated;
             };
@@ -408,12 +429,16 @@ fn parse_printf_format(text: &str) -> PrintfFormat {
             has_keywords = true;
         } else if char != '%' {
             required_args += 1;
+            if !space_flagged {
+                unambiguous_args += 1;
+            }
         }
         i += 1;
     }
     PrintfFormat::Parsed {
         has_keywords,
         required_args,
+        unambiguous_args,
     }
 }
 
@@ -675,6 +700,7 @@ fn lazy_arguments(checker: &Checker, term: &ast::ExprStringLiteral, rhs: &Expr) 
         PrintfFormat::Parsed {
             has_keywords: false,
             required_args,
+            ..
         } if required_args > 0 => Some(checker.locator().slice(rhs.range()).to_string()),
         _ => None,
     }
@@ -726,19 +752,48 @@ fn tuple_or_dict_arguments(checker: &Checker, rhs: &Expr) -> Option<String> {
     }
 }
 
+/// Returns `true` if nothing can interpolate the translated term after the call returns.
+///
+/// pylint-odoo exempts a translation call given no values of its own, because the term is then
+/// used verbatim (`_("100%")`) or interpolated afterwards (`_("Hello %s") % name`). That
+/// reasoning stops holding when the call is the lone argument of the exception being raised:
+/// the string goes straight into the exception, so a placeholder in it is never filled.
+fn is_lone_argument_of_raised_exception(checker: &Checker, call: &ast::ExprCall) -> bool {
+    let Some(Expr::Call(exception)) = checker.semantic().current_expression_parent() else {
+        return false;
+    };
+    if !exception.arguments.keywords.is_empty()
+        || !matches!(&*exception.arguments.args, [Expr::Call(argument)] if argument.range() == call.range())
+    {
+        return false;
+    }
+    matches!(
+        checker.semantic().current_statement(),
+        Stmt::Raise(ast::StmtRaise { exc: Some(exc), .. }) if exc.range() == exception.range()
+    )
+}
+
 /// ODE8301, ODE8306, ODE8305, ODE8300: checks a literal term's printf placeholders
 /// against the values supplied to the translation call, mirroring pylint's
 /// `_check_format_string` plus pylint-odoo's no-arguments exemption (a term without
 /// supplied values is used verbatim, so `_("100%")` is fine).
+///
+/// The exemption is lifted for the one shape where the term can not be interpolated later
+/// either -- the lone argument of a raised exception -- and there only the count of
+/// placeholders is checked. A malformed conversion is a diagnostic about `%` formatting that
+/// never runs, and `"50%"` or `"100% off"` is prose in a user-facing message far more often
+/// than a truncated or space-flagged conversion.
 fn check_format_string(checker: &Checker, call: &ast::ExprCall, term: &ast::ExprStringLiteral) {
     let num_supplied = call.arguments.args.len() - 1;
-    if num_supplied == 0 {
+    let uninterpolated = num_supplied == 0;
+    if uninterpolated && !is_lone_argument_of_raised_exception(checker, call) {
         return;
     }
     let text = term.value.to_str();
     match parse_printf_format(text) {
         PrintfFormat::UnsupportedChar(index) => {
-            if checker.is_rule_enabled(Rule::TranslationUnsupportedFormat)
+            if !uninterpolated
+                && checker.is_rule_enabled(Rule::TranslationUnsupportedFormat)
                 && let Some(unsupported_char) = text.chars().nth(index)
             {
                 checker.report_diagnostic(
@@ -751,7 +806,7 @@ fn check_format_string(checker: &Checker, call: &ast::ExprCall, term: &ast::Expr
             }
         }
         PrintfFormat::Truncated => {
-            if checker.is_rule_enabled(Rule::TranslationFormatTruncated) {
+            if !uninterpolated && checker.is_rule_enabled(Rule::TranslationFormatTruncated) {
                 checker.report_diagnostic(TranslationFormatTruncated, call.range());
             }
         }
@@ -764,7 +819,15 @@ fn check_format_string(checker: &Checker, call: &ast::ExprCall, term: &ast::Expr
         PrintfFormat::Parsed {
             has_keywords: false,
             required_args,
+            unambiguous_args,
         } => {
+            // Nothing supplies the values, so the count only means something when at least one
+            // placeholder is unmistakably one.
+            let required_args = if uninterpolated && unambiguous_args == 0 {
+                0
+            } else {
+                required_args
+            };
             if num_supplied > required_args {
                 if checker.is_rule_enabled(Rule::TranslationTooManyArgs) {
                     checker.report_diagnostic(TranslationTooManyArgs, call.range());
