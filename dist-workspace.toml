@@ -74,7 +74,12 @@ hosting = ["simple", "github"]
 simple-download-url = "https://releases.astral.sh/github/ruff/releases/download/{tag}"
 
 [dist.github-custom-runners]
-global = "depot-ubuntu-24.04-4"
+# Vauxoo fork: the Depot runners belong to astral-sh's organization, and a job asking for a label
+# no runner offers queues forever instead of failing, so the fork gets a GitHub-hosted runner
+# through the same conditional the hand-written workflows use. dist writes this value into
+# `runs-on` verbatim, so the expression keeps working if `.github/workflows/release.yml` is ever
+# regenerated.
+global = "${{ github.repository == 'astral-sh/ruff' && 'depot-ubuntu-24.04-4' || 'ubuntu-24.04' }}"
 
 [dist.github-action-commits]
 "actions/checkout" = "de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
