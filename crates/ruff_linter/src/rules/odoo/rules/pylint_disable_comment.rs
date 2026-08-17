@@ -219,12 +219,15 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
     ("else-if-used", &["collapsible-else-if"]),       // PLR5501
     ("eval-used", &["suspicious-eval-usage"]),        // S307
     ("exec-used", &["exec-builtin"]),                 // S102
+    // pylint-odoo's own `except-pass` is deprecated in favor of the flake8-bandit rule that
+    // reports the same handler, so its pragmas migrate straight to the rule that stays.
+    ("except-pass", &["try-except-pass"]), // S110
     ("expression-not-assigned", &["useless-expression"]), // B018
     (
         "f-string-without-interpolation",
         &["f-string-missing-placeholders"],
     ), // F541
-    ("forgotten-debug-statement", &["debugger"]),     // T100
+    ("forgotten-debug-statement", &["debugger"]), // T100
     (
         "format-combined-specification",
         &["string-dot-format-mixing-automatic"],
@@ -235,14 +238,14 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
         &["single-line-implicit-string-concatenation"],
     ), // ISC001
     ("import-outside-toplevel", &["import-outside-top-level"]), // PLC0415
-    ("init-is-generator", &["yield-in-init"]),        // PLE0100
+    ("init-is-generator", &["yield-in-init"]), // PLE0100
     ("invalid-bool-returned", &["invalid-bool-return-type"]), // PLE0304
     ("invalid-bytes-returned", &["invalid-bytes-return-type"]), // PLE0308
     ("invalid-hash-returned", &["invalid-hash-return-type"]), // PLE0309
     ("invalid-index-returned", &["invalid-index-return-type"]), // PLE0305
     ("invalid-length-returned", &["invalid-length-return-type"]), // PLE0303
     ("invalid-str-returned", &["invalid-str-return-type"]), // PLE0307
-    ("literal-comparison", &["is-literal"]),          // F632
+    ("literal-comparison", &["is-literal"]), // F632
     ("logging-format-interpolation", &["logging-string-format"]), // G001
     ("logging-fstring-interpolation", &["logging-f-string"]), // G004
     (
@@ -251,7 +254,7 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
     ), // G002,G003
     ("lost-exception", &["jump-statement-in-finally"]), // B012
     ("method-cache-max-size-none", &["cached-instance-method"]), // B019
-    ("misplaced-future", &["late-future-import"]),    // F404
+    ("misplaced-future", &["late-future-import"]), // F404
     ("missing-final-newline", &["missing-newline-at-end-of-file"]), // W292
     (
         "missing-format-argument-key",
@@ -273,9 +276,9 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
             "multiple-statements-on-one-line-semicolon",
         ],
     ), // E701,E702
-    ("no-else-break", &["superfluous-else-break"]),   // RET508
+    ("no-else-break", &["superfluous-else-break"]), // RET508
     ("no-else-continue", &["superfluous-else-continue"]), // RET507
-    ("no-else-raise", &["superfluous-else-raise"]),   // RET506
+    ("no-else-raise", &["superfluous-else-raise"]), // RET506
     ("no-else-return", &["superfluous-else-return"]), // RET505
     (
         "no-self-argument",
@@ -351,11 +354,11 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
     ), // PLC0105
     ("typevar-name-mismatch", &["type-param-name-mismatch"]), // PLC0132
     ("undefined-all-variable", &["undefined-export"]), // F822
-    ("undefined-variable", &["undefined-name"]),      // F821
-    ("unidiomatic-typecheck", &["type-comparison"]),  // E721
+    ("undefined-variable", &["undefined-name"]), // F821
+    ("unidiomatic-typecheck", &["type-comparison"]), // E721
     ("unnecessary-ellipsis", &["unnecessary-placeholder"]), // PIE790
     ("unnecessary-lambda-assignment", &["lambda-assignment"]), // E731
-    ("unnecessary-negation", &["double-negation"]),   // SIM208
+    ("unnecessary-negation", &["double-negation"]), // SIM208
     ("unnecessary-pass", &["unnecessary-placeholder"]), // PIE790
     (
         "unnecessary-semicolon",
@@ -380,10 +383,10 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
     ), // PLC1901
     ("use-implicit-booleaness-not-len", &["len-test"]), // PLC1802
     ("use-list-literal", &["unnecessary-collection-call"]), // C408
-    ("use-maxsplit-arg", &["missing-maxsplit-arg"]),  // PLC0207
+    ("use-maxsplit-arg", &["missing-maxsplit-arg"]), // PLC0207
     ("use-sequence-for-iteration", &["iteration-over-set"]), // PLC0208
     ("use-set-for-membership", &["literal-membership"]), // PLR6201
-    ("use-yield-from", &["yield-in-for-loop"]),       // UP028
+    ("use-yield-from", &["yield-in-for-loop"]), // UP028
     (
         "used-prior-global-declaration",
         &["load-before-global-declaration"],
@@ -444,7 +447,9 @@ const MESSAGE_ALIASES: &[(&str, &[&str])] = &[
     ("W8120", &["translation-positional-used"]),
     ("W8121", &["context-overridden"]),
     ("W8125", &["manifest-data-duplicated"]),
-    ("W8138", &["except-pass"]),
+    // `except-pass` is deprecated in favor of flake8-bandit's `try-except-pass`, which
+    // reports the same handler, so the pragma migrates straight to the rule that stays.
+    ("W8138", &["try-except-pass"]),
     ("W8150", &["odoo-addons-relative-import"]),
     ("W8155", &["bad-builtin-groupby"]),
     ("W8160", &["deprecated-odoo-model-method"]),

@@ -5,6 +5,14 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 
+/// ## Deprecation
+/// This rule is deprecated in favor of [`try-except-pass`][S110], which reports the exact
+/// same code: an `except` handler whose whole body is a `pass`. The rule was ported from
+/// pylint-odoo's `except-pass` before that overlap was noticed, and keeping both meant the
+/// same handler was reported twice, once per rule.
+///
+/// [S110]: https://docs.astral.sh/ruff/rules/try-except-pass/
+///
 /// ## What it does
 /// Checks for `except` blocks whose entire body is a bare `pass`.
 ///
@@ -30,7 +38,7 @@ use crate::checkers::ast::Checker;
 ///     _logger.exception("do_something failed")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(deprecated_since = "0.16.3.22")]
 pub(crate) struct ExceptPass;
 
 impl Violation for ExceptPass {
