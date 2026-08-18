@@ -28,6 +28,8 @@ mod tests {
     #[test_case(Rule::MethodRequiredSuper, Path::new("method_required_super.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("unused_logger_0.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("unused_logger_1.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_2.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_3.py"))]
     #[test_case(
         Rule::AttributeStringRedundant,
         Path::new("attribute_string_redundant.py")
