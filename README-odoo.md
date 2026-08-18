@@ -14,8 +14,69 @@ shipping every upstream linter and formatter rule plus the `OD` and `OAPP` rule 
 - Everything else — configuration, the formatter, editor integrations, the upstream rules — behaves
     exactly as upstream and is documented at <https://docs.astral.sh/ruff/>.
 
-This file covers what differs from upstream Ruff for anyone installing or building the fork: the
-command name, the packaging, and the version scheme.
+This file covers what differs from upstream Ruff for anyone installing or building the fork: why it
+exists at all, the command name, the packaging, and the version scheme.
+
+## Why this exists
+
+Vauxoo's Odoo checks used to live in [pylint-odoo](https://github.com/OCA/pylint-odoo) (a Pylint
+plugin) and [odoo-pre-commit-hooks](https://github.com/OCA/odoo-pre-commit-hooks), running next to
+the autofixing tools already present in the pre-commit stack. Three problems pushed us to port those
+checks into Ruff instead, and none of them was something a patch to those projects could have fixed.
+
+**Autofixes corrupted each other.** Every tool rewrote the file on its own, with no idea of what the
+others had done to it. A fix applied by one hook routinely invalidated a fix another hook had just
+applied, or uncovered a violation that only became reachable after the first rewrite. So the run
+ended dirty, the command had to be run a second time, and that run pulled in yet another fix. Getting
+a repository to a fixed point — a run that proposes no changes — commonly took three or four passes
+of the same command. That is confusing on a developer machine and simply broken in CI, where there is
+one run and a dirty tree is a failure.
+
+Ruff does that iteration internally: it lints, applies every non-overlapping fix, re-parses the
+result, and repeats until the file stops changing, discarding any fix that would have introduced a
+syntax error. One invocation, one stable file.
+
+**Pylint has no autofixes.** Pylint only reports. Any check we also wanted fixed automatically had to
+be written twice — once as a Pylint checker that reports it and once as a separate fixer that
+rewrites it — with two sets of tests, two notions of what the pattern is, and no guarantee the two
+stayed in agreement as they were maintained. In Ruff a fix is attached to the diagnostic that
+produced it, so the rule that finds a problem is the same code that repairs it, and its fixture
+covers both.
+
+**Speed, which mattered more than anything else.** A linter is only run as often as it is cheap to
+run. Pylint infers types through astroid, and a stack of separate hooks pays for a process start and
+a fresh parse of every file per tool. Ruff parses each file once, in Rust, in parallel across cores,
+and caches unchanged files between runs — fast enough to run on save and on every commit rather than
+only in CI, which is what makes the rules actually shape the code being written instead of being
+discovered at review time.
+
+### Why a fork, and not a separate repository
+
+The obvious alternative was to keep the Odoo rules in their own project and just depend on Ruff. It
+does not work, for reasons that are structural rather than incidental:
+
+- **Ruff has no plugin system.** Rules are compiled into the binary; there is no dynamic loading, no
+    stable ABI, and no "register a rule" entry point to call from the outside. That is a deliberate
+    design choice upstream — it is part of why a single static binary can dispatch rules with no
+    per-rule overhead — not a gap waiting to be filled.
+- **A rule is not self-contained.** Adding one touches files that upstream owns: the code-to-rule
+    map in `codes.rs`, the linter enum in `registry.rs`, the dispatch inside the AST visitor in
+    `checkers/ast/analyze/`, the settings struct behind `lint.odoo`, and the generated JSON schema
+    and docs. There is no seam an external crate could attach to.
+- **The internal crates are not a public API.** `ruff_linter` describes itself as "an internal
+    component crate of Ruff": it is versioned with the binary and refactored freely. A separate
+    project built on it would break on close to every upstream release, which is a worse maintenance
+    burden than a rebase.
+- **A second tool would recreate the original problem.** Even with all of the above solved, shipping
+    the Odoo rules as a second binary means a second process, a second parse, a second fix pass over
+    the same file, a second configuration file, and a second suppression syntax. The whole point is
+    that the Odoo rules run in the same pass as everything else: one command, one AST, one `--fix`,
+    one `# noqa`, one cache, one `pyproject.toml`.
+
+The cost of this choice is having to rebase onto upstream Ruff, and that is accepted knowingly. The
+fork is arranged to keep that cost low: the Odoo rules live in their own directory, upstream files
+are touched as little as possible, and the `ruff` crate and its binary are left untouched behind a
+thin wrapper crate.
 
 ## The `ruff-odoo` command
 
