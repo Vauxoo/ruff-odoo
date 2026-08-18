@@ -14,3 +14,61 @@ class MyModel(models.Model):
 
     def action_do(self):
         super().action_do()
+
+    # The call is the last statement, so the `return` can go in front of it even though
+    # other statements run first.
+    def copy(self, default=None):
+        self.check_access("read")
+        super(MyModel, self).copy(default)
+
+    # The result is assigned to a plain name, so `res` is the value the method was building
+    # and the `return` goes at the end, after the statements that finish building it.
+    def default_get(self, fields):
+        res = super().default_get(fields)
+        res["name"] = "x"
+
+    # The assignment is the only statement: the `return` still goes after it.
+    def read(self, fields=None, load="_classic_read"):
+        res = super().read(fields, load)
+
+    # The name is only bound in one branch, so a `return res` at the end of the method could
+    # find nothing to return.
+    def name_get(self):
+        if self.env.context.get("short"):
+            res = super().name_get()
+
+    # An attribute is not a name the method can hand back, and neither is a tuple.
+    def fields_view_get(self, *args):
+        self.cached = super().fields_view_get(*args)
+
+    # The method never returns normally, so a `return` at the end would be dead code.
+    def unlink_all(self):
+        res = super().unlink_all()
+        raise UserError(res)
+
+    # The call is the last statement of the `if`, not of the method, so inserting the
+    # `return` there would change what the other branch does.
+    def onchange_partner(self):
+        if self.partner_id:
+            super().onchange_partner()
+
+    # Nothing holds the result, and prepending the `return` would skip the logging call.
+    def action_confirm(self):
+        super().action_confirm()
+        _logger.info("confirmed")
+
+    # `super()` is only an argument: the value of the trailing call is not the base
+    # implementation's, so the rule leaves the choice to the author.
+    def fields_get(self, allfields=None):
+        dict(super().fields_get(allfields))
+
+    # The trailing call is `action_do()`, not `super()`'s: its value is the one that would
+    # be returned, so the choice stays with the author here too.
+    def create_and_do(self, vals):
+        super().create(vals).action_do()
+
+    # Two `super()` calls: the trailing one is only one of the results, so which of them the
+    # method should return is the author's call.
+    def action_done(self):
+        super().action_check()
+        super().action_done()
