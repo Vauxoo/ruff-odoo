@@ -9,6 +9,7 @@ ODC8501 [*] Use of header comments
 3 | # TODO: remove this stray comment
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 4 | # pylint: disable=missing-docstring
+5 | # ruff: ignore[unused-import]
   |
 help: Remove stray header comment
   |

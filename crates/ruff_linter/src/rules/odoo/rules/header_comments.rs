@@ -55,6 +55,10 @@ const VALID_HEADER_COMMENTS: &[&str] = &[
     "nosec:",
     "oca-hooks:",
     "pylint:",
+    // Ruff's own suppressions: `# ruff: noqa`, `# ruff: ignore[...]` and the
+    // `# ruff: disable[...]` / `# ruff: enable[...]` pair `pylint-disable-comment` writes when
+    // it migrates a standalone pragma -- which lands exactly here, at the top of the file.
+    "ruff:",
 ];
 
 /// Returns `true` if every non-blank line in the file is a comment. The original Fixit check
