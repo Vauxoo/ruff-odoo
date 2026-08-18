@@ -2,51 +2,137 @@
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
 ODC8116 [*] Manifest superfluous key "installable". It is the same as the default value
- --> __manifest__.py:2:5
-  |
-1 | {
-2 |     "installable": True,
-  |     ^^^^^^^^^^^^^
-3 |     "depends": [],
-4 |     "author": "",
-  |
-help: Remove superfluous key "installable"
-  |
-1 | {
-  -     "installable": True,
-2 |     "depends": [],
-  |
-
-ODC8116 [*] Manifest superfluous key "depends". It is the same as the default value
  --> __manifest__.py:3:5
   |
 1 | {
-2 |     "installable": True,
+2 |     # Superfluous: these are the values Odoo assumes on its own.
+3 |     "installable": True,
+  |     ^^^^^^^^^^^^^
+4 |     "depends": [],
+5 |     "author": "",
+  |
+help: Remove superfluous key "installable"
+  |
+2 |     # Superfluous: these are the values Odoo assumes on its own.
+  -     "installable": True,
 3 |     "depends": [],
+  |
+
+ODC8116 [*] Manifest superfluous key "depends". It is the same as the default value
+ --> __manifest__.py:4:5
+  |
+2 |     # Superfluous: these are the values Odoo assumes on its own.
+3 |     "installable": True,
+4 |     "depends": [],
   |     ^^^^^^^^^
-4 |     "author": "",
-5 |     "active": False,
+5 |     "author": "",
+6 |     "active": False,
   |
 help: Remove superfluous key "depends"
   |
-2 |     "installable": True,
+3 |     "installable": True,
   -     "depends": [],
-3 |     "author": "",
+4 |     "author": "",
   |
 
 ODC8116 [*] Manifest superfluous key "author". It is the same as the default value
- --> __manifest__.py:4:5
+ --> __manifest__.py:5:5
   |
-2 |     "installable": True,
-3 |     "depends": [],
-4 |     "author": "",
+3 |     "installable": True,
+4 |     "depends": [],
+5 |     "author": "",
   |     ^^^^^^^^
-5 |     "active": False,
-6 |     "name": "My Module",
+6 |     "active": False,
+7 |     "data": [],
   |
 help: Remove superfluous key "author"
   |
-3 |     "depends": [],
+4 |     "depends": [],
   -     "author": "",
-4 |     "active": False,
+5 |     "active": False,
   |
+
+ODC8116 [*] Manifest superfluous key "data". It is the same as the default value
+ --> __manifest__.py:7:5
+  |
+5 |     "author": "",
+6 |     "active": False,
+7 |     "data": [],
+  |     ^^^^^^
+8 |     "external_dependencies": {},
+9 |     "sequence": 0,
+  |
+help: Remove superfluous key "data"
+  |
+6 |     "active": False,
+  -     "data": [],
+7 |     "external_dependencies": {},
+  |
+
+ODC8116 [*] Manifest superfluous key "external_dependencies". It is the same as the default value
+  --> __manifest__.py:8:5
+   |
+ 6 |     "active": False,
+ 7 |     "data": [],
+ 8 |     "external_dependencies": {},
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |     "sequence": 0,
+10 |     "auto_install": False,
+   |
+help: Remove superfluous key "external_dependencies"
+  |
+7 |     "data": [],
+  -     "external_dependencies": {},
+8 |     "sequence": 0,
+  |
+
+ODC8116 [*] Manifest superfluous key "sequence". It is the same as the default value
+  --> __manifest__.py:9:5
+   |
+ 7 |     "data": [],
+ 8 |     "external_dependencies": {},
+ 9 |     "sequence": 0,
+   |     ^^^^^^^^^^
+10 |     "auto_install": False,
+11 |     "application": None,
+   |
+help: Remove superfluous key "sequence"
+  |
+8 |     "external_dependencies": {},
+  -     "sequence": 0,
+9 |     "auto_install": False,
+  |
+
+ODC8116 [*] Manifest superfluous key "auto_install". It is the same as the default value
+  --> __manifest__.py:10:5
+   |
+ 8 |     "external_dependencies": {},
+ 9 |     "sequence": 0,
+10 |     "auto_install": False,
+   |     ^^^^^^^^^^^^^^
+11 |     "application": None,
+12 |     # Kept: "active" defaults to True, so False is a real choice, and the rest are
+   |
+help: Remove superfluous key "auto_install"
+   |
+9  |     "sequence": 0,
+   -     "auto_install": False,
+10 |     "application": None,
+   |
+
+ODC8116 [*] Manifest superfluous key "application". It is the same as the default value
+  --> __manifest__.py:11:5
+   |
+ 9 |     "sequence": 0,
+10 |     "auto_install": False,
+11 |     "application": None,
+   |     ^^^^^^^^^^^^^
+12 |     # Kept: "active" defaults to True, so False is a real choice, and the rest are
+13 |     # values a manifest is made of.
+   |
+help: Remove superfluous key "application"
+   |
+10 |     "auto_install": False,
+   -     "application": None,
+11 |     # Kept: "active" defaults to True, so False is a real choice, and the rest are
+   |

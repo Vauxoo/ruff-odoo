@@ -1,0 +1,22 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8161 Better using self.env._
+  --> prefer_env_translation_not_odoo.py:13:16
+   |
+12 |     def gettext_translation(self):
+13 |         return _("from the standard library")
+   |                ^
+14 |
+15 |     def locally_shadowed(self):
+   |
+help: Replace with `self.env._`
+
+ODW8161 Better using self.env._
+  --> prefer_env_translation_not_odoo.py:17:16
+   |
+15 |     def locally_shadowed(self):
+16 |         _ = lambda *args: True  # noqa: E731
+17 |         return _("a local of its own")
+   |                ^
+help: Replace with `self.env._`

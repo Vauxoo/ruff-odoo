@@ -147,7 +147,7 @@ ODW8161 Better using self.env._
    |
 help: Replace with `self.env._`
 
-ODW8161 [*] Better using self.env._
+ODW8161 Better using self.env._
   --> prefer_env_translation.py:55:16
    |
 53 |     def page(self):
@@ -155,8 +155,3 @@ ODW8161 [*] Better using self.env._
 55 |         return _("in a controller")
    |                ^
 help: Replace with `self.env._`
-   |
-54 |         # Fixed only from Odoo 19.0 on, the version that gave `Controller` its `env`.
-   -         return _("in a controller")
-55 +         return self.env._("in a controller")
-   |

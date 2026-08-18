@@ -28,9 +28,19 @@ mod tests {
     #[test_case(Rule::MethodRequiredSuper, Path::new("method_required_super.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("unused_logger_0.py"))]
     #[test_case(Rule::UnusedLogger, Path::new("unused_logger_1.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_2.py"))]
+    #[test_case(Rule::UnusedLogger, Path::new("unused_logger_3.py"))]
     #[test_case(
         Rule::AttributeStringRedundant,
         Path::new("attribute_string_redundant.py")
+    )]
+    #[test_case(
+        Rule::AttributeStringRedundant,
+        Path::new("attribute_string_redundant_not_odoo.py")
+    )]
+    #[test_case(
+        Rule::AttributeStringRedundant,
+        Path::new("attribute_string_redundant_other_fields.py")
     )]
     #[test_case(
         Rule::ManifestRequiredAuthor,
@@ -85,6 +95,10 @@ mod tests {
         Path::new("odoo_addons_relative_import/my_module/migrations/16.0.1.0/pre-migrate.py")
     )]
     #[test_case(Rule::PreferEnvTranslation, Path::new("prefer_env_translation.py"))]
+    #[test_case(
+        Rule::PreferEnvTranslation,
+        Path::new("prefer_env_translation_not_odoo.py")
+    )]
     #[test_case(
         Rule::ManifestSuperfluousKey,
         Path::new("manifest_superfluous_key/__manifest__.py")
@@ -255,6 +269,43 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::DeprecatedOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `Controller` only got its `env` property in Odoo 19.0, so up to 18.0 a call in a
+    /// controller is reported without a fix: rewriting it would raise `AttributeError`.
+    #[test]
+    fn prefer_env_translation_controller_before_odoo_19() -> Result<()> {
+        let snapshot = "prefer_env_translation_controller_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/prefer_env_translation.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::PreferEnvTranslation)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// From 19.0 on the controller call is rewritten like a model one.
+    #[test]
+    fn prefer_env_translation_controller_at_odoo_19() -> Result<()> {
+        let snapshot = "prefer_env_translation_controller_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/prefer_env_translation.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::PreferEnvTranslation)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);

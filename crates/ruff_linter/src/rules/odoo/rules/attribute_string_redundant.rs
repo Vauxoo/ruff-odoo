@@ -1,6 +1,7 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
+use ruff_python_ast::name::QualifiedName;
 use ruff_python_ast::{self as ast, Expr};
-use ruff_python_semantic::ScopeKind;
+use ruff_python_semantic::{ScopeKind, SemanticModel};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
@@ -90,6 +91,25 @@ fn inferred_label(field_name: &str) -> String {
     python_title_case(&trimmed.replace('_', " "))
 }
 
+/// Returns `true` if `func` is an attribute of Odoo's `fields` module, as in
+/// `fields.Char(...)` after `from odoo import fields`.
+///
+/// The name alone is not enough: the label is inferred by Odoo's own field descriptors, so a
+/// `fields` coming from anywhere else defines something this rule knows nothing about -- and
+/// dropping an argument from it would be dropping a real one.
+fn is_odoo_fields_module(semantic: &SemanticModel, func: &Expr) -> bool {
+    let Expr::Attribute(ast::ExprAttribute { value, .. }) = func else {
+        return false;
+    };
+    matches!(
+        semantic
+            .resolve_qualified_name(value)
+            .as_ref()
+            .map(QualifiedName::segments),
+        Some(["odoo", "fields"])
+    )
+}
+
 /// ODW8113
 pub(crate) fn attribute_string_redundant(checker: &Checker, assign: &ast::StmtAssign) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
@@ -108,6 +128,9 @@ pub(crate) fn attribute_string_redundant(checker: &Checker, assign: &ast::StmtAs
     let Some(field_type) = odoo_field_type(&call.func) else {
         return;
     };
+    if !is_odoo_fields_module(checker.semantic(), &call.func) {
+        return;
+    }
 
     let mut string_keyword = None;
     for keyword in &call.arguments.keywords {
