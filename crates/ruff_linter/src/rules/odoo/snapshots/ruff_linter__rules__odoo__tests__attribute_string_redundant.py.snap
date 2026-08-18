@@ -159,4 +159,182 @@ help: Remove redundant `string` attribute
 45 |
    -     line_ids = fields.One2many("my.line", "parent_id", "Line")
 46 +     line_ids = fields.One2many("my.line", "parent_id")
+47 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:53:5
+   |
+52 |     # Position 0: the string is the first positional argument, with or without company.
+53 |     name = fields.Char(string="Name", required=True)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+54 |
+55 |     active = fields.Boolean("Active", default=True)
+   |
+help: Remove redundant `string` attribute
+   |
+52 |     # Position 0: the string is the first positional argument, with or without company.
+   -     name = fields.Char(string="Name", required=True)
+53 +     name = fields.Char(required=True)
+54 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:55:5
+   |
+53 |     name = fields.Char(string="Name", required=True)
+54 |
+55 |     active = fields.Boolean("Active", default=True)
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+56 |
+57 |     age = fields.Integer(string="Age")
+   |
+help: Remove redundant `string` attribute
+   |
+54 |
+   -     active = fields.Boolean("Active", default=True)
+55 +     active = fields.Boolean(default=True)
+56 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:57:5
+   |
+55 |     active = fields.Boolean("Active", default=True)
+56 |
+57 |     age = fields.Integer(string="Age")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+58 |
+59 |     score = fields.Float("Score")
+   |
+help: Remove redundant `string` attribute
+   |
+56 |
+   -     age = fields.Integer(string="Age")
+57 +     age = fields.Integer()
+58 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:59:5
+   |
+57 |     age = fields.Integer(string="Age")
+58 |
+59 |     score = fields.Float("Score")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+60 |
+61 |     body = fields.Html(string="Body")
+   |
+help: Remove redundant `string` attribute
+   |
+58 |
+   -     score = fields.Float("Score")
+59 +     score = fields.Float()
+60 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:61:5
+   |
+59 |     score = fields.Float("Score")
+60 |
+61 |     body = fields.Html(string="Body")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+62 |
+63 |     date_order = fields.Date(string="Date Order")
+   |
+help: Remove redundant `string` attribute
+   |
+60 |
+   -     body = fields.Html(string="Body")
+61 +     body = fields.Html()
+62 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:63:5
+   |
+61 |     body = fields.Html(string="Body")
+62 |
+63 |     date_order = fields.Date(string="Date Order")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+64 |
+65 |     file_data = fields.Binary(string="File Data")
+   |
+help: Remove redundant `string` attribute
+   |
+62 |
+   -     date_order = fields.Date(string="Date Order")
+63 +     date_order = fields.Date()
+64 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:65:5
+   |
+63 |     date_order = fields.Date(string="Date Order")
+64 |
+65 |     file_data = fields.Binary(string="File Data")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+66 |
+67 |     # Position 1: Selection, Reference and Many2one take the string after their first argument.
+   |
+help: Remove redundant `string` attribute
+   |
+64 |
+   -     file_data = fields.Binary(string="File Data")
+65 +     file_data = fields.Binary()
+66 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:68:5
+   |
+67 |     # Position 1: Selection, Reference and Many2one take the string after their first argument.
+68 |     type = fields.Selection(selection=[], string="Type")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+69 |
+70 |     partner_id = fields.Many2one("res.partner", "Partner")
+   |
+help: Remove redundant `string` attribute
+   |
+67 |     # Position 1: Selection, Reference and Many2one take the string after their first argument.
+   -     type = fields.Selection(selection=[], string="Type")
+68 +     type = fields.Selection(selection=[])
+69 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:70:5
+   |
+68 |     type = fields.Selection(selection=[], string="Type")
+69 |
+70 |     partner_id = fields.Many2one("res.partner", "Partner")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+71 |
+72 |     # Position 2: One2many takes it after the comodel and the inverse name.
+   |
+help: Remove redundant `string` attribute
+   |
+69 |
+   -     partner_id = fields.Many2one("res.partner", "Partner")
+70 +     partner_id = fields.Many2one("res.partner")
+71 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:73:5
+   |
+72 |     # Position 2: One2many takes it after the comodel and the inverse name.
+73 |     child_ids = fields.One2many("my.child", "parent_id", string="Child")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+74 |
+75 |     # No diagnostic: Many2many is `(comodel_name, relation, column1, column2, string)`, so the
+   |
+help: Remove redundant `string` attribute
+   |
+72 |     # Position 2: One2many takes it after the comodel and the inverse name.
+   -     child_ids = fields.One2many("my.child", "parent_id", string="Child")
+73 +     child_ids = fields.One2many("my.child", "parent_id")
+74 |
    |
