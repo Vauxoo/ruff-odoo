@@ -109,10 +109,20 @@ cross-module inference (see Scope discipline above).
    - **Ported from pylint-odoo** — reuse its code verbatim. Find it in that project's
      `ODOO_MSGS` (or in the `MESSAGE_ALIASES` table in `pylint_disable_comment.rs`, which
      lists every one of them).
-   - **Ported from odoo-pre-commit-hooks, or invented here** — there is no original code,
-     so take the next free number in the fork's own `85xx` block, under the letter that
-     matches the check's category (`C` convention, `E` error, `F` fatal, `R` refactor,
-     `W` warning). Never invent a number outside `85xx`: pylint-odoo may later claim it.
+   - **Ported from odoo-pre-commit-hooks** — there is no original code, so take the next
+     free number in the `85xx` block, under the letter that matches the check's category
+     (`C` convention, `E` error, `F` fatal, `R` refactor, `W` warning).
+   - **Invented here** — take the next free number in the `95xx` block, same letters. It is
+     a block of its own so that `85xx` stays available for whatever else comes from the two
+     upstream projects: a check ported later should land next to its siblings rather than
+     wherever a fork-only rule happened to leave a gap.
+
+   Never invent a number outside `85xx`/`95xx`: pylint-odoo may later claim anything below.
+   Picking the letter is a judgement call — `E` for what breaks or is certainly wrong (data,
+   security, a call that raises), `W` for a construct that runs but is almost certainly a
+   mistake, `C` for convention, `R` for a refactor. When in doubt, look at where the closest
+   existing rule sits: the field-definition checks (`renamed-field-parameter` `ODW8111`,
+   `attribute-string-redundant` `ODW8113`, `m2m-relation-is-label` `ODW9501`) are all `W`.
 5. **⚠️ The gotcha that costs the most debugging time**: if the rule is dispatched from
    `checkers/tokens.rs` (or `checkers/physical_lines.rs` / `checkers/filesystem.rs`), it is **not
    enough** to wire the dispatch call — you must also add the rule to the matching arm of

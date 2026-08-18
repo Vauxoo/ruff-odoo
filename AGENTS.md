@@ -212,10 +212,11 @@ consequences worth knowing before adding or renumbering a rule:
 
 - A rule ported from pylint-odoo takes that project's code verbatim. Codes are therefore not
     sequential and have gaps wherever pylint-odoo has one; do not "tidy" them.
-- A rule with no pylint-odoo counterpart — a port of an odoo-pre-commit-hooks check, or one
-    invented here — gets the next free number in the fork's own `85xx` block under the matching
-    letter. Keeping those out of pylint-odoo's ranges is what guarantees a future pylint-odoo
-    message can't collide with one of ours.
+- A rule with no pylint-odoo counterpart gets a number in one of the fork's own blocks, under
+    the matching letter: `85xx` for a port of an odoo-pre-commit-hooks check, `95xx` for a rule
+    invented here (`m2m-relation-is-label` is `ODW9501`). Keeping those out of pylint-odoo's
+    ranges is what guarantees a future pylint-odoo message can't collide with one of ours, and
+    keeping the two apart leaves `85xx` free for whatever else arrives from upstream projects.
 - The three paid-app rules keep the plain `OAPP001`–`OAPP003` sequence instead of their
     pylint-odoo ids (`C8117`–`C8119`), because they live in a separate linter so that selecting
     `OD` doesn't drag them in, and those ids only mean anything inside the `OD` numbering.

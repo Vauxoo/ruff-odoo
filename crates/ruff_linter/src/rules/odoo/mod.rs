@@ -32,6 +32,7 @@ mod tests {
         Rule::AttributeStringRedundant,
         Path::new("attribute_string_redundant.py")
     )]
+    #[test_case(Rule::M2mRelationIsLabel, Path::new("m2m_relation_is_label.py"))]
     #[test_case(
         Rule::ManifestRequiredAuthor,
         Path::new("manifest_required_author/__manifest__.py")

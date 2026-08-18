@@ -1506,6 +1506,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::AttributeStringRedundant) {
                 odoo::rules::attribute_string_redundant(checker, assign);
             }
+            if checker.is_rule_enabled(Rule::M2mRelationIsLabel) {
+                odoo::rules::m2m_relation_is_label(checker, assign);
+            }
             if checker.is_rule_enabled(Rule::AttributeDeprecated) {
                 odoo::rules::attribute_deprecated(checker, assign);
             }
