@@ -5,7 +5,7 @@ use crate::checkers::ast::Checker;
 use crate::codes::Rule;
 use crate::rules::{
     flake8_import_conventions, flake8_pyi, flake8_pytest_style, flake8_return,
-    flake8_type_checking, pyflakes, pylint, pyupgrade, refurb, ruff,
+    flake8_type_checking, odoo, pyflakes, pylint, pyupgrade, refurb, ruff,
 };
 
 /// Run lint rules over the [`Binding`]s.
@@ -15,6 +15,7 @@ pub(crate) fn bindings(checker: &Checker) {
         Rule::InvalidAllFormat,
         Rule::InvalidAllObject,
         Rule::NonAsciiName,
+        Rule::OdooExceptionWarning,
         Rule::UnaliasedCollectionsAbcSetImport,
         Rule::UnconventionalImportAlias,
         Rule::UnsortedDunderSlots,
@@ -90,6 +91,9 @@ pub(crate) fn bindings(checker: &Checker) {
         }
         if checker.is_rule_enabled(Rule::UnaliasedCollectionsAbcSetImport) {
             flake8_pyi::rules::unaliased_collections_abc_set_import(checker, binding);
+        }
+        if checker.is_rule_enabled(Rule::OdooExceptionWarning) {
+            odoo::rules::odoo_exception_warning(checker, binding);
         }
         if !checker.source_type.is_stub() && checker.is_rule_enabled(Rule::UnquotedTypeAlias) {
             flake8_type_checking::rules::unquoted_type_alias(checker, binding);
