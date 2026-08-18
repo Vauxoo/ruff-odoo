@@ -1,0 +1,32 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9501 `Salespersons` is the relation table of this Many2many, not its label; pass the label as `string="Salespersons"`
+  --> m2m_relation_is_label.py:8:46
+   |
+ 7 |     # The label lands where the relation table goes: capitals give it away.
+ 8 |     user_ids = fields.Many2many("res.users", "Salespersons", domain="[('share', '=', False)]")
+   |                                              ^^^^^^^^^^^^^^
+ 9 |
+10 |     # Same, with a value that could not be a table name at all.
+   |
+
+ODW9501 `Finished Lot/Serial` is the relation table of this Many2many, not its label; pass the label as `string="Finished Lot/Serial"`
+  --> m2m_relation_is_label.py:11:54
+   |
+10 |     # Same, with a value that could not be a table name at all.
+11 |     finished_lot_ids = fields.Many2many("stock.lot", "Finished Lot/Serial", related="production_id.lot_producing_ids")
+   |                                                      ^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 |     # Lowercase, but the spaces still make it a label rather than an identifier.
+   |
+
+ODW9501 `some tags` is the relation table of this Many2many, not its label; pass the label as `string="some tags"`
+  --> m2m_relation_is_label.py:14:43
+   |
+13 |     # Lowercase, but the spaces still make it a label rather than an identifier.
+14 |     tag_ids = fields.Many2many("res.tag", "some tags")
+   |                                           ^^^^^^^^^^^
+15 |
+16 |     # No diagnostic: it reads as a table name, which is what the parameter is for.
+   |
