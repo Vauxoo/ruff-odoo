@@ -1,6 +1,6 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::parenthesize::parenthesized_range;
-use ruff_python_ast::{self as ast, Expr, Operator, Stmt};
+use ruff_python_ast::{self as ast, Expr, Operator, Stmt, StringFlags};
 use ruff_python_stdlib::identifiers::is_identifier;
 use ruff_python_stdlib::keyword::is_keyword;
 use ruff_text_size::{Ranged, TextRange};
@@ -141,14 +141,28 @@ impl Violation for TranslationFormatInterpolation {
 /// ```python
 /// _("Hello %s", name)
 /// ```
+///
+/// ## Fix safety
+/// A fix is offered when the f-string is the call's only argument and every interpolation
+/// is a plain expression — no conversion flag (`!r`), format spec, or `=` debug form — and
+/// no literal piece spells a character through an escape sequence: each interpolation
+/// becomes `%s` and its expression moves into the translation call. The fix is marked
+/// unsafe because the term the translation machinery looks up changes, so the exported
+/// translation entries have to be regenerated.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationFstringInterpolation;
 
 impl Violation for TranslationFstringInterpolation {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         "Use lazy % formatting in odoo._ functions instead of an f-string".to_string()
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        Some("Pass the values as arguments to the translation call".to_string())
     }
 }
 
@@ -569,6 +583,63 @@ fn positional_arguments_source(checker: &Checker, arguments: &ast::Arguments) ->
     Some(sources.join(", "))
 }
 
+/// Rewrites the f-string as a printf-style literal plus its interpolated expressions,
+/// ready to become translation-call arguments: `f"Hello {name}"` yields
+/// (`"Hello %s"`, `name`), keeping the f-string's own quoting.
+///
+/// `None` when the term mixes implicitly concatenated parts, an interpolation carries a
+/// conversion flag, format spec, or `=` debug form, a literal piece spells a character
+/// through an escape sequence (a backslash could encode a brace or `%` the source-level
+/// rewrite cannot see), or nothing is interpolated at all — without arguments the
+/// translation function never `%`-formats, so the escaping would show through.
+fn printf_template_from_fstring(
+    checker: &Checker,
+    fstring: &ast::ExprFString,
+) -> Option<(String, String)> {
+    let mut parts = fstring.value.iter();
+    let (Some(ast::FStringPart::FString(part)), None) = (parts.next(), parts.next()) else {
+        return None;
+    };
+    let quote_char = part.flags.quote_style().as_char();
+    let quote = if part.flags.is_triple_quoted() {
+        quote_char.to_string().repeat(3)
+    } else {
+        quote_char.to_string()
+    };
+    let mut template = String::new();
+    let mut arguments: Vec<&str> = Vec::new();
+    for element in &part.elements {
+        match element {
+            ast::InterpolatedStringElement::Literal(literal) => {
+                let source = checker.locator().slice(literal.range());
+                if source.contains('\\') {
+                    return None;
+                }
+                template.push_str(
+                    &source
+                        .replace('%', "%%")
+                        .replace("{{", "{")
+                        .replace("}}", "}"),
+                );
+            }
+            ast::InterpolatedStringElement::Interpolation(interpolation) => {
+                if interpolation.conversion != ast::ConversionFlag::None
+                    || interpolation.format_spec.is_some()
+                    || interpolation.debug_text.is_some()
+                {
+                    return None;
+                }
+                template.push_str("%s");
+                arguments.push(checker.locator().slice(interpolation.expression.range()));
+            }
+        }
+    }
+    if arguments.is_empty() {
+        return None;
+    }
+    Some((format!("{quote}{template}{quote}"), arguments.join(", ")))
+}
+
 /// Returns `true` for a string literal or a `+`-concatenation built only from string
 /// literals, which `%` formatting treats as one literal (e.g. `"a" + "b"`).
 fn is_literal_str_concat(expr: &Expr) -> bool {
@@ -710,7 +781,21 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
             if checker.is_rule_enabled(Rule::TranslationFstringInterpolation)
                 && !fstring_contains_printf(&fstring.value)
             {
-                checker.report_diagnostic(TranslationFstringInterpolation, call.range());
+                let mut diagnostic =
+                    checker.report_diagnostic(TranslationFstringInterpolation, call.range());
+                // `_(f"Hello {name}")` becomes `_("Hello %s", name)`. Only offered when
+                // the f-string is the call's lone argument.
+                if call.arguments.args.len() == 1
+                    && call.arguments.keywords.is_empty()
+                    && !checker.comment_ranges().intersects(call.range())
+                    && let Some((template, arguments)) =
+                        printf_template_from_fstring(checker, fstring)
+                {
+                    diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                        format!("{template}, {arguments}"),
+                        fstring.range(),
+                    )));
+                }
             }
         }
         _ => {}

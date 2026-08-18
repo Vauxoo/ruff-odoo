@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+ODW8303 [*] Use lazy % formatting in odoo._ functions instead of an f-string
  --> translation_fstring_interpolation.py:7:9
   |
 5 | class Model:
@@ -11,8 +11,16 @@ ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
 8 |         self.env._(f"Hello {var}")  # ODW8303
 9 |         _(f"Hello")  # ODW8303
   |
+help: Pass the values as arguments to the translation call
+  |
+6 |     def method(self, var):
+  -         _(f"Hello {var}")  # ODW8303
+7 +         _("Hello %s", var)  # ODW8303
+8 |         self.env._(f"Hello {var}")  # ODW8303
+  |
+note: This is an unsafe fix and may change runtime behavior
 
-ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+ODW8303 [*] Use lazy % formatting in odoo._ functions instead of an f-string
   --> translation_fstring_interpolation.py:8:9
    |
  6 |     def method(self, var):
@@ -22,6 +30,14 @@ ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
  9 |         _(f"Hello")  # ODW8303
 10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
    |
+help: Pass the values as arguments to the translation call
+  |
+7 |         _(f"Hello {var}")  # ODW8303
+  -         self.env._(f"Hello {var}")  # ODW8303
+8 +         self.env._("Hello %s", var)  # ODW8303
+9 |         _(f"Hello")  # ODW8303
+  |
+note: This is an unsafe fix and may change runtime behavior
 
 ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
   --> translation_fstring_interpolation.py:9:9
@@ -31,7 +47,9 @@ ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
  9 |         _(f"Hello")  # ODW8303
    |         ^^^^^^^^^^^
 10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+11 |         _(f"{var} and {var}")  # ODW8303
    |
+help: Pass the values as arguments to the translation call
 
 ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
   --> translation_fstring_interpolation.py:10:9
@@ -40,6 +58,68 @@ ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
  9 |         _(f"Hello")  # ODW8303
 10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-11 |
-12 |         # No diagnostic: the `%` placeholders show the interpolation is printf's.
+11 |         _(f"{var} and {var}")  # ODW8303
+12 |         _(f"{{literal}} 100% {var}")  # ODW8303
    |
+help: Pass the values as arguments to the translation call
+
+ODW8303 [*] Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:11:9
+   |
+ 9 |         _(f"Hello")  # ODW8303
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+11 |         _(f"{var} and {var}")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^^^
+12 |         _(f"{{literal}} 100% {var}")  # ODW8303
+13 |         # Flagged, but no fix: a conversion flag or an escape sequence.
+   |
+help: Pass the values as arguments to the translation call
+   |
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+   -         _(f"{var} and {var}")  # ODW8303
+11 +         _("%s and %s", var, var)  # ODW8303
+12 |         _(f"{{literal}} 100% {var}")  # ODW8303
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8303 [*] Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:12:9
+   |
+10 |         _(f"Hello {var}" f" and {var}")  # ODW8303
+11 |         _(f"{var} and {var}")  # ODW8303
+12 |         _(f"{{literal}} 100% {var}")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |         # Flagged, but no fix: a conversion flag or an escape sequence.
+14 |         _(f"Hello {var!r}")  # ODW8303
+   |
+help: Pass the values as arguments to the translation call
+   |
+11 |         _(f"{var} and {var}")  # ODW8303
+   -         _(f"{{literal}} 100% {var}")  # ODW8303
+12 +         _("{literal} 100%% %s", var)  # ODW8303
+13 |         # Flagged, but no fix: a conversion flag or an escape sequence.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:14:9
+   |
+12 |         _(f"{{literal}} 100% {var}")  # ODW8303
+13 |         # Flagged, but no fix: a conversion flag or an escape sequence.
+14 |         _(f"Hello {var!r}")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^
+15 |         _(f"Hello {var}\n")  # ODW8303
+   |
+help: Pass the values as arguments to the translation call
+
+ODW8303 Use lazy % formatting in odoo._ functions instead of an f-string
+  --> translation_fstring_interpolation.py:15:9
+   |
+13 |         # Flagged, but no fix: a conversion flag or an escape sequence.
+14 |         _(f"Hello {var!r}")  # ODW8303
+15 |         _(f"Hello {var}\n")  # ODW8303
+   |         ^^^^^^^^^^^^^^^^^^^
+16 |
+17 |         # No diagnostic: the `%` placeholders show the interpolation is printf's.
+   |
+help: Pass the values as arguments to the translation call
