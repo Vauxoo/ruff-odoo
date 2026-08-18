@@ -2,8 +2,9 @@ use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast as ast;
 use ruff_text_size::Ranged;
 
-use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::fix::edits::add_argument;
+use crate::{Fix, FixAvailability, Violation};
 
 /// ## What it does
 /// Checks for calls to external request methods (`requests.get`, `urllib.request.urlopen`,
@@ -30,24 +31,40 @@ use crate::checkers::ast::Checker;
 /// `external-request-timeout` default list — enable one of the two, not both, to avoid
 /// duplicated reports on `requests` calls.
 ///
+/// ## Fix safety
+/// The fix inserts `timeout=120` — the number of seconds is set by
+/// [`external-request-timeout-seconds`](../settings.md#lint_odoo_external-request-timeout-seconds).
+/// It is marked as unsafe because a call that used to block indefinitely now raises a
+/// timeout error once the limit passes. No fix is offered when the call unpacks `**kwargs`,
+/// which may already carry a `timeout`.
+///
 /// ## Options
 /// - `lint.odoo.external-request-timeout-methods`
+/// - `lint.odoo.external-request-timeout-seconds`
 ///
-/// Written as dotted paths, e.g. `requests.get`.
+/// The methods are written as dotted paths, e.g. `requests.get`.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.5")]
 pub(crate) struct ExternalRequestTimeout {
     method: String,
+    seconds: u32,
 }
 
 impl Violation for ExternalRequestTimeout {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
-        let ExternalRequestTimeout { method } = self;
+        let ExternalRequestTimeout { method, .. } = self;
         format!(
             "Use of external request method `{method}` without timeout. It could wait for a \
              long time"
         )
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        let ExternalRequestTimeout { seconds, .. } = self;
+        Some(format!("Add `timeout={seconds}`"))
     }
 }
 
@@ -87,5 +104,16 @@ pub(crate) fn external_request_timeout(checker: &Checker, call: &ast::ExprCall) 
     else {
         return;
     };
-    checker.report_diagnostic(ExternalRequestTimeout { method }, call.range());
+    let seconds = checker.settings().odoo.external_request_timeout_seconds.0;
+    let mut diagnostic =
+        checker.report_diagnostic(ExternalRequestTimeout { method, seconds }, call.range());
+    // `**kwargs` may already carry a `timeout`; adding an explicit one on top would raise a
+    // `TypeError` at the call.
+    if call.arguments.keywords.iter().all(|kw| kw.arg.is_some()) {
+        diagnostic.set_fix(Fix::unsafe_edit(add_argument(
+            &format!("timeout={seconds}"),
+            &call.arguments,
+            checker.tokens(),
+        )));
+    }
 }

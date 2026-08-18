@@ -1,0 +1,29 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODR8101 [*] `odoo.exceptions.Warning` is a deprecated alias to `odoo.exceptions.UserError`, use `from odoo.exceptions import UserError`
+ --> odoo_exception_warning_0.py:3:29
+  |
+1 | """`UserError` is free: the import is retargeted and every use renamed."""
+2 |
+3 | from odoo.exceptions import Warning
+  |                             ^^^^^^^
+4 |
+5 | __all__ = ["Warning"]
+  |
+help: Replace with `UserError`
+   |
+2  |
+   - from odoo.exceptions import Warning
+3  + from odoo.exceptions import UserError
+4  |
+   - __all__ = ["Warning"]
+5  + __all__ = ["UserError"]
+6  |
+7  |
+8  | def check(record):
+9  |     if not record.active:
+   -         raise Warning("Inactive record")
+10 +         raise UserError("Inactive record")
+   |
+note: This is an unsafe fix and may change runtime behavior

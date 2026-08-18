@@ -80,7 +80,11 @@ mod tests {
     #[test_case(Rule::InvalidCommit, Path::new("invalid_commit.py"))]
     #[test_case(Rule::ContextOverridden, Path::new("context_overridden.py"))]
     #[test_case(Rule::BadBuiltinGroupby, Path::new("bad_builtin_groupby.py"))]
-    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_0.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_1.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_2.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_3.py"))]
+    #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_4.py"))]
     #[test_case(Rule::AttributeDeprecated, Path::new("attribute_deprecated.py"))]
     #[test_case(Rule::MissingReturn, Path::new("missing_return.py"))]
     #[test_case(
@@ -731,6 +735,24 @@ mod tests {
                     external_request_timeout_methods: super::settings::ConfiguredList::UserProvided(
                         vec!["requests.get".to_string()],
                     ),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ExternalRequestTimeout)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The configured number of seconds is what the fix inserts as `timeout=`.
+    #[test]
+    fn external_request_timeout_seconds_configured() -> Result<()> {
+        let snapshot = "external_request_timeout_seconds_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/external_request_timeout.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    external_request_timeout_seconds: super::settings::TimeoutSeconds(30),
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::ExternalRequestTimeout)

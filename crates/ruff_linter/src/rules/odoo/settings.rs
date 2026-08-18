@@ -25,6 +25,7 @@ pub struct Settings {
     pub cursor_expr: ConfiguredList,
     pub odoo_exceptions: ConfiguredList,
     pub external_request_timeout_methods: ConfiguredList,
+    pub external_request_timeout_seconds: TimeoutSeconds,
     pub deprecated_field_parameters: ConfiguredList,
     pub deprecated_odoo_model_methods: ConfiguredList,
     pub readme_template_url: Option<String>,
@@ -52,12 +53,31 @@ impl Display for Settings {
                 self.cursor_expr,
                 self.odoo_exceptions,
                 self.external_request_timeout_methods,
+                self.external_request_timeout_seconds,
                 self.deprecated_field_parameters,
                 self.deprecated_odoo_model_methods,
                 self.readme_template_url | optional,
             ]
         }
         Ok(())
+    }
+}
+
+/// The number of seconds the `external-request-timeout` (`ODE8106`) fix passes as
+/// `timeout=`. A plain `u32` cannot carry the two-minute default through `derive(Default)`,
+/// hence the newtype.
+#[derive(Debug, Clone, Copy, CacheKey)]
+pub struct TimeoutSeconds(pub u32);
+
+impl Default for TimeoutSeconds {
+    fn default() -> Self {
+        Self(120)
+    }
+}
+
+impl Display for TimeoutSeconds {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

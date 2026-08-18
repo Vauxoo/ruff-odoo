@@ -744,9 +744,6 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
         ) => {
             let level = *level;
             let module = module.as_deref();
-            if checker.is_rule_enabled(Rule::OdooExceptionWarning) {
-                odoo::rules::odoo_exception_warning(checker, import_from);
-            }
             if checker.is_rule_enabled(Rule::OdooAddonsRelativeImport) {
                 odoo::rules::odoo_addons_relative_import(checker, import_from, checker.path);
             }

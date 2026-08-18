@@ -248,6 +248,7 @@ linter.odoo.no_missing_return = default
 linter.odoo.cursor_expr = default
 linter.odoo.odoo_exceptions = default
 linter.odoo.external_request_timeout_methods = default
+linter.odoo.external_request_timeout_seconds = 120
 linter.odoo.deprecated_field_parameters = default
 linter.odoo.deprecated_odoo_model_methods = default
 linter.odoo.readme_template_url = none

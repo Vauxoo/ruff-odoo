@@ -10,11 +10,11 @@ ODE8106 [*] Use of external request method `requests.get` without timeout. It co
 11 | requests.request("GET", "https://example.com")
 12 | post("https://example.com", data={})
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 9  | # Flagged: no timeout.
    - requests.get("https://example.com")
-10 + requests.get("https://example.com", timeout=120)
+10 + requests.get("https://example.com", timeout=30)
 11 | requests.request("GET", "https://example.com")
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -29,11 +29,11 @@ ODE8106 [*] Use of external request method `requests.request` without timeout. I
 12 | post("https://example.com", data={})
 13 | urllib.request.urlopen("https://example.com")
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 10 | requests.get("https://example.com")
    - requests.request("GET", "https://example.com")
-11 + requests.request("GET", "https://example.com", timeout=120)
+11 + requests.request("GET", "https://example.com", timeout=30)
 12 | post("https://example.com", data={})
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -48,11 +48,11 @@ ODE8106 [*] Use of external request method `requests.post` without timeout. It c
 13 | urllib.request.urlopen("https://example.com")
 14 | smtplib.SMTP("localhost")
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 11 | requests.request("GET", "https://example.com")
    - post("https://example.com", data={})
-12 + post("https://example.com", timeout=120, data={})
+12 + post("https://example.com", timeout=30, data={})
 13 | urllib.request.urlopen("https://example.com")
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -67,11 +67,11 @@ ODE8106 [*] Use of external request method `urllib.request.urlopen` without time
 14 | smtplib.SMTP("localhost")
 15 | ftplib.FTP("ftp.example.com")
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 12 | post("https://example.com", data={})
    - urllib.request.urlopen("https://example.com")
-13 + urllib.request.urlopen("https://example.com", timeout=120)
+13 + urllib.request.urlopen("https://example.com", timeout=30)
 14 | smtplib.SMTP("localhost")
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -86,11 +86,11 @@ ODE8106 [*] Use of external request method `smtplib.SMTP` without timeout. It co
 15 | ftplib.FTP("ftp.example.com")
 16 | Serial("/dev/ttyS0")
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 13 | urllib.request.urlopen("https://example.com")
    - smtplib.SMTP("localhost")
-14 + smtplib.SMTP("localhost", timeout=120)
+14 + smtplib.SMTP("localhost", timeout=30)
 15 | ftplib.FTP("ftp.example.com")
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -104,11 +104,11 @@ ODE8106 [*] Use of external request method `ftplib.FTP` without timeout. It coul
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 16 | Serial("/dev/ttyS0")
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 14 | smtplib.SMTP("localhost")
    - ftplib.FTP("ftp.example.com")
-15 + ftplib.FTP("ftp.example.com", timeout=120)
+15 + ftplib.FTP("ftp.example.com", timeout=30)
 16 | Serial("/dev/ttyS0")
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -123,11 +123,11 @@ ODE8106 [*] Use of external request method `serial.Serial` without timeout. It c
 17 |
 18 | # Flagged, but no fix: `**kwargs` may already carry a `timeout`.
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 15 | ftplib.FTP("ftp.example.com")
    - Serial("/dev/ttyS0")
-16 + Serial("/dev/ttyS0", timeout=120)
+16 + Serial("/dev/ttyS0", timeout=30)
 17 |
    |
 note: This is an unsafe fix and may change runtime behavior
@@ -141,7 +141,7 @@ ODE8106 Use of external request method `requests.get` without timeout. It could 
 20 |
 21 | # Flagged: the fix lands before the existing keyword arguments.
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
 
 ODE8106 [*] Use of external request method `requests.post` without timeout. It could wait for a long time
   --> external_request_timeout.py:22:1
@@ -152,11 +152,11 @@ ODE8106 [*] Use of external request method `requests.post` without timeout. It c
 23 |
 24 | # Not flagged: timeout given.
    |
-help: Add `timeout=120`
+help: Add `timeout=30`
    |
 21 | # Flagged: the fix lands before the existing keyword arguments.
    - post("https://example.com", data={"a": 1}, headers={"X-Token": "secret"})
-22 + post("https://example.com", timeout=120, data={"a": 1}, headers={"X-Token": "secret"})
+22 + post("https://example.com", timeout=30, data={"a": 1}, headers={"X-Token": "secret"})
 23 |
    |
 note: This is an unsafe fix and may change runtime behavior

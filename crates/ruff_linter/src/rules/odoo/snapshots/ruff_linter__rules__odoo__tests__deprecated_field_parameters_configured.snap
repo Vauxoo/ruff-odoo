@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8111 Field parameter "digits_compute" is no longer supported. Use "digits" instead.
+ODW8111 [*] Field parameter "digits_compute" is no longer supported. Use "digits" instead.
  --> renamed_field_parameter.py:4:27
   |
 2 |     _inherit = "my.model"
@@ -11,3 +11,11 @@ ODW8111 Field parameter "digits_compute" is no longer supported. Use "digits" in
 5 |     ref = fields.Char(select=True)
 6 |     name = fields.Char(index=True)
   |
+help: Replace `digits_compute` with `digits`
+  |
+3 |
+  -     amount = fields.Float(digits_compute=precision)
+4 +     amount = fields.Float(digits=precision)
+5 |     ref = fields.Char(select=True)
+  |
+note: This is an unsafe fix and may change runtime behavior
