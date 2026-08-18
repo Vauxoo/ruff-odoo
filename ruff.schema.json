@@ -2773,6 +2773,15 @@
             "type": "string"
           }
         },
+        "external-request-timeout-seconds": {
+          "description": "The number of seconds the `external-request-timeout` (`ODE8106`) fix passes as `timeout=` when inserting the missing argument.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
         "license-allowed": {
           "description": "The licenses a manifest may declare (`ODC8105`). Setting it replaces the built-in list,\nwhich holds the licenses pylint-odoo accepts.",
           "type": [

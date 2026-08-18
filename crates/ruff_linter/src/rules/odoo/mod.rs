@@ -744,6 +744,24 @@ mod tests {
         Ok(())
     }
 
+    /// The configured number of seconds is what the fix inserts as `timeout=`.
+    #[test]
+    fn external_request_timeout_seconds_configured() -> Result<()> {
+        let snapshot = "external_request_timeout_seconds_configured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/external_request_timeout.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    external_request_timeout_seconds: super::settings::TimeoutSeconds(30),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ExternalRequestTimeout)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     /// Renaming a parameter of the project's own reports it; `select` is no longer listed.
     #[test]
     fn deprecated_field_parameters_configured() -> Result<()> {

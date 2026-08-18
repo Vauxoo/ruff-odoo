@@ -3353,6 +3353,16 @@ pub struct OdooOptions {
         "#
     )]
     pub external_request_timeout_methods: Option<Vec<String>>,
+    /// The number of seconds the `external-request-timeout` (`ODE8106`) fix passes as `timeout=` when inserting the missing argument.
+    #[option(
+        default = r#"120"#,
+        value_type = "int",
+        example = r#"
+            # Fail faster than the default two minutes.
+            external-request-timeout-seconds = 30
+        "#
+    )]
+    pub external_request_timeout_seconds: Option<u32>,
     /// The renamed field parameters, each written as `old:new` (`ODW8111`). Setting it replaces the built-in list.
     #[option(
         default = r#"["digits_compute:digits", "select:index"]"#,
@@ -3440,6 +3450,10 @@ impl OdooOptions {
                 Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
                 None => odoo::settings::ConfiguredList::BuiltIn,
             },
+            external_request_timeout_seconds: self
+                .external_request_timeout_seconds
+                .map(odoo::settings::TimeoutSeconds)
+                .unwrap_or_default(),
             deprecated_field_parameters: match self.deprecated_field_parameters {
                 Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
                 None => odoo::settings::ConfiguredList::BuiltIn,

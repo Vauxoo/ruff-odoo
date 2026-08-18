@@ -15,6 +15,12 @@ smtplib.SMTP("localhost")
 ftplib.FTP("ftp.example.com")
 Serial("/dev/ttyS0")
 
+# Flagged, but no fix: `**kwargs` may already carry a `timeout`.
+requests.get("https://example.com", **kwargs)
+
+# Flagged: the fix lands before the existing keyword arguments.
+post("https://example.com", data={"a": 1}, headers={"X-Token": "secret"})
+
 # Not flagged: timeout given.
 requests.get("https://example.com", timeout=10)
 smtplib.SMTP("localhost", timeout=5)

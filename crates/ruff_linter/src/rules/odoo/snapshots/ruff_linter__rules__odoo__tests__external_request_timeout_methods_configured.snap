@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8106 Use of external request method `requests.get` without timeout. It could wait for a long time
+ODE8106 [*] Use of external request method `requests.get` without timeout. It could wait for a long time
   --> external_request_timeout.py:10:1
    |
  9 | # Flagged: no timeout.
@@ -10,3 +10,22 @@ ODE8106 Use of external request method `requests.get` without timeout. It could 
 11 | requests.request("GET", "https://example.com")
 12 | post("https://example.com", data={})
    |
+help: Add `timeout=120`
+   |
+9  | # Flagged: no timeout.
+   - requests.get("https://example.com")
+10 + requests.get("https://example.com", timeout=120)
+11 | requests.request("GET", "https://example.com")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8106 Use of external request method `requests.get` without timeout. It could wait for a long time
+  --> external_request_timeout.py:19:1
+   |
+18 | # Flagged, but no fix: `**kwargs` may already carry a `timeout`.
+19 | requests.get("https://example.com", **kwargs)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | # Flagged: the fix lands before the existing keyword arguments.
+   |
+help: Add `timeout=120`
