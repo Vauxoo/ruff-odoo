@@ -160,14 +160,27 @@ impl Violation for RenamedFieldParameter {
 /// ```python
 /// name = fields.Char(string="Name")
 /// ```
+///
+/// ## Fix safety
+/// The fix unwraps the call, keeping its only argument. It is marked as unsafe because the
+/// attribute value changes from a string translated at module-load time to the plain
+/// string; that is the point of the rule, but code comparing the value against a
+/// translated string would change behavior. No fix is offered when the call takes anything
+/// but a single positional argument.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct TranslationField;
 
 impl Violation for TranslationField {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         "Translation method _(\"string\") in fields is not necessary".to_string()
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        Some("Remove the translation call".to_string())
     }
 }
 
@@ -379,7 +392,17 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
                     Expr::Name(name) if name.id == "_" || name.id == "_lt"
                 )
             {
-                checker.report_diagnostic(TranslationField, value.range());
+                let mut diagnostic = checker.report_diagnostic(TranslationField, value.range());
+                if let [term] = &*inner.arguments.args
+                    && inner.arguments.keywords.is_empty()
+                    && !term.is_starred_expr()
+                    && !checker.comment_ranges().intersects(value.range())
+                {
+                    diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                        checker.locator().slice(term.range()).to_string(),
+                        value.range(),
+                    )));
+                }
             }
         }
     }
