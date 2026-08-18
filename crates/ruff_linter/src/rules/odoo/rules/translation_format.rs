@@ -1,4 +1,5 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
+use ruff_python_ast::parenthesize::parenthesized_range;
 use ruff_python_ast::{self as ast, Expr, Operator, Stmt};
 use ruff_python_stdlib::identifiers::is_identifier;
 use ruff_python_stdlib::keyword::is_keyword;
@@ -92,14 +93,28 @@ impl Violation for TranslationNotLazy {
 /// ```python
 /// _("Hello %s", name)
 /// ```
+///
+/// ## Fix safety
+/// A fix is offered when the template only uses bare `{}` fields, the `format` call passes
+/// exactly that many positional arguments, and the literal spells no character through an
+/// escape sequence: the fields become `%s`, literal braces and `%` are re-escaped, and the
+/// arguments move into the translation call. The fix is marked unsafe because the term the
+/// translation machinery looks up changes (`Hello {}` becomes `Hello %s`), so the exported
+/// translation entries have to be regenerated.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.9")]
 pub(crate) struct TranslationFormatInterpolation;
 
 impl Violation for TranslationFormatInterpolation {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         "Use lazy % formatting in odoo._ functions instead of str.format".to_string()
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        Some("Pass the values as arguments to the translation call".to_string())
     }
 }
 
@@ -489,6 +504,71 @@ fn has_nonempty_format_spec(text: &str) -> bool {
     false
 }
 
+/// The `str.format` template's source rewritten with printf placeholders: bare `{}` fields
+/// become `%s`, literal braces unescape (`{{` → `{`), and `%` escapes to `%%`, so the
+/// rewritten literal renders exactly what the template did once the translation function
+/// formats it. Returns the rewritten source and the number of fields.
+///
+/// `None` when a field is anything but a bare `{}`, or when the source contains a
+/// backslash: an escape sequence could spell a brace or `%` the source-level rewrite
+/// cannot see (e.g. `\x7b`), so such literals are left alone.
+fn printf_template_from_format_source(source: &str) -> Option<(String, usize)> {
+    if source.contains('\\') {
+        return None;
+    }
+    let mut out = String::with_capacity(source.len());
+    let mut fields = 0;
+    let mut chars = source.chars().peekable();
+    while let Some(char) = chars.next() {
+        match char {
+            '{' if chars.peek() == Some(&'{') => {
+                chars.next();
+                out.push('{');
+            }
+            '{' if chars.peek() == Some(&'}') => {
+                chars.next();
+                out.push_str("%s");
+                fields += 1;
+            }
+            // Anything but a bare `{}` field (`{0}`, `{name}`, ...) or a doubled brace.
+            '{' | '}' if chars.peek() != Some(&char) => return None,
+            '}' => {
+                chars.next();
+                out.push('}');
+            }
+            '%' => out.push_str("%%"),
+            _ => out.push(char),
+        }
+    }
+    Some((out, fields))
+}
+
+/// The source of `arguments`' positional arguments, written the way the call passed them,
+/// when they are the whole argument list (no keywords, no unpacking).
+fn positional_arguments_source(checker: &Checker, arguments: &ast::Arguments) -> Option<String> {
+    if arguments.args.is_empty()
+        || !arguments.keywords.is_empty()
+        || arguments.args.iter().any(Expr::is_starred_expr)
+    {
+        return None;
+    }
+    let sources: Vec<&str> = arguments
+        .args
+        .iter()
+        .map(|arg| {
+            let range = parenthesized_range(
+                arg.into(),
+                arguments.into(),
+                checker.comment_ranges(),
+                checker.locator().contents(),
+            )
+            .unwrap_or(arg.range());
+            checker.locator().slice(range)
+        })
+        .collect();
+    Some(sources.join(", "))
+}
+
 /// Returns `true` for a string literal or a `+`-concatenation built only from string
 /// literals, which `%` formatting treats as one literal (e.g. `"a" + "b"`).
 fn is_literal_str_concat(expr: &Expr) -> bool {
@@ -552,7 +632,23 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
         && let [Expr::StringLiteral(term)] = &*inner.arguments.args
         && !has_nonempty_format_spec(term.value.to_str())
     {
-        checker.report_diagnostic(TranslationFormatInterpolation, call.range());
+        let mut diagnostic =
+            checker.report_diagnostic(TranslationFormatInterpolation, call.range());
+        // `_("Hello {}").format(name)` becomes `_("Hello %s", name)`: the fields become
+        // placeholders and the values move into the translation call.
+        if !checker.comment_ranges().intersects(call.range())
+            && let Some((template, fields)) =
+                printf_template_from_format_source(checker.locator().slice(term.range()))
+            && fields > 0
+            && fields == call.arguments.args.len()
+            && let Some(arguments) = positional_arguments_source(checker, &call.arguments)
+        {
+            let func_source = checker.locator().slice(inner.func.range());
+            diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                format!("{func_source}({template}, {arguments})"),
+                call.range(),
+            )));
+        }
     }
 
     if !is_translation_underscore(&call.func) {
@@ -583,7 +679,25 @@ pub(crate) fn translation_format(checker: &Checker, call: &ast::ExprCall) {
                 && let Expr::StringLiteral(term) = value.as_ref()
                 && !has_nonempty_format_spec(term.value.to_str())
             {
-                checker.report_diagnostic(TranslationFormatInterpolation, call.range());
+                let mut diagnostic =
+                    checker.report_diagnostic(TranslationFormatInterpolation, call.range());
+                // `_("Hello {}".format(name))` becomes `_("Hello %s", name)`: keep the
+                // template, move the values into the call. Only offered when the term is
+                // the call's lone argument.
+                if call.arguments.args.len() == 1
+                    && call.arguments.keywords.is_empty()
+                    && !checker.comment_ranges().intersects(call.range())
+                    && let Some((template, fields)) =
+                        printf_template_from_format_source(checker.locator().slice(term.range()))
+                    && fields > 0
+                    && fields == inner.arguments.args.len()
+                    && let Some(arguments) = positional_arguments_source(checker, &inner.arguments)
+                {
+                    diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                        format!("{template}, {arguments}"),
+                        inner.range(),
+                    )));
+                }
             }
         }
         // ODE8301, ODE8306, ODE8305, ODE8300: the term is a plain literal, so its
