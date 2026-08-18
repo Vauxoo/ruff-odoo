@@ -80,6 +80,7 @@ mod tests {
     #[test_case(Rule::InvalidCommit, Path::new("invalid_commit.py"))]
     #[test_case(Rule::ContextOverridden, Path::new("context_overridden.py"))]
     #[test_case(Rule::BadBuiltinGroupby, Path::new("bad_builtin_groupby.py"))]
+    #[test_case(Rule::BadBuiltinGroupby, Path::new("bad_builtin_groupby_no_import.py"))]
     #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_0.py"))]
     #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_1.py"))]
     #[test_case(Rule::OdooExceptionWarning, Path::new("odoo_exception_warning_2.py"))]

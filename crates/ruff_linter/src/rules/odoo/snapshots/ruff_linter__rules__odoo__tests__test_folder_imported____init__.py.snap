@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8130 Test folder imported in module
+ODE8130 [*] Test folder imported in module
  --> __init__.py:2:1
   |
 1 | from . import models
@@ -10,8 +10,15 @@ ODE8130 Test folder imported in module
 3 | from .tests import test_stuff
 4 | import tests.common
   |
+help: Remove the `tests` import
+  |
+1 | from . import models
+  - from . import tests
+2 | from .tests import test_stuff
+  |
+note: This is an unsafe fix and may change runtime behavior
 
-ODE8130 Test folder imported in module
+ODE8130 [*] Test folder imported in module
  --> __init__.py:3:1
   |
 1 | from . import models
@@ -19,12 +26,44 @@ ODE8130 Test folder imported in module
 3 | from .tests import test_stuff
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 4 | import tests.common
+5 | from . import models, tests
   |
+help: Remove the `tests` import
+  |
+2 | from . import tests
+  - from .tests import test_stuff
+3 | import tests.common
+  |
+note: This is an unsafe fix and may change runtime behavior
 
-ODE8130 Test folder imported in module
+ODE8130 [*] Test folder imported in module
  --> __init__.py:4:1
   |
 2 | from . import tests
 3 | from .tests import test_stuff
 4 | import tests.common
   | ^^^^^^^^^^^^^^^^^^^
+5 | from . import models, tests
+  |
+help: Remove the `tests` import
+  |
+3 | from .tests import test_stuff
+  - import tests.common
+4 | from . import models, tests
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8130 [*] Test folder imported in module
+ --> __init__.py:5:1
+  |
+3 | from .tests import test_stuff
+4 | import tests.common
+5 | from . import models, tests
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Remove the `tests` import
+  |
+4 | import tests.common
+  - from . import models, tests
+5 + from . import models
+  |
+note: This is an unsafe fix and may change runtime behavior

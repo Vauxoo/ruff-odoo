@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8101 The author key in the manifest file must be a string (with comma separated values)
+ODE8101 [*] The author key in the manifest file must be a string (with comma separated values)
  --> __manifest__.py:3:5
   |
 1 | {
@@ -10,3 +10,51 @@ ODE8101 The author key in the manifest file must be a string (with comma separat
   |     ^^^^^^^^
 4 | }
   |
+help: Join the authors into one string
+  |
+2 |     "name": "My Module",
+  -     "author": ["Someone"],
+3 +     "author": "Someone",
+4 | }
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8101 [*] The author key in the manifest file must be a string (with comma separated values)
+  --> __manifest__.py:13:5
+   |
+11 | {
+12 |     "name": "Tuple Module",
+13 |     "author": ("Vauxoo", "Odoo Community Association (OCA)"),
+   |     ^^^^^^^^
+14 | }
+   |
+help: Join the authors into one string
+   |
+12 |     "name": "Tuple Module",
+   -     "author": ("Vauxoo", "Odoo Community Association (OCA)"),
+13 +     "author": "Vauxoo, Odoo Community Association (OCA)",
+14 | }
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8101 The author key in the manifest file must be a string (with comma separated values)
+  --> __manifest__.py:18:5
+   |
+16 | {
+17 |     "name": "Non-String Module",
+18 |     "author": ["Someone", 42],
+   |     ^^^^^^^^
+19 | }
+   |
+help: Join the authors into one string
+
+ODE8101 The author key in the manifest file must be a string (with comma separated values)
+  --> __manifest__.py:23:5
+   |
+21 | {
+22 |     "name": "Comma Module",
+23 |     "author": ["Someone, Inc."],
+   |     ^^^^^^^^
+24 | }
+   |
+help: Join the authors into one string
