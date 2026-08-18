@@ -845,10 +845,21 @@ pub(crate) fn pylint_disable_comment(
                 },
             ]
         } else {
-            vec![Edit::range_replacement(
-                kept_pragma(format!("# ruff: disable[{names}]")),
-                comment_range,
-            )]
+            // The messages Ruff has no rule for stay in a `pylint: disable` of their own, on
+            // its own line: Ruff only reads a suppression that trails other text when it is a
+            // `ruff: ignore`, so writing the pair after the kept pragma would produce an
+            // `invalid-suppression-comment` -- and, with unsafe fixes on, that rule then
+            // deletes the very suppression this one had just written.
+            let disable = format!("# ruff: disable[{names}]");
+            let replacement = if unmapped.is_empty() {
+                disable
+            } else {
+                format!(
+                    "# pylint: disable={}\n{indent}{disable}",
+                    unmapped.join(",")
+                )
+            };
+            vec![Edit::range_replacement(replacement, comment_range)]
         };
 
         // A `disable` with no matching `enable` is itself a diagnostic

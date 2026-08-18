@@ -49,3 +49,11 @@ def module_level(cr):
 
 def also_covered(cr):
     cr.commit()
+
+
+# The same pragma, naming a message Ruff has no rule for: what is kept for pylint goes on a
+# line of its own, since Ruff only reads a suppression trailing other text when it is a
+# `ruff: ignore`, and `invalid-suppression-comment` would delete a `disable` written there.
+# pylint: disable=invalid-commit,some-custom-check
+def kept_pragma_at_module_level(cr):
+    cr.commit()
