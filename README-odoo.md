@@ -1,5 +1,9 @@
 # ruff-odoo
 
+[![PyPI](https://img.shields.io/pypi/v/ruff-odoo?logo=pypi&logoColor=white)](https://pypi.org/project/ruff-odoo/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Vauxoo/ruff-odoo/ci.yaml?branch=main&logo=github&label=CI)](https://github.com/Vauxoo/ruff-odoo/actions)
+[![Docs](https://img.shields.io/badge/docs-Odoo%20rules-blue)](https://vauxoo.github.io/ruff-odoo/)
+
 `ruff-odoo` is [Vauxoo](https://www.vauxoo.com/)'s fork of [Ruff](https://github.com/astral-sh/ruff),
 shipping every upstream linter and formatter rule plus the `OD` and `OAPP` rule groups, ported from
 [pylint-odoo](https://github.com/OCA/pylint-odoo) and
