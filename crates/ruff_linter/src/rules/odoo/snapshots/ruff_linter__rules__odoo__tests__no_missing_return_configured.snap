@@ -56,71 +56,126 @@ help: Return the `super()` call
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8110 Missing `return` (`super` is used) in method default_get
+ODW8110 [*] Missing `return` (`super` is used) in method default_get
   --> missing_return.py:26:9
    |
-24 |     # Storing the result and doing nothing with it: only the author knows whether the
-25 |     # variable, `super()`'s value, or something else should be returned.
+24 |     # The result is assigned to a plain name, so `res` is the value the method was building
+25 |     # and the `return` goes at the end, after the statements that finish building it.
 26 |     def default_get(self, fields):
    |         ^^^^^^^^^^^
 27 |         res = super().default_get(fields)
 28 |         res["name"] = "x"
    |
+help: Return `res`
+   |
+28 |         res["name"] = "x"
+29 +         return res
+30 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8110 [*] Missing `return` (`super` is used) in method read
+  --> missing_return.py:31:9
+   |
+30 |     # The assignment is the only statement: the `return` still goes after it.
+31 |     def read(self, fields=None, load="_classic_read"):
+   |         ^^^^
+32 |         res = super().read(fields, load)
+   |
+help: Return `res`
+   |
+32 |         res = super().read(fields, load)
+33 +         return res
+34 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8110 Missing `return` (`super` is used) in method name_get
+  --> missing_return.py:36:9
+   |
+34 |     # The name is only bound in one branch, so a `return res` at the end of the method could
+35 |     # find nothing to return.
+36 |     def name_get(self):
+   |         ^^^^^^^^
+37 |         if self.env.context.get("short"):
+38 |             res = super().name_get()
+   |
+help: Return the `super()` call
+
+ODW8110 Missing `return` (`super` is used) in method fields_view_get
+  --> missing_return.py:41:9
+   |
+40 |     # An attribute is not a name the method can hand back, and neither is a tuple.
+41 |     def fields_view_get(self, *args):
+   |         ^^^^^^^^^^^^^^^
+42 |         self.cached = super().fields_view_get(*args)
+   |
+help: Return the `super()` call
+
+ODW8110 Missing `return` (`super` is used) in method unlink_all
+  --> missing_return.py:45:9
+   |
+44 |     # The method never returns normally, so a `return` at the end would be dead code.
+45 |     def unlink_all(self):
+   |         ^^^^^^^^^^
+46 |         res = super().unlink_all()
+47 |         raise UserError(res)
+   |
 help: Return the `super()` call
 
 ODW8110 Missing `return` (`super` is used) in method onchange_partner
-  --> missing_return.py:32:9
+  --> missing_return.py:51:9
    |
-30 |     # The call is the last statement of the `if`, not of the method, so inserting the
-31 |     # `return` there would change what the other branch does.
-32 |     def onchange_partner(self):
+49 |     # The call is the last statement of the `if`, not of the method, so inserting the
+50 |     # `return` there would change what the other branch does.
+51 |     def onchange_partner(self):
    |         ^^^^^^^^^^^^^^^^
-33 |         if self.partner_id:
-34 |             super().onchange_partner()
+52 |         if self.partner_id:
+53 |             super().onchange_partner()
    |
 help: Return the `super()` call
 
 ODW8110 Missing `return` (`super` is used) in method action_confirm
-  --> missing_return.py:37:9
+  --> missing_return.py:56:9
    |
-36 |     # Prepending the `return` here would skip the logging call.
-37 |     def action_confirm(self):
+55 |     # Nothing holds the result, and prepending the `return` would skip the logging call.
+56 |     def action_confirm(self):
    |         ^^^^^^^^^^^^^^
-38 |         super().action_confirm()
-39 |         _logger.info("confirmed")
+57 |         super().action_confirm()
+58 |         _logger.info("confirmed")
    |
 help: Return the `super()` call
 
 ODW8110 Missing `return` (`super` is used) in method fields_get
-  --> missing_return.py:43:9
+  --> missing_return.py:62:9
    |
-41 |     # `super()` is only an argument: the value of the trailing call is not the base
-42 |     # implementation's, so the rule leaves the choice to the author.
-43 |     def fields_get(self, allfields=None):
+60 |     # `super()` is only an argument: the value of the trailing call is not the base
+61 |     # implementation's, so the rule leaves the choice to the author.
+62 |     def fields_get(self, allfields=None):
    |         ^^^^^^^^^^
-44 |         dict(super().fields_get(allfields))
+63 |         dict(super().fields_get(allfields))
    |
 help: Return the `super()` call
 
 ODW8110 Missing `return` (`super` is used) in method create_and_do
-  --> missing_return.py:48:9
+  --> missing_return.py:67:9
    |
-46 |     # The trailing call is `action_do()`, not `super()`'s: its value is the one that would
-47 |     # be returned, so the choice stays with the author here too.
-48 |     def create_and_do(self, vals):
+65 |     # The trailing call is `action_do()`, not `super()`'s: its value is the one that would
+66 |     # be returned, so the choice stays with the author here too.
+67 |     def create_and_do(self, vals):
    |         ^^^^^^^^^^^^^
-49 |         super().create(vals).action_do()
+68 |         super().create(vals).action_do()
    |
 help: Return the `super()` call
 
 ODW8110 Missing `return` (`super` is used) in method action_done
-  --> missing_return.py:53:9
+  --> missing_return.py:72:9
    |
-51 |     # Two `super()` calls: the trailing one is only one of the results, so which of them the
-52 |     # method should return is the author's call.
-53 |     def action_done(self):
+70 |     # Two `super()` calls: the trailing one is only one of the results, so which of them the
+71 |     # method should return is the author's call.
+72 |     def action_done(self):
    |         ^^^^^^^^^^^
-54 |         super().action_check()
-55 |         super().action_done()
+73 |         super().action_check()
+74 |         super().action_done()
    |
 help: Return the `super()` call

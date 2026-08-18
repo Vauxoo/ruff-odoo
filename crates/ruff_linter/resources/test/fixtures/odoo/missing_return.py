@@ -21,11 +21,30 @@ class MyModel(models.Model):
         self.check_access("read")
         super(MyModel, self).copy(default)
 
-    # Storing the result and doing nothing with it: only the author knows whether the
-    # variable, `super()`'s value, or something else should be returned.
+    # The result is assigned to a plain name, so `res` is the value the method was building
+    # and the `return` goes at the end, after the statements that finish building it.
     def default_get(self, fields):
         res = super().default_get(fields)
         res["name"] = "x"
+
+    # The assignment is the only statement: the `return` still goes after it.
+    def read(self, fields=None, load="_classic_read"):
+        res = super().read(fields, load)
+
+    # The name is only bound in one branch, so a `return res` at the end of the method could
+    # find nothing to return.
+    def name_get(self):
+        if self.env.context.get("short"):
+            res = super().name_get()
+
+    # An attribute is not a name the method can hand back, and neither is a tuple.
+    def fields_view_get(self, *args):
+        self.cached = super().fields_view_get(*args)
+
+    # The method never returns normally, so a `return` at the end would be dead code.
+    def unlink_all(self):
+        res = super().unlink_all()
+        raise UserError(res)
 
     # The call is the last statement of the `if`, not of the method, so inserting the
     # `return` there would change what the other branch does.
@@ -33,7 +52,7 @@ class MyModel(models.Model):
         if self.partner_id:
             super().onchange_partner()
 
-    # Prepending the `return` here would skip the logging call.
+    # Nothing holds the result, and prepending the `return` would skip the logging call.
     def action_confirm(self):
         super().action_confirm()
         _logger.info("confirmed")
