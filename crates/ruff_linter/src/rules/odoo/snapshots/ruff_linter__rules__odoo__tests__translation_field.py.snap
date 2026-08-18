@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8103 Translation method _("string") in fields is not necessary
+ODW8103 [*] Translation method _("string") in fields is not necessary
  --> translation_field.py:4:31
   |
 2 |     _inherit = "my.model"
@@ -9,4 +9,41 @@ ODW8103 Translation method _("string") in fields is not necessary
 4 |     name = fields.Char(string=_("Name"))
   |                               ^^^^^^^^^
 5 |     label = fields.Char("Label")
+6 |     help_text = fields.Char(help=_lt("Some help"))
   |
+help: Remove the translation call
+  |
+3 |
+  -     name = fields.Char(string=_("Name"))
+4 +     name = fields.Char(string="Name")
+5 |     label = fields.Char("Label")
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8103 [*] Translation method _("string") in fields is not necessary
+ --> translation_field.py:6:34
+  |
+4 |     name = fields.Char(string=_("Name"))
+5 |     label = fields.Char("Label")
+6 |     help_text = fields.Char(help=_lt("Some help"))
+  |                                  ^^^^^^^^^^^^^^^^
+7 |     # Flagged, but no fix: more than one argument.
+8 |     title = fields.Char(string=_("Title %s", suffix))
+  |
+help: Remove the translation call
+  |
+5 |     label = fields.Char("Label")
+  -     help_text = fields.Char(help=_lt("Some help"))
+6 +     help_text = fields.Char(help="Some help")
+7 |     # Flagged, but no fix: more than one argument.
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW8103 Translation method _("string") in fields is not necessary
+ --> translation_field.py:8:32
+  |
+6 |     help_text = fields.Char(help=_lt("Some help"))
+7 |     # Flagged, but no fix: more than one argument.
+8 |     title = fields.Char(string=_("Title %s", suffix))
+  |                                ^^^^^^^^^^^^^^^^^^^^^
+help: Remove the translation call
