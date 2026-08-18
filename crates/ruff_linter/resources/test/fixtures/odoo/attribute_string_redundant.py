@@ -30,3 +30,17 @@ class OtherModel(models.Model):
     _inherit = "other.model"
 
     partner_id = fields.Many2one("res.partner")
+
+
+class MoreFieldTypes(models.Model):
+    _inherit = "more.model"
+
+    description = fields.Text(string="Description")
+
+    create_date = fields.Datetime("Create Date")
+
+    amount = fields.Monetary(string="Amount")
+
+    res_id = fields.Reference([], "Res")
+
+    line_ids = fields.One2many("my.line", "parent_id", "Line")

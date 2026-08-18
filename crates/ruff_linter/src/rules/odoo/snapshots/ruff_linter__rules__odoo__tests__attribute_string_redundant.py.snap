@@ -74,3 +74,89 @@ help: Remove redundant `string` attribute
 14 +         "res.partner", "table_name", "col1", "col2"
 15 |     )
    |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:38:5
+   |
+36 |     _inherit = "more.model"
+37 |
+38 |     description = fields.Text(string="Description")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+39 |
+40 |     create_date = fields.Datetime("Create Date")
+   |
+help: Remove redundant `string` attribute
+   |
+37 |
+   -     description = fields.Text(string="Description")
+38 +     description = fields.Text()
+39 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:40:5
+   |
+38 |     description = fields.Text(string="Description")
+39 |
+40 |     create_date = fields.Datetime("Create Date")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+41 |
+42 |     amount = fields.Monetary(string="Amount")
+   |
+help: Remove redundant `string` attribute
+   |
+39 |
+   -     create_date = fields.Datetime("Create Date")
+40 +     create_date = fields.Datetime()
+41 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:42:5
+   |
+40 |     create_date = fields.Datetime("Create Date")
+41 |
+42 |     amount = fields.Monetary(string="Amount")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+43 |
+44 |     res_id = fields.Reference([], "Res")
+   |
+help: Remove redundant `string` attribute
+   |
+41 |
+   -     amount = fields.Monetary(string="Amount")
+42 +     amount = fields.Monetary()
+43 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:44:5
+   |
+42 |     amount = fields.Monetary(string="Amount")
+43 |
+44 |     res_id = fields.Reference([], "Res")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+45 |
+46 |     line_ids = fields.One2many("my.line", "parent_id", "Line")
+   |
+help: Remove redundant `string` attribute
+   |
+43 |
+   -     res_id = fields.Reference([], "Res")
+44 +     res_id = fields.Reference([])
+45 |
+   |
+
+ODW8113 [*] The `string` attribute is redundant and should be removed
+  --> attribute_string_redundant.py:46:5
+   |
+44 |     res_id = fields.Reference([], "Res")
+45 |
+46 |     line_ids = fields.One2many("my.line", "parent_id", "Line")
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Remove redundant `string` attribute
+   |
+45 |
+   -     line_ids = fields.One2many("my.line", "parent_id", "Line")
+46 +     line_ids = fields.One2many("my.line", "parent_id")
+   |

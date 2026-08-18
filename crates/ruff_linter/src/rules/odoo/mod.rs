@@ -33,6 +33,14 @@ mod tests {
         Path::new("attribute_string_redundant.py")
     )]
     #[test_case(
+        Rule::AttributeStringRedundant,
+        Path::new("attribute_string_redundant_not_odoo.py")
+    )]
+    #[test_case(
+        Rule::AttributeStringRedundant,
+        Path::new("attribute_string_redundant_other_fields.py")
+    )]
+    #[test_case(
         Rule::ManifestRequiredAuthor,
         Path::new("manifest_required_author/__manifest__.py")
     )]
