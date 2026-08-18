@@ -3,12 +3,13 @@ use std::borrow::Cow;
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr};
 use ruff_python_semantic::ScopeKind;
+use ruff_python_stdlib::identifiers::is_identifier;
 use ruff_text_size::Ranged;
 
-use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Rule;
 use crate::rules::odoo::helpers::{class_defines_method, odoo_field_type};
+use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
 /// Checks that the method name passed to a field's `compute=` argument starts with
@@ -110,6 +111,12 @@ impl Violation for MethodInverse {
 /// amount = fields.Float(digits=get_precision("Account"))
 /// ```
 ///
+/// ## Fix safety
+/// This rule's fix is marked as unsafe: the old parameter was silently ignored by the ORM,
+/// so renaming it enables behavior (precision, indexing) that the running code did not
+/// have. No fix is offered when the call already passes the new parameter, since renaming
+/// would produce a duplicate keyword argument.
+///
 /// ## Options
 /// - `lint.odoo.deprecated-field-parameters`
 ///
@@ -122,10 +129,17 @@ pub(crate) struct RenamedFieldParameter {
 }
 
 impl Violation for RenamedFieldParameter {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         let RenamedFieldParameter { old, new } = self;
         format!("Field parameter \"{old}\" is no longer supported. Use \"{new}\" instead.")
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        let RenamedFieldParameter { old, new } = self;
+        Some(format!("Replace `{old}` with `{new}`"))
     }
 }
 
@@ -271,10 +285,10 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
     }
 
     for keyword in &call.arguments.keywords {
-        let Some(arg_name) = keyword.arg.as_ref() else {
+        let Some(arg_identifier) = keyword.arg.as_ref() else {
             continue;
         };
-        let arg_name = arg_name.as_str();
+        let arg_name = arg_identifier.as_str();
 
         if matches!(arg_name, "compute" | "search" | "inverse") {
             if let Some(value) = field_attribute_string_value(&keyword.value) {
@@ -332,13 +346,27 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
                 .deprecated_field_parameters
                 .renamed(arg_name, RENAMED_PARAMETERS)
         {
-            checker.report_diagnostic(
+            let mut diagnostic = checker.report_diagnostic(
                 RenamedFieldParameter {
                     old: arg_name.to_string(),
-                    new,
+                    new: new.clone(),
                 },
                 keyword.range(),
             );
+            // Renaming would produce a duplicate keyword argument — a syntax error — if the
+            // call already passes the new parameter; a user-configured replacement may also
+            // not be a valid identifier at all.
+            let conflicts = call
+                .arguments
+                .keywords
+                .iter()
+                .any(|other| other.arg.as_deref().is_some_and(|name| name == new));
+            if !conflicts && is_identifier(&new) {
+                diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                    new,
+                    arg_identifier.range(),
+                )));
+            }
         }
     }
 
