@@ -1,0 +1,19 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8155 [*] Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
+ --> bad_builtin_groupby_no_import.py:5:1
+  |
+3 | import itertools
+4 |
+5 | itertools.groupby(records, key=lambda r: r.partner_id)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Replace with `odoo.tools.groupby`
+  |
+3 | import itertools
+4 + from odoo.tools import groupby
+5 |
+  - itertools.groupby(records, key=lambda r: r.partner_id)
+6 + groupby(records, key=lambda r: r.partner_id)
+  |
+note: This is an unsafe fix and may change runtime behavior

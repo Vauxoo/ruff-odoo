@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8155 Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
+ODW8155 [*] Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
  --> bad_builtin_groupby.py:6:1
   |
 4 | from odoo.tools import groupby
@@ -11,8 +11,16 @@ ODW8155 Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` i
 7 | itertools_groupby(records, key=lambda r: r.partner_id)
 8 | groupby(records, key=lambda r: r.partner_id)
   |
+help: Replace with `odoo.tools.groupby`
+  |
+5 |
+  - itertools.groupby(records, key=lambda r: r.partner_id)
+6 + groupby(records, key=lambda r: r.partner_id)
+7 | itertools_groupby(records, key=lambda r: r.partner_id)
+  |
+note: This is an unsafe fix and may change runtime behavior
 
-ODW8155 Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
+ODW8155 [*] Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` instead.
  --> bad_builtin_groupby.py:7:1
   |
 6 | itertools.groupby(records, key=lambda r: r.partner_id)
@@ -20,3 +28,11 @@ ODW8155 Used builtin function `itertools.groupby`. Prefer `odoo.tools.groupby` i
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 8 | groupby(records, key=lambda r: r.partner_id)
   |
+help: Replace with `odoo.tools.groupby`
+  |
+6 | itertools.groupby(records, key=lambda r: r.partner_id)
+  - itertools_groupby(records, key=lambda r: r.partner_id)
+7 | groupby(records, key=lambda r: r.partner_id)
+8 + groupby(records, key=lambda r: r.partner_id)
+  |
+note: This is an unsafe fix and may change runtime behavior
