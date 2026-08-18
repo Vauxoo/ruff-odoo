@@ -12,3 +12,13 @@
     "name": "Third Module",
     "maintainers": ["someone", "else"],
 }
+
+{
+    "name": "Tuple Module",
+    "maintainers": ("someone", "else"),
+}
+
+{
+    "name": "Comma Module",
+    "maintainers": "someone, else",
+}

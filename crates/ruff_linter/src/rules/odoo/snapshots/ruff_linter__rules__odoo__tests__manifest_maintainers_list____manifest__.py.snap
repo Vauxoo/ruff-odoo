@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8104 The maintainers key in the manifest file must be a list of strings
+ODE8104 [*] The maintainers key in the manifest file must be a list of strings
  --> __manifest__.py:3:5
   |
 1 | {
@@ -10,6 +10,14 @@ ODE8104 The maintainers key in the manifest file must be a list of strings
   |     ^^^^^^^^^^^^^
 4 | }
   |
+help: Turn the value into a list of strings
+  |
+2 |     "name": "My Module",
+  -     "maintainers": "someone",
+3 +     "maintainers": ["someone"],
+4 | }
+  |
+note: This is an unsafe fix and may change runtime behavior
 
 ODE8104 The maintainers key in the manifest file must be a list of strings
  --> __manifest__.py:8:5
@@ -20,3 +28,33 @@ ODE8104 The maintainers key in the manifest file must be a list of strings
   |     ^^^^^^^^^^^^^
 9 | }
   |
+help: Turn the value into a list of strings
+
+ODE8104 [*] The maintainers key in the manifest file must be a list of strings
+  --> __manifest__.py:18:5
+   |
+16 | {
+17 |     "name": "Tuple Module",
+18 |     "maintainers": ("someone", "else"),
+   |     ^^^^^^^^^^^^^
+19 | }
+   |
+help: Turn the value into a list of strings
+   |
+17 |     "name": "Tuple Module",
+   -     "maintainers": ("someone", "else"),
+18 +     "maintainers": ["someone", "else"],
+19 | }
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8104 The maintainers key in the manifest file must be a list of strings
+  --> __manifest__.py:23:5
+   |
+21 | {
+22 |     "name": "Comma Module",
+23 |     "maintainers": "someone, else",
+   |     ^^^^^^^^^^^^^
+24 | }
+   |
+help: Turn the value into a list of strings
