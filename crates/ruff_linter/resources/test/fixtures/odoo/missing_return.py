@@ -47,3 +47,9 @@ class MyModel(models.Model):
     # be returned, so the choice stays with the author here too.
     def create_and_do(self, vals):
         super().create(vals).action_do()
+
+    # Two `super()` calls: the trailing one is only one of the results, so which of them the
+    # method should return is the author's call.
+    def action_done(self):
+        super().action_check()
+        super().action_done()

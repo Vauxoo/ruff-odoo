@@ -27,12 +27,13 @@ use crate::{Edit, Fix, FixAvailability};
 /// ```
 ///
 /// ## Fix safety
-/// A fix is only offered when the method ends with a bare call rooted at `super()`, which is
-/// the one shape where inserting `return` cannot skip anything: the call is already the last
-/// thing the method does. Every other shape is reported without a fix — the result stored in a
-/// variable (`res = super().write(vals)`), the call made inside an `if` or a loop, or more
-/// statements running after it — because where the `return` belongs, and what it should
-/// return, is a decision only the author can make.
+/// A fix is only offered for the one shape where inserting `return` cannot change anything but
+/// the returned value: the method calls `super()` exactly once, and that call is its last
+/// statement, so nothing can be skipped by returning there. Every other shape is reported
+/// without a fix — the result stored in a variable (`res = super().write(vals)`), the call
+/// made inside an `if` or a loop, more statements running after it, or a second `super()` call
+/// earlier in the method — because where the `return` belongs, and what it should return, is a
+/// decision only the author can make.
 ///
 /// The fix is marked unsafe because it changes what the method returns: callers that relied on
 /// the `None` of an implicit return now see the base implementation's value. That is the point
@@ -114,6 +115,29 @@ fn contains_return(body: &[Stmt]) -> bool {
     })
 }
 
+/// Returns `true` if `expr` is a `super(...)` call, with or without arguments.
+fn is_super_call(expr: &Expr) -> bool {
+    matches!(
+        expr,
+        Expr::Call(ast::ExprCall { func, .. })
+            if matches!(func.as_ref(), Expr::Name(name) if name.id == "super")
+    )
+}
+
+/// Counts the `super(...)` calls in `body`, including the ones in nested functions and classes,
+/// which is what `any_over_body` walks.
+fn count_super_calls(body: &[Stmt]) -> usize {
+    let mut count = 0;
+    any_over_body(body, |expr| {
+        if is_super_call(expr) {
+            count += 1;
+        }
+        // Never short-circuit: every call has to be counted, not just the first one.
+        false
+    });
+    count
+}
+
 /// Returns `true` if `expr` is a call made on `super(...)` itself, such as
 /// `super().write(vals)` or `await super(MyModel, self).write(vals)`, reaching the method
 /// through attribute access only. A later call in a chain (`super().create(vals).action_do()`)
@@ -153,14 +177,8 @@ pub(crate) fn missing_return(checker: &Checker, function_def: &ast::StmtFunction
         return;
     }
 
-    let calls_super = any_over_body(&function_def.body, |expr| {
-        matches!(
-            expr,
-            Expr::Call(ast::ExprCall { func, .. })
-                if matches!(func.as_ref(), Expr::Name(name) if name.id == "super")
-        )
-    });
-    if !calls_super {
+    let super_calls = count_super_calls(&function_def.body);
+    if super_calls == 0 {
         return;
     }
 
@@ -183,8 +201,11 @@ pub(crate) fn missing_return(checker: &Checker, function_def: &ast::StmtFunction
     );
 
     // Only the trailing `super()` call can be turned into a `return` by inserting the keyword:
-    // anywhere else, the statements that follow it would stop running.
-    if let Some(stmt @ Stmt::Expr(ast::StmtExpr { value, .. })) = function_def.body.last()
+    // anywhere else, the statements that follow it would stop running. A method calling
+    // `super()` more than once is left alone too — the trailing call is then one of several
+    // results, and picking the one to return is the author's call.
+    if super_calls == 1
+        && let Some(stmt @ Stmt::Expr(ast::StmtExpr { value, .. })) = function_def.body.last()
         && is_super_rooted_call(value)
     {
         diagnostic.set_fix(Fix::unsafe_edit(Edit::insertion(

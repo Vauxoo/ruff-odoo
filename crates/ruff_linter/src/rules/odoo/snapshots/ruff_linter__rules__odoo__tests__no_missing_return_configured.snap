@@ -112,3 +112,15 @@ ODW8110 Missing `return` (`super` is used) in method create_and_do
 49 |         super().create(vals).action_do()
    |
 help: Return the `super()` call
+
+ODW8110 Missing `return` (`super` is used) in method action_done
+  --> missing_return.py:53:9
+   |
+51 |     # Two `super()` calls: the trailing one is only one of the results, so which of them the
+52 |     # method should return is the author's call.
+53 |     def action_done(self):
+   |         ^^^^^^^^^^^
+54 |         super().action_check()
+55 |         super().action_done()
+   |
+help: Return the `super()` call
