@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8148 Use `default=lambda self: self._default_company()` to preserve inheritability
+ODE8148 [*] Use `default=lambda self: self._default_company()` to preserve inheritability
  --> inheritable_method_lambda.py:4:57
   |
 2 |     _inherit = "my.model"
@@ -9,4 +9,32 @@ ODE8148 Use `default=lambda self: self._default_company()` to preserve inheritab
 4 |     company_id = fields.Many2one("res.company", default=_default_company)
   |                                                         ^^^^^^^^^^^^^^^^
 5 |     user_id = fields.Many2one("res.users", default=lambda self: self.env.user)
+6 |     partner_id = fields.Many2one("res.partner", domain=_domain_partner)
   |
+help: Replace the reference with `lambda self: self._default_company()`
+  |
+3 |
+  -     company_id = fields.Many2one("res.company", default=_default_company)
+4 +     company_id = fields.Many2one("res.company", default=lambda self: self._default_company())
+5 |     user_id = fields.Many2one("res.users", default=lambda self: self.env.user)
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8148 [*] Use `domain=lambda self: self._domain_partner()` to preserve inheritability
+ --> inheritable_method_lambda.py:6:56
+  |
+4 |     company_id = fields.Many2one("res.company", default=_default_company)
+5 |     user_id = fields.Many2one("res.users", default=lambda self: self.env.user)
+6 |     partner_id = fields.Many2one("res.partner", domain=_domain_partner)
+  |                                                        ^^^^^^^^^^^^^^^
+7 |
+8 |     def _default_company(self):
+  |
+help: Replace the reference with `lambda self: self._domain_partner()`
+  |
+5 |     user_id = fields.Many2one("res.users", default=lambda self: self.env.user)
+  -     partner_id = fields.Many2one("res.partner", domain=_domain_partner)
+6 +     partner_id = fields.Many2one("res.partner", domain=lambda self: self._domain_partner())
+7 |
+  |
+note: This is an unsafe fix and may change runtime behavior

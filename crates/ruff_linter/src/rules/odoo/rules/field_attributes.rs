@@ -276,6 +276,17 @@ impl Violation for InheritableMethodString {
 /// )
 /// ```
 ///
+/// ## Fix safety
+/// The fix wraps the reference in `lambda self: self.<name>()`. Odoo calls the callable of
+/// these attributes with the record as its only argument, so the lambda calls the same method
+/// with the same argument the direct reference already received. The rule only fires when the
+/// enclosing class defines a method with that name, so the call resolves to a method that
+/// exists. The fix is still marked as unsafe because dispatch changes from the bound function
+/// object to a name lookup on the record: a subclass override starts being honored (the point
+/// of the rule), and if the reference actually pointed at a same-named object from an outer
+/// scope — for example an imported function shadowed by a method defined further down the
+/// class — the class method replaces it.
+///
 /// ## References
 /// - [OCA/odoo-pre-commit-hooks#126](https://github.com/OCA/odoo-pre-commit-hooks/issues/126),
 ///   the proposal this rule and [`inheritable-method-string`][ODE8147] implement, including
@@ -292,10 +303,19 @@ pub(crate) struct InheritableMethodLambda {
 }
 
 impl Violation for InheritableMethodLambda {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Always;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         let InheritableMethodLambda { argument, name } = self;
         format!("Use `{argument}=lambda self: self.{name}()` to preserve inheritability")
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        let InheritableMethodLambda { name, .. } = self;
+        Some(format!(
+            "Replace the reference with `lambda self: self.{name}()`"
+        ))
     }
 }
 
@@ -395,13 +415,17 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
             && let Expr::Name(ast::ExprName { id, .. }) = &keyword.value
             && class_defines_method(class_def, id.as_str())
         {
-            checker.report_diagnostic(
+            let mut diagnostic = checker.report_diagnostic(
                 InheritableMethodLambda {
                     argument: arg_name.to_string(),
                     name: id.to_string(),
                 },
                 keyword.value.range(),
             );
+            diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                format!("lambda self: self.{id}()"),
+                keyword.value.range(),
+            )));
         }
 
         if checker.is_rule_enabled(Rule::RenamedFieldParameter)
