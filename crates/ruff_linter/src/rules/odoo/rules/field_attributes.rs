@@ -202,6 +202,15 @@ impl Violation for TranslationField {
 /// ```python
 /// total = fields.Float(compute="_compute_total")
 /// ```
+///
+/// ## Fix safety
+/// The fix replaces the reference with the method's name as a string. The rule only fires
+/// when the enclosing class defines a method with that name, so the string resolves to a
+/// method that exists. The fix is still marked as unsafe because dispatch changes from the
+/// bound function object to a name lookup on the record: a subclass override starts being
+/// honored (the point of the rule), and if the reference actually pointed at a same-named
+/// object from an outer scope — for example an imported function shadowed by a method
+/// defined further down the class — the class method replaces it.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InheritableMethodString {
@@ -209,10 +218,17 @@ pub(crate) struct InheritableMethodString {
 }
 
 impl Violation for InheritableMethodString {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Always;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         let InheritableMethodString { name } = self;
         format!("Use string method name `\"{name}\"` to preserve inheritability")
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        let InheritableMethodString { name } = self;
+        Some(format!("Replace the reference with `\"{name}\"`"))
     }
 }
 
@@ -329,12 +345,17 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
                 && let Expr::Name(ast::ExprName { id, .. }) = &keyword.value
                 && class_defines_method(class_def, id.as_str())
             {
-                checker.report_diagnostic(
+                let mut diagnostic = checker.report_diagnostic(
                     InheritableMethodString {
                         name: id.to_string(),
                     },
                     keyword.value.range(),
                 );
+                let quote = checker.stylist().quote();
+                diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                    format!("{quote}{id}{quote}"),
+                    keyword.value.range(),
+                )));
             }
         }
 

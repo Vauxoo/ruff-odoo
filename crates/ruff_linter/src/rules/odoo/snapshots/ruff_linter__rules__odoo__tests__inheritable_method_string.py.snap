@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODE8147 Use string method name `"_compute_total"` to preserve inheritability
+ODE8147 [*] Use string method name `"_compute_total"` to preserve inheritability
  --> inheritable_method_string.py:4:34
   |
 2 |     _inherit = "my.model"
@@ -9,4 +9,32 @@ ODE8147 Use string method name `"_compute_total"` to preserve inheritability
 4 |     total = fields.Float(compute=_compute_total)
   |                                  ^^^^^^^^^^^^^^
 5 |     other = fields.Float(compute="_compute_other")
+6 |     has_google_tagmanager = fields.Boolean(inverse=inverse_has_google_tagmanager)
   |
+help: Replace the reference with `"_compute_total"`
+  |
+3 |
+  -     total = fields.Float(compute=_compute_total)
+4 +     total = fields.Float(compute="_compute_total")
+5 |     other = fields.Float(compute="_compute_other")
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE8147 [*] Use string method name `"inverse_has_google_tagmanager"` to preserve inheritability
+ --> inheritable_method_string.py:6:52
+  |
+4 |     total = fields.Float(compute=_compute_total)
+5 |     other = fields.Float(compute="_compute_other")
+6 |     has_google_tagmanager = fields.Boolean(inverse=inverse_has_google_tagmanager)
+  |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |
+8 |     def _compute_total(self):
+  |
+help: Replace the reference with `"inverse_has_google_tagmanager"`
+  |
+5 |     other = fields.Float(compute="_compute_other")
+  -     has_google_tagmanager = fields.Boolean(inverse=inverse_has_google_tagmanager)
+6 +     has_google_tagmanager = fields.Boolean(inverse="inverse_has_google_tagmanager")
+7 |
+  |
+note: This is an unsafe fix and may change runtime behavior
