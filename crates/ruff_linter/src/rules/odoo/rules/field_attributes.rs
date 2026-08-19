@@ -189,9 +189,15 @@ impl Violation for TranslationField {
 /// reference instead of the method's name as a string.
 ///
 /// ## Why is this bad?
-/// A direct reference binds the field to that exact function object, so a subclass
-/// overriding the method is silently ignored. Passing the name as a string preserves
-/// inheritability.
+/// A direct reference hardcodes the field to that exact function object at class-definition
+/// time. When another module inherits the model and overrides the method, the field keeps
+/// calling the original function and the override is silently ignored — the classic Odoo
+/// inheritance mechanism simply does not apply. Passing the name as a string makes Odoo
+/// resolve the method on the record at runtime, so overrides are honored.
+///
+/// The direct reference also forces the method to be defined *above* the field definition
+/// (otherwise the name is unbound), which is against the convention of declaring fields
+/// first and methods after them.
 ///
 /// ## Example
 /// ```python
@@ -202,6 +208,22 @@ impl Violation for TranslationField {
 /// ```python
 /// total = fields.Float(compute="_compute_total")
 /// ```
+///
+/// ## Fix safety
+/// The fix replaces the reference with the method's name as a string. The rule only fires
+/// when the enclosing class defines a method with that name, so the string resolves to a
+/// method that exists. The fix is still marked as unsafe because dispatch changes from the
+/// bound function object to a name lookup on the record: a subclass override starts being
+/// honored (the point of the rule), and if the reference actually pointed at a same-named
+/// object from an outer scope — for example an imported function shadowed by a method
+/// defined further down the class — the class method replaces it.
+///
+/// ## References
+/// - [OCA/odoo-pre-commit-hooks#126](https://github.com/OCA/odoo-pre-commit-hooks/issues/126),
+///   the proposal this rule and [`inheritable-method-lambda`][ODE8148] implement, including
+///   which field attributes accept a string and which require a callable.
+///
+/// [ODE8148]: https://vauxoo.github.io/ruff-odoo/rules/inheritable-method-lambda/
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InheritableMethodString {
@@ -209,10 +231,17 @@ pub(crate) struct InheritableMethodString {
 }
 
 impl Violation for InheritableMethodString {
+    const FIX_AVAILABILITY: FixAvailability = FixAvailability::Always;
+
     #[derive_message_formats]
     fn message(&self) -> String {
         let InheritableMethodString { name } = self;
         format!("Use string method name `\"{name}\"` to preserve inheritability")
+    }
+
+    fn fix_title(&self) -> Option<String> {
+        let InheritableMethodString { name } = self;
+        Some(format!("Replace the reference with `\"{name}\"`"))
     }
 }
 
@@ -221,9 +250,18 @@ impl Violation for InheritableMethodString {
 /// instead of a lambda.
 ///
 /// ## Why is this bad?
-/// A direct reference binds the field to that exact function object, so a subclass
-/// overriding the method is silently ignored. A lambda dispatches through `self` and
-/// preserves inheritability.
+/// A direct reference hardcodes the field to that exact function object at class-definition
+/// time. When another module inherits the model and overrides the method, the field keeps
+/// calling the original function and the override is silently ignored. Unlike
+/// `compute=`/`search=`/`inverse=` (see [`inheritable-method-string`][ODE8147]), these
+/// attributes do not accept a method name as a string — Odoo only accepts a plain value or
+/// a callable here — so a lambda that dispatches through `self` is what preserves
+/// inheritability.
+///
+/// This is not a theoretical concern: [odoo/odoo#185419] un-hardcoded the `domain=` methods
+/// of the Sales Order Item fields for exactly this reason, and [odoo/enterprise#72931] shows
+/// the follow-up — once the method became inheritable, an inheriting module's override that
+/// had been silently ignored started being called and had to be adapted.
 ///
 /// ## Example
 /// ```python
@@ -237,6 +275,15 @@ impl Violation for InheritableMethodString {
 ///     "res.company", default=lambda self: self._default_company()
 /// )
 /// ```
+///
+/// ## References
+/// - [OCA/odoo-pre-commit-hooks#126](https://github.com/OCA/odoo-pre-commit-hooks/issues/126),
+///   the proposal this rule and [`inheritable-method-string`][ODE8147] implement, including
+///   which field attributes accept a string and which require a callable.
+///
+/// [ODE8147]: https://vauxoo.github.io/ruff-odoo/rules/inheritable-method-string/
+/// [odoo/odoo#185419]: https://github.com/odoo/odoo/pull/185419
+/// [odoo/enterprise#72931]: https://github.com/odoo/enterprise/pull/72931
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]
 pub(crate) struct InheritableMethodLambda {
@@ -329,12 +376,17 @@ pub(crate) fn field_attributes(checker: &Checker, assign: &ast::StmtAssign) {
                 && let Expr::Name(ast::ExprName { id, .. }) = &keyword.value
                 && class_defines_method(class_def, id.as_str())
             {
-                checker.report_diagnostic(
+                let mut diagnostic = checker.report_diagnostic(
                     InheritableMethodString {
                         name: id.to_string(),
                     },
                     keyword.value.range(),
                 );
+                let quote = checker.stylist().quote();
+                diagnostic.set_fix(Fix::unsafe_edit(Edit::range_replacement(
+                    format!("{quote}{id}{quote}"),
+                    keyword.value.range(),
+                )));
             }
         }
 
