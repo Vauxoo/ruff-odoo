@@ -125,7 +125,7 @@ Use the mirror repository, which installs the prebuilt wheels:
 repos:
   - repo: https://github.com/vauxoo/ruff-pre-commit
     # Use the latest release tag; see the version scheme below.
-    rev: 0.16.3.27
+    rev: 0.16.3.28
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -167,7 +167,7 @@ repository falls back to the Cargo version.
 
 ```console
 $ ruff-odoo --version
-ruff-odoo 0.16.3.27
+ruff-odoo 0.16.3.28
 ```
 
 It stays bare on purpose: tools that shell out to the binary (`ruff-lsp`, for one) parse that output
@@ -178,7 +178,7 @@ the commit the binary was built from:
 
 ```console
 $ ruff-odoo version
-ruff-odoo 0.16.3.27+3 (b45cfcb38 2026-08-15)
+ruff-odoo 0.16.3.28+3 (b45cfcb38 2026-08-15)
 ```
 
 The leading name is the binary that was actually invoked, so a locally built `ruff` dev binary
@@ -189,12 +189,12 @@ For machine-readable output, ask for JSON:
 ```console
 $ ruff-odoo version --output-format json
 {
-  "version": "0.16.3.27",
+  "version": "0.16.3.28",
   "commit_info": {
     "short_commit_hash": "b45cfcb38",
     "commit_hash": "b45cfcb38d111d9f446b195125290a19e4cf8a4e",
     "commit_date": "2026-08-15",
-    "last_tag": "0.16.3.27",
+    "last_tag": "0.16.3.28",
     "commits_since_last_tag": 3
   }
 }
