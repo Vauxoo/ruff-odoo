@@ -41,7 +41,9 @@ class SaleOrder(models.Model):
 
 
 # A module-level pragma runs to the end of the file in pylint, even though it reads as if
-# it only applied to the function below it — so the function after it is covered too.
+# it only applied to the function below it — so the function after it is covered too. It is
+# pylint's global disable, and the rewrite leaves the `# ruff: disable` unclosed to match:
+# no `# ruff: enable` is appended at the end of the file.
 # pylint: disable=invalid-commit
 def module_level(cr):
     cr.commit()

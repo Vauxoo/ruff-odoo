@@ -76,7 +76,11 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///   is what a `# ruff: disable[...]` / `# ruff: enable[...]` pair expresses. When
 ///   the pragma opens a `def` body it also covers the `def` header, as pylint does
 ///   for messages anchored there (`missing-return`, `method-required-super`, ...),
-///   so the `disable` is placed above the header.
+///   so the `disable` is placed above the header;
+/// - a standalone `disable` pragma at module level is pylint's *global* disable,
+///   which governs everything to the end of the file. An unclosed
+///   `# ruff: disable[...]` does the same, so no closing `# ruff: enable[...]` is
+///   appended to the file.
 ///
 /// One deliberate difference: `disable-next` applies to the next *line* in pylint
 /// and to the next *statement* in Ruff, so a multi-line statement ends up fully
@@ -862,22 +866,28 @@ pub(crate) fn pylint_disable_comment(
             vec![Edit::range_replacement(replacement, comment_range)]
         };
 
-        // A `disable` with no matching `enable` is itself a diagnostic
-        // (`unmatched-suppression-comment`), so the pair always closes.
-        let end = region.end();
-        edits.push(if end == locator.line_start(end) {
-            // The region ends on a line boundary (a module-level pragma runs to the end of the
-            // file), so the `enable` becomes the next line.
-            Edit::insertion(format!("{indent}# ruff: enable[{names}]\n"), end)
-        } else {
-            // The region ends at the last statement, which may be followed on that same line by
-            // a trailing comment — anchor past it, or the comment would be pushed onto the
-            // `enable` line.
-            Edit::insertion(
-                format!("\n{indent}# ruff: enable[{names}]"),
-                locator.line_end(end),
-            )
-        });
+        // A module-level pragma is pylint's *global* disable: it governs everything to the end
+        // of the file, and so does an unclosed `# ruff: disable`, so writing an `enable` on the
+        // last line would only state what the end of the file already implies. Anywhere deeper —
+        // inside a class or a function — the region ends before the file does, and the pair has
+        // to close there or the suppression would leak past the block pylint scoped it to.
+        let is_global =
+            !opens_a_body && indent.is_empty() && region.end() == locator.contents().text_len();
+        if !is_global {
+            let end = region.end();
+            edits.push(if end == locator.line_start(end) {
+                // The region ends on a line boundary, so the `enable` becomes the next line.
+                Edit::insertion(format!("{indent}# ruff: enable[{names}]\n"), end)
+            } else {
+                // The region ends at the last statement, which may be followed on that same line
+                // by a trailing comment — anchor past it, or the comment would be pushed onto
+                // the `enable` line.
+                Edit::insertion(
+                    format!("\n{indent}# ruff: enable[{names}]"),
+                    locator.line_end(end),
+                )
+            });
+        }
 
         let Some((first, rest)) = edits.split_first() else {
             continue;

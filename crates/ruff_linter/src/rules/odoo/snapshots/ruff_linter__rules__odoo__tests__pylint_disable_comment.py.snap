@@ -194,15 +194,12 @@ ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[inva
 74 |     return True
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
-    |
-71  |
-    - # pylint: disable=invalid-commit
-72  + # ruff: disable[invalid-commit]
-73  | def standalone_comment(env):
---------------------------------------------------------------------------------
-110 |     env.company.name  # pylint: disable=expression-not-assigned
-111 + # ruff: enable[invalid-commit]
-    |
+   |
+71 |
+   - # pylint: disable=invalid-commit
+72 + # ruff: disable[invalid-commit]
+73 | def standalone_comment(env):
+   |
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
   --> pylint_disable_comment.py:77:1
