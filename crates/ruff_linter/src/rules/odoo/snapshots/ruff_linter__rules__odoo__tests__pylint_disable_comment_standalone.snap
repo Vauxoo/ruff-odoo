@@ -173,66 +173,61 @@ ODE8102 Use of cr.commit() directly
    |         ^^^^^^^^^^^^^^^^^^^^
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
-  --> pylint_disable_comment_standalone.py:45:1
+  --> pylint_disable_comment_standalone.py:47:1
    |
-43 | # A module-level pragma runs to the end of the file in pylint, even though it reads as if
-44 | # it only applied to the function below it — so the function after it is covered too.
-45 | # pylint: disable=invalid-commit
+45 | # pylint's global disable, and the rewrite leaves the `# ruff: disable` unclosed to match:
+46 | # no `# ruff: enable` is appended at the end of the file.
+47 | # pylint: disable=invalid-commit
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-46 | def module_level(cr):
-47 |     cr.commit()
+48 | def module_level(cr):
+49 |     cr.commit()
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
    |
-44 | # it only applied to the function below it — so the function after it is covered too.
+46 | # no `# ruff: enable` is appended at the end of the file.
    - # pylint: disable=invalid-commit
-45 + # ruff: disable[invalid-commit]
-46 | def module_level(cr):
---------------------------------------------------------------------------------
-59 |     cr.commit()
-60 + # ruff: enable[invalid-commit]
+47 + # ruff: disable[invalid-commit]
+48 | def module_level(cr):
    |
 
 ODE8102 Use of cr.commit() directly
-  --> pylint_disable_comment_standalone.py:47:5
+  --> pylint_disable_comment_standalone.py:49:5
    |
-45 | # pylint: disable=invalid-commit
-46 | def module_level(cr):
-47 |     cr.commit()
+47 | # pylint: disable=invalid-commit
+48 | def module_level(cr):
+49 |     cr.commit()
    |     ^^^^^^^^^^^
 
 ODE8102 Use of cr.commit() directly
-  --> pylint_disable_comment_standalone.py:51:5
+  --> pylint_disable_comment_standalone.py:53:5
    |
-50 | def also_covered(cr):
-51 |     cr.commit()
+52 | def also_covered(cr):
+53 |     cr.commit()
    |     ^^^^^^^^^^^
 
 ODC8502 [*] `pylint: disable` comment should be migrated to `# ruff: ignore[invalid-commit]`
-  --> pylint_disable_comment_standalone.py:57:1
+  --> pylint_disable_comment_standalone.py:59:1
    |
-55 | # line of its own, since Ruff only reads a suppression trailing other text when it is a
-56 | # `ruff: ignore`, and `invalid-suppression-comment` would delete a `disable` written there.
-57 | # pylint: disable=invalid-commit,some-custom-check
+57 | # line of its own, since Ruff only reads a suppression trailing other text when it is a
+58 | # `ruff: ignore`, and `invalid-suppression-comment` would delete a `disable` written there.
+59 | # pylint: disable=invalid-commit,some-custom-check
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-58 | def kept_pragma_at_module_level(cr):
-59 |     cr.commit()
+60 | def kept_pragma_at_module_level(cr):
+61 |     cr.commit()
    |
 help: Replace with `# ruff: ignore[invalid-commit]`
    |
-56 | # `ruff: ignore`, and `invalid-suppression-comment` would delete a `disable` written there.
+58 | # `ruff: ignore`, and `invalid-suppression-comment` would delete a `disable` written there.
    - # pylint: disable=invalid-commit,some-custom-check
-57 + # pylint: disable=some-custom-check
-58 + # ruff: disable[invalid-commit]
-59 | def kept_pragma_at_module_level(cr):
-60 |     cr.commit()
-61 + # ruff: enable[invalid-commit]
+59 + # pylint: disable=some-custom-check
+60 + # ruff: disable[invalid-commit]
+61 | def kept_pragma_at_module_level(cr):
    |
 
 ODE8102 Use of cr.commit() directly
-  --> pylint_disable_comment_standalone.py:59:5
+  --> pylint_disable_comment_standalone.py:61:5
    |
-57 | # pylint: disable=invalid-commit,some-custom-check
-58 | def kept_pragma_at_module_level(cr):
-59 |     cr.commit()
+59 | # pylint: disable=invalid-commit,some-custom-check
+60 | def kept_pragma_at_module_level(cr):
+61 |     cr.commit()
    |     ^^^^^^^^^^^
