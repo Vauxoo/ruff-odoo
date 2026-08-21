@@ -51,5 +51,6 @@ class MyModel(models.Model):
 class MyController(http.Controller):
     @http.route("/page", auth="public")
     def page(self):
-        # Fixed only from Odoo 19.0 on, the version that gave `Controller` its `env`.
+        # Reported, and fixed, only from Odoo 19.0 on, the version that gave `Controller` its
+        # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
         return _("in a controller")

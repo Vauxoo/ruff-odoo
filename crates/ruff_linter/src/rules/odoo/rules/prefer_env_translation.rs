@@ -19,6 +19,11 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// so on an older codebase the bare `_()` is the only correct call. Configure the targeted
 /// version with the `odoo-version` setting; without it the rule stays enabled.
 ///
+/// Inside an `http.Controller` the rule instead applies from Odoo 19.0 on, the version that
+/// gave `Controller` its `env` property. On 18.0 a controller reaches the environment through
+/// `request.env` alone, so there is no `self.env._` to recommend and the call is not reported
+/// at all — reporting it would name a replacement that does not exist on that version.
+///
 /// ## Example
 /// ```python
 /// def my_method(self):
@@ -32,11 +37,10 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// ```
 ///
 /// ## Fix safety
-/// The rewrite is only offered where `self.env` exists: inside a method of an Odoo model,
-/// and of an `http.Controller` from Odoo 19.0 on, the version that gave `Controller` its
-/// `env` property. At module level, in a plain function, in a `@staticmethod`, in a nested
-/// function or in a class that is not Odoo's, the call is reported without a fix, since
-/// `self.env` would resolve to nothing there.
+/// The rewrite is only offered where `self.env` exists: inside a method of an Odoo model or
+/// of an `http.Controller`. At module level, in a plain function, in a `@staticmethod`, in a
+/// nested function or in a class that is not Odoo's, the call is reported without a fix,
+/// since `self.env` would resolve to nothing there.
 ///
 /// The same goes for what the call resolves to: only `odoo._`/`odoo._lt` are rewritten,
 /// which covers an aliased import (`from odoo import _ as lt`) and leaves a `_` that came
@@ -77,14 +81,29 @@ fn is_odoo_controller_class(semantic: &SemanticModel, class_def: &ast::StmtClass
 /// Returns `true` if `self.env` resolves inside `class_def`.
 ///
 /// A model always has it. A controller only got it in Odoo 19.0 ("[IMP] core: use self.env
-/// inside controllers"), which added the `env` property returning `request.env`; before that
-/// a controller reaches the environment through `request.env` alone, so rewriting a call
-/// there would raise `AttributeError`.
+/// inside controllers"), which added the `env` property returning `request.env`. A controller
+/// on an earlier version never reaches here: [`in_controller_without_env`] has already
+/// returned from the rule, so by this point any controller is one that has an `env`.
 fn class_has_env(checker: &Checker, class_def: &ast::StmtClassDef) -> bool {
     let semantic = checker.semantic();
-    is_odoo_model_class(semantic, class_def)
-        || (is_odoo_controller_class(semantic, class_def)
-            && odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None))
+    is_odoo_model_class(semantic, class_def) || is_odoo_controller_class(semantic, class_def)
+}
+
+/// Returns `true` for a call inside an `http.Controller` on an Odoo older than 19.0.
+///
+/// `Controller` only got its `env` property in Odoo 19.0; before that a controller reaches
+/// the environment through `request.env` alone. There is therefore no `self.env._` to
+/// recommend there, which is why the call is left alone entirely rather than reported without
+/// a fix: the diagnostic would name a replacement that does not exist on that version.
+fn in_controller_without_env(checker: &Checker) -> bool {
+    if odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None) {
+        return false;
+    }
+    let semantic = checker.semantic();
+    semantic.current_scopes().any(|scope| {
+        matches!(scope.kind, ScopeKind::Class(class_def)
+            if is_odoo_controller_class(semantic, class_def))
+    })
 }
 
 /// ODW8161
@@ -108,6 +127,9 @@ pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
         Some(["odoo", "_" | "_lt"])
     );
     if !is_odoo_translation && id != "_" && id != "_lt" {
+        return;
+    }
+    if in_controller_without_env(checker) {
         return;
     }
 
