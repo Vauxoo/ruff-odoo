@@ -91,3 +91,11 @@ ODW8163 Using an empty domain `search([])` without a `limit` will load all recor
 61 |         # `self` runs against the model the class declares.
 62 |         return self.search([])
    |                ^^^^^^^^^^^^^^^
+
+ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.move", may impact performance.
+  --> no_search_all.py:78:16
+   |
+76 |     def action_self_search(self):
+77 |         # No `_name`, so the class extends every model it inherits: `self` is `account.move`.
+78 |         return self.search([])
+   |                ^^^^^^^^^^^^^^^

@@ -19,9 +19,10 @@ use crate::rules::odoo::helpers::is_odoo_model_class;
 /// attachments — that is a serious performance problem.
 ///
 /// The model the call runs against is resolved from `self.env["..."]` (directly or through a
-/// local variable) and from the `_name`/`_inherit` of the enclosing model class. A call whose
-/// model cannot be resolved — `self.env[model_name]`, the comodel of a relational field — is
-/// not reported.
+/// local variable) and from the `_name`/`_inherit` of the enclosing model class. A class with
+/// no `_name` extends every model its `_inherit` names, and one listed model is enough to
+/// report. A call whose model cannot be resolved — `self.env[model_name]`, the comodel of a
+/// relational field — is not reported.
 ///
 /// ## Example
 /// ```python
@@ -155,18 +156,20 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall) {
         return;
     }
 
-    // A call whose model cannot be resolved is left alone rather than reported blindly.
-    let Some(model) = called_model(checker, call, model_class) else {
+    // A call whose model cannot be resolved is left alone rather than reported blindly. A
+    // class extending several models resolves to all of them, and one listed model is enough.
+    let Some(model) = called_models(checker, call, model_class)
+        .into_iter()
+        .find(|model| {
+            checker
+                .settings()
+                .odoo
+                .no_search_all_models
+                .matches_glob(model, HEAVY_MODELS)
+        })
+    else {
         return;
     };
-    if !checker
-        .settings()
-        .odoo
-        .no_search_all_models
-        .matches_glob(&model, HEAVY_MODELS)
-    {
-        return;
-    }
 
     checker.report_diagnostic(
         NoSearchAll {
@@ -190,32 +193,35 @@ fn enclosing_model_class<'a>(checker: &'a Checker) -> Option<&'a ast::StmtClassD
         })
 }
 
-/// The model `call` runs `search` against, if it can be resolved within this file.
+/// The models `call` may run `search` against, if they can be resolved within this file.
 ///
 /// Three shapes resolve: `self.env["sale.order"].search(...)`, a local bound to that subscript
-/// (`sale = self.env["sale.order"]`), and `self.search(...)`, which runs against the model the
-/// enclosing class declares.
-fn called_model(
+/// (`sale = self.env["sale.order"]`), and `self.search(...)`, which runs against the models the
+/// enclosing class declares. An `env` subscript names exactly one model; `self` may name
+/// several, since a class can extend more than one.
+fn called_models(
     checker: &Checker,
     call: &ast::ExprCall,
     model_class: &ast::StmtClassDef,
-) -> Option<String> {
+) -> Vec<String> {
     let Expr::Attribute(ast::ExprAttribute { value, .. }) = call.func.as_ref() else {
-        return None;
+        return Vec::new();
     };
     match strip_passthrough_calls(value) {
-        Expr::Subscript(subscript) => env_subscript_model(subscript),
+        Expr::Subscript(subscript) => env_subscript_model(subscript).into_iter().collect(),
         Expr::Name(name) => {
             if name.id.as_str() == "self" {
-                return declared_model(model_class);
+                return declared_models(model_class);
             }
-            let assigned = find_assigned_value(name.id.as_str(), checker.semantic())?;
+            let Some(assigned) = find_assigned_value(name.id.as_str(), checker.semantic()) else {
+                return Vec::new();
+            };
             match strip_passthrough_calls(assigned) {
-                Expr::Subscript(subscript) => env_subscript_model(subscript),
-                _ => None,
+                Expr::Subscript(subscript) => env_subscript_model(subscript).into_iter().collect(),
+                _ => Vec::new(),
             }
         }
-        _ => None,
+        _ => Vec::new(),
     }
 }
 
@@ -251,37 +257,52 @@ fn env_subscript_model(subscript: &ast::ExprSubscript) -> Option<String> {
     Some(literal.value.to_str().to_string())
 }
 
-/// The model `class_def` declares, from its `_name` or, failing that, its `_inherit`.
+/// The models `self` runs against inside `class_def`.
 ///
-/// A multi-model `_inherit` list names no single model, so it resolves to nothing rather than
-/// to an arbitrary entry of the list.
-fn declared_model(class_def: &ast::StmtClassDef) -> Option<String> {
-    class_attribute_model(class_def, "_name")
-        .or_else(|| class_attribute_model(class_def, "_inherit"))
+/// A class carrying a `_name` *is* that model — its `_inherit` only pulls in mixins, and the
+/// records live in the new model's own table. Without a `_name` the class extends every model
+/// its `_inherit` names, so all of them are candidates: for
+/// `_inherit = ["mail.thread", "account.move"]`, `self` is `account.move`.
+fn declared_models(class_def: &ast::StmtClassDef) -> Vec<String> {
+    let named = class_attribute_models(class_def, "_name");
+    if !named.is_empty() {
+        return named;
+    }
+    class_attribute_models(class_def, "_inherit")
 }
 
-/// The string a class-level `<attribute> = "..."` (or single-element list) assignment names.
-fn class_attribute_model(class_def: &ast::StmtClassDef, attribute: &str) -> Option<String> {
-    class_def.body.iter().find_map(|stmt| {
-        let ast::Stmt::Assign(assign) = stmt else {
-            return None;
-        };
-        if !assign
-            .targets
-            .iter()
-            .any(|target| matches!(target, Expr::Name(name) if name.id == attribute))
-        {
-            return None;
-        }
-        match assign.value.as_ref() {
-            Expr::StringLiteral(literal) => Some(literal.value.to_str().to_string()),
-            Expr::List(ast::ExprList { elts, .. }) => match elts.as_slice() {
-                [Expr::StringLiteral(literal)] => Some(literal.value.to_str().to_string()),
+/// The strings a class-level `<attribute> = "..."` (or list of strings) assignment names.
+fn class_attribute_models(class_def: &ast::StmtClassDef, attribute: &str) -> Vec<String> {
+    class_def
+        .body
+        .iter()
+        .find_map(|stmt| {
+            let ast::Stmt::Assign(assign) = stmt else {
+                return None;
+            };
+            if !assign
+                .targets
+                .iter()
+                .any(|target| matches!(target, Expr::Name(name) if name.id == attribute))
+            {
+                return None;
+            }
+            match assign.value.as_ref() {
+                Expr::StringLiteral(literal) => Some(vec![literal.value.to_str().to_string()]),
+                Expr::List(ast::ExprList { elts, .. }) => Some(
+                    elts.iter()
+                        .filter_map(|elt| match elt {
+                            Expr::StringLiteral(literal) => {
+                                Some(literal.value.to_str().to_string())
+                            }
+                            _ => None,
+                        })
+                        .collect(),
+                ),
                 _ => None,
-            },
-            _ => None,
-        }
-    })
+            }
+        })
+        .unwrap_or_default()
 }
 
 /// Returns `true` if `domain` is an empty-list literal, or a `Name` assigned (within

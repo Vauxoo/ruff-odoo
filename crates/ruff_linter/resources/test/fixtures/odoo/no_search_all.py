@@ -74,5 +74,23 @@ class MultiInherit(models.Model):
     _inherit = ["mail.thread", "account.move"]
 
     def action_self_search(self):
-        # A multi-model `_inherit` names no single model, so nothing is reported.
+        # No `_name`, so the class extends every model it inherits: `self` is `account.move`.
+        return self.search([])
+
+
+class MultiInheritSmall(models.Model):
+    _inherit = ["mail.thread", "my.small.model"]
+
+    def action_self_search(self):
+        # Same shape, but none of the extended models is one that grows.
+        return self.search([])
+
+
+class PrototypeCopy(models.Model):
+    _name = "my.move.snapshot"
+    _inherit = ["account.move"]
+
+    def action_self_search(self):
+        # `_name` plus `_inherit` copies the model into a new table of its own, so `self` is
+        # `my.move.snapshot` and not the `account.move` it was built from.
         return self.search([])

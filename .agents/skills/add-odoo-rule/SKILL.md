@@ -173,7 +173,30 @@ cross-module inference (see Scope discipline above).
    ```
    (fallback: `cargo test -p ruff_linter --lib`). Pay attention to
    `registry::tests::rule_naming_convention` and `registry::tests::linter_sorting` specifically.
-3. `cargo dev generate-all` — regenerates `ruff.schema.json` and `docs/rules/<name>.md` (the
+
+   > [!WARNING]
+   > A filtered run (`cargo test -p ruff_linter --lib rules::odoo`) reports something like
+   > "125 passed; 2817 filtered out". Those 2817 are **not** green — they never ran. Never
+   > report a filtered run as if the suite were passing, and never push on the strength of one.
+
+3. **If you added a field to `odoo::settings::Settings`** — run `cargo test --workspace`, not
+   just `-p ruff_linter`. The `Settings` `Display` impl is serialized verbatim into the CLI
+   snapshots of a *different* crate, so a new field breaks ~12 snapshots under
+   `crates/ruff/tests/cli/snapshots/` (`cli__show_settings__*` and every
+   `cli__lint__requires_python_*`). They are invisible to `-p ruff_linter`, to `cargo clippy`
+   and to `cargo fmt`, so the first sign of trouble is `cargo test (linux/macos/windows)`
+   turning red in CI — all three at once — after everything looked green locally. Find them
+   with a field name already in `Settings`:
+   ```
+   grep -rl "deprecated_odoo_model_methods" crates/ruff crates/ruff_workspace
+   ```
+   Regenerate with `INSTA_UPDATE=always cargo test --workspace` (or `cargo insta accept`), then
+   **review the diff**: it must be exactly one added line per snapshot, nothing else. Remember
+   the three places a new option has to be wired — the `Settings` struct *and* its
+   `display_settings!` block in `rules/odoo/settings.rs`, the `OdooOptions` field plus its
+   `to_settings` arm in `crates/ruff_workspace/src/options.rs`, and `ruff.schema.json` via
+   `generate-all`.
+4. `cargo dev generate-all` — regenerates `ruff.schema.json` and `docs/rules/<name>.md` (the
    latter is gitignored, generated on demand — its successful generation without errors is itself
    a useful smoke test that the doc comment sections are well-formed). **If you touched a
    `Linter` enum variant's doc comment** (adding a new sub-linter like `OdooApp`/`OAPP`, or editing
@@ -186,7 +209,7 @@ cross-module inference (see Scope discipline above).
    catch it before pushing. If there's no natural pypi.org package to link, point at the rule
    group's own source directory on GitHub instead (e.g.
    `https://github.com/Vauxoo/ruff-odoo/tree/main/crates/ruff_linter/src/rules/<group>`).
-4. **Doc-example formatting** — CI's mkdocs job runs every ```` ```python ```` example in the rule
+5. **Doc-example formatting** — CI's mkdocs job runs every ```` ```python ```` example in the rule
    docs through `ruff format` and fails on any diff (`scripts/check_docs_formatted.py`). Common
    traps: a "Use instead" empty dict must be `{}` (not a multi-line `{\n}`), stub bodies must
    collapse to `def f(): ...` (not `...` on its own indented line), and lines over the format
@@ -200,22 +223,22 @@ cross-module inference (see Scope discipline above).
    Expect "All docs are formatted correctly." On failure it prints the exact `///` rewrite to
    paste into the rule file. It takes a few minutes (one `ruff format` subprocess per snippet
    across all ~900 rules), so run it in the background.
-5. `cargo fmt` (verify with `cargo fmt --check`) — CI has a dedicated formatting job that fails
+6. `cargo fmt` (verify with `cargo fmt --check`) — CI has a dedicated formatting job that fails
    on any diff, and hand-written fix-building code (long `Edit::range_replacement(...)` calls,
    nested builders) frequently comes out slightly off rustfmt style. Run it before every push,
    not just before the first one.
-6. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
-7. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
+7. `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
+8. `uv run --only-group dev --locked prek run --files <every file touched>` (or `uvx prek run
    --files ...` if this checkout has no `uv.lock` for `--locked` to resolve against — batch the
    file list in groups of ~5-10; a single `--files` call with 30+ paths has failed here with
    "File name too long").
-8. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
+9. Manual smoke test with the built binary, including `--fix`, on a small synthetic Odoo module —
    don't rely on unit tests alone to validate the CLI-level experience:
    ```
    cargo build --bin ruff
    target/debug/ruff check --select OD --preview --no-cache --fix <path>
    ```
-9. Coverage (optional but useful when adding a non-trivial rule):
+10. Coverage (optional but useful when adding a non-trivial rule):
    `cargo llvm-cov -p ruff_linter --lib --summary-only -- rules::odoo` (install once with `cargo
    install cargo-llvm-cov --locked` + `rustup component add llvm-tools-preview`), then grep the
    `rules/odoo/` lines from the output.
