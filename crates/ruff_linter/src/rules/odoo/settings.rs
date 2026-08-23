@@ -28,6 +28,7 @@ pub struct Settings {
     pub external_request_timeout_seconds: TimeoutSeconds,
     pub deprecated_field_parameters: ConfiguredList,
     pub deprecated_odoo_model_methods: ConfiguredList,
+    pub no_search_all_models: ConfiguredList,
     pub readme_template_url: Option<String>,
 }
 
@@ -56,6 +57,7 @@ impl Display for Settings {
                 self.external_request_timeout_seconds,
                 self.deprecated_field_parameters,
                 self.deprecated_odoo_model_methods,
+                self.no_search_all_models,
                 self.readme_template_url | optional,
             ]
         }
@@ -124,6 +126,28 @@ impl ConfiguredList {
         match self {
             ConfiguredList::BuiltIn => built_in.contains(&value),
             ConfiguredList::UserProvided(entries) => entries.iter().any(|entry| entry == value),
+        }
+    }
+
+    /// Whether `value` matches any entry of the list, reading each entry as a glob.
+    ///
+    /// An entry with no wildcard is compared literally, so `sale.order` matches only that
+    /// model; one with a wildcard is a pattern, so `account.move*` covers `account.move` and
+    /// `account.move.line` alike. An entry that is not a valid pattern matches nothing rather
+    /// than aborting the check.
+    pub(crate) fn matches_glob(&self, value: &str, built_in: &[&str]) -> bool {
+        fn matches(pattern: &str, value: &str) -> bool {
+            if pattern.contains(['*', '?', '[']) {
+                glob::Pattern::new(pattern).is_ok_and(|pattern| pattern.matches(value))
+            } else {
+                pattern == value
+            }
+        }
+        match self {
+            ConfiguredList::BuiltIn => built_in.iter().any(|pattern| matches(pattern, value)),
+            ConfiguredList::UserProvided(entries) => {
+                entries.iter().any(|pattern| matches(pattern, value))
+            }
         }
     }
 

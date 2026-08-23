@@ -2852,6 +2852,16 @@
             "type": "string"
           }
         },
+        "no-search-all-models": {
+          "description": "The models `no-search-all` (`ODW8163`) reports an unlimited `search([])` on. Entries are matched as globs, so `account.move*` covers `account.move` and `account.move.line`. A call whose model cannot be resolved is never reported. Setting it replaces the built-in list.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "odoo-exceptions": {
           "description": "The exceptions whose message must be translated (`ODC8107`). Setting it replaces the built-in list.",
           "type": [
