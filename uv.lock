@@ -623,7 +623,7 @@ wheels = [
 
 [[package]]
 name = "ruff-odoo"
-version = "0.16.3.30"
+version = "0.16.3.31"
 source = { editable = "." }
 
 [package.dev-dependencies]
