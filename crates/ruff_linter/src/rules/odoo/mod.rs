@@ -227,6 +227,29 @@ mod tests {
         Ok(())
     }
 
+    /// A project that names its own models replaces the built-in list outright: `res.users`
+    /// starts being reported and every model of the default list stops being, `res.partner`
+    /// included.
+    #[test]
+    fn no_search_all_custom_models() -> Result<()> {
+        let snapshot = "no_search_all_custom_models".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/no_search_all.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    no_search_all_models: super::settings::ConfiguredList::UserProvided(vec![
+                        "res.users".to_string(),
+                        "res.config.*".to_string(),
+                    ]),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::NoSearchAll)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     #[test]
     fn prefer_env_attribute_suppressed_before_odoo_19() -> Result<()> {
         let snapshot = "prefer_env_attribute_suppressed_before_odoo_19".to_string();

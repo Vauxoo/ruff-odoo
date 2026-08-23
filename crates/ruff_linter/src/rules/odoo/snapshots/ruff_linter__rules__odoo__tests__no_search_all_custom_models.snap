@@ -1,0 +1,30 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.users", may impact performance.
+  --> no_search_all.py:26:17
+   |
+24 |     def action_model_not_listed(self):
+25 |         # These models stay small, so an unlimited search on them is not worth reporting.
+26 |         users = self.env["res.users"].search([])
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |         params = self.env["ir.config_parameter"].search([])
+28 |         companies = self.env["res.company"].search_read([])
+   |
+
+ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.config.settings", may impact performance.
+  --> no_search_all.py:42:24
+   |
+41 |         settings = self.env["res.config.settings"]
+42 |         all_settings = settings.search([])
+   |                        ^^^^^^^^^^^^^^^^^^^
+43 |         return all_orders, all_settings
+   |
+
+ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.config.settings", may impact performance.
+  --> no_search_all.py:70:16
+   |
+68 |     def action_self_search(self):
+69 |         # Same shape, but this model is not one that grows.
+70 |         return self.search([])
+   |                ^^^^^^^^^^^^^^^

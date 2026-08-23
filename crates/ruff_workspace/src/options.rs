@@ -3383,6 +3383,16 @@ pub struct OdooOptions {
         "#
     )]
     pub deprecated_odoo_model_methods: Option<Vec<String>>,
+    /// The models `no-search-all` (`ODW8163`) reports an unlimited `search([])` on. Entries are matched as globs, so `account.move*` covers `account.move` and `account.move.line`. A call whose model cannot be resolved is never reported. Setting it replaces the built-in list.
+    #[option(
+        default = r#"["account.analytic.line", "account.bank.statement.line", "account.move*", "account.partial.reconcile", "account.payment", "bus.bus", "crm.lead", "hr.attendance", "hr.leave", "hr.payslip*", "ir.attachment", "ir.logging", "ir.model.data", "mail.followers", "mail.mail", "mail.message", "mail.notification", "mail.tracking.value", "mrp.production", "mrp.workorder", "payment.transaction", "pos.order*", "product.product", "product.template", "project.task", "purchase.order*", "queue.job", "res.partner", "sale.order*", "sms.sms", "stock.move*", "stock.picking", "stock.quant", "stock.valuation.layer", "website.track", "website.visitor"]"#,
+        value_type = "list[str]",
+        example = r#"
+            # Only the two tables that actually hurt in this database.
+            no-search-all-models = ["account.move*", "stock.move*"]
+        "#
+    )]
+    pub no_search_all_models: Option<Vec<String>>,
     /// The README template pointed at by `missing-readme` (`ODC8112`) when a module has none.
     /// Unset, the diagnostic just reports the missing file.
     #[option(
@@ -3459,6 +3469,10 @@ impl OdooOptions {
                 None => odoo::settings::ConfiguredList::BuiltIn,
             },
             deprecated_odoo_model_methods: match self.deprecated_odoo_model_methods {
+                Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
+                None => odoo::settings::ConfiguredList::BuiltIn,
+            },
+            no_search_all_models: match self.no_search_all_models {
                 Some(values) => odoo::settings::ConfiguredList::UserProvided(values),
                 None => odoo::settings::ConfiguredList::BuiltIn,
             },
