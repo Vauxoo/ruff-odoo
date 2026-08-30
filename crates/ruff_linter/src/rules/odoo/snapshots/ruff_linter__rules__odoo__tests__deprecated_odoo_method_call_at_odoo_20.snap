@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
+ODW8502 `check_access_rights` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
   --> deprecated_odoo_method_call.py:8:14
    |
  7 |     def deprecated_in_18(self):
@@ -11,7 +11,7 @@ ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` 
 10 |         self._filter_access_rules("read")
    |
 
-ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `check_access_rule` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead; an override belongs in `_check_access`.
   --> deprecated_odoo_method_call.py:9:14
    |
  7 |     def deprecated_in_18(self):
@@ -30,7 +30,7 @@ help: Replace with `check_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`.
   --> deprecated_odoo_method_call.py:10:14
    |
  8 |         self.check_access_rights("read")
@@ -49,7 +49,7 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules_python` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`.
   --> deprecated_odoo_method_call.py:11:14
    |
  9 |         self.check_access_rule("write")
@@ -68,7 +68,7 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 `_check_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
+ODW8502 `_check_recursion` was removed in Odoo 20.0 (deprecated since 18.0). Use `not _has_cycle(...)` instead — the result is inverted.
   --> deprecated_odoo_method_call.py:12:14
    |
 10 |         self._filter_access_rules("read")
@@ -78,7 +78,7 @@ ODW8502 `_check_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(..
 13 |         self._check_m2m_recursion("child_ids")
    |
 
-ODW8502 `_check_m2m_recursion` is deprecated since Odoo 18.0. Use `not _has_cycle(...)` instead — the result is inverted.
+ODW8502 `_check_m2m_recursion` was removed in Odoo 20.0 (deprecated since 18.0). Use `not _has_cycle(...)` instead — the result is inverted.
   --> deprecated_odoo_method_call.py:13:14
    |
 11 |         self._filter_access_rules_python("read")
@@ -89,17 +89,7 @@ ODW8502 `_check_m2m_recursion` is deprecated since Odoo 18.0. Use `not _has_cycl
 15 |     def deprecated_in_19(self):
    |
 
-ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
-  --> deprecated_odoo_method_call.py:16:14
-   |
-15 |     def deprecated_in_19(self):
-16 |         self.read_group([], ["amount:sum"], ["partner_id"])
-   |              ^^^^^^^^^^
-17 |         self.check_field_access_rights("read", ["name"])
-18 |         self.env["my.model"].browse(1).toggle_active()
-   |
-
-ODW8502 `check_field_access_rights` is deprecated since Odoo 19.0. Use `_check_field_access`, or `fields_get` to list the allowed fields.
+ODW8502 `check_field_access_rights` was removed in Odoo 20.0 (deprecated since 19.0). Use `_check_field_access`, or `fields_get` to list the allowed fields.
   --> deprecated_odoo_method_call.py:17:14
    |
 15 |     def deprecated_in_19(self):
@@ -109,7 +99,7 @@ ODW8502 `check_field_access_rights` is deprecated since Odoo 19.0. Use `_check_f
 18 |         self.env["my.model"].browse(1).toggle_active()
    |
 
-ODW8502 `toggle_active` is deprecated since Odoo 19.0. Use `action_archive` or `action_unarchive` depending on the intent.
+ODW8502 `toggle_active` was removed in Odoo 20.0 (deprecated since 19.0). Use `action_archive` or `action_unarchive` depending on the intent.
   --> deprecated_odoo_method_call.py:18:40
    |
 16 |         self.read_group([], ["amount:sum"], ["partner_id"])
@@ -118,15 +108,4 @@ ODW8502 `toggle_active` is deprecated since Odoo 19.0. Use `action_archive` or `
    |                                        ^^^^^^^^^^^^^
 19 |
 20 |     def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False):
-   |
-
-ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
-  --> deprecated_odoo_method_call.py:26:24
-   |
-24 |     def toggle_active(self):
-25 |         """A `super()` call to a *different* deprecated method is still a migration site."""
-26 |         return super().read_group([], [], [])
-   |                        ^^^^^^^^^^
-27 |
-28 |     def replacements(self):
    |

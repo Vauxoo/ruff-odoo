@@ -10,3 +10,44 @@ ODW8160 fields_view_get has been deprecated by Odoo. Please look for alternative
   |         ^^^^^^^^^^^^^^^
 8 |         return {}
   |
+
+ODW8160 check_access_rights has been deprecated by Odoo. Override `_check_access` instead.
+  --> deprecated_odoo_model_method.py:13:9
+   |
+11 |         return {}
+12 |
+13 |     def check_access_rights(self, operation, raise_exception=True):
+   |         ^^^^^^^^^^^^^^^^^^^
+14 |         """Odoo 18.0 folded the access hooks into `_check_access`."""
+15 |         return super().check_access_rights(operation, raise_exception)
+   |
+
+ODW8160 check_access_rule has been deprecated by Odoo. Override `_check_access` instead.
+  --> deprecated_odoo_model_method.py:17:9
+   |
+15 |         return super().check_access_rights(operation, raise_exception)
+16 |
+17 |     def check_access_rule(self, operation):
+   |         ^^^^^^^^^^^^^^^^^
+18 |         return super().check_access_rule(operation)
+   |
+
+ODW8160 _filter_access_rules has been deprecated by Odoo. Override `_check_access` instead.
+  --> deprecated_odoo_model_method.py:20:9
+   |
+18 |         return super().check_access_rule(operation)
+19 |
+20 |     def _filter_access_rules(self, operation):
+   |         ^^^^^^^^^^^^^^^^^^^^
+21 |         return super()._filter_access_rules(operation)
+   |
+
+ODW8160 _filter_access_rules_python has been deprecated by Odoo. Override `_check_access` instead.
+  --> deprecated_odoo_model_method.py:23:9
+   |
+21 |         return super()._filter_access_rules(operation)
+22 |
+23 |     def _filter_access_rules_python(self, operation):
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |         return super()._filter_access_rules_python(operation)
+   |
