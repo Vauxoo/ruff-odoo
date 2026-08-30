@@ -16,14 +16,14 @@ global `~/.claude/CLAUDE.md` settings for this — this file must be self-contai
 astral-sh/ruff (upstream, remote "astral")
       ^
       | (kept in sync, see the sync-astral-upstream skill)
-Vauxoo/ruff (stable company fork, remote "stb")
+Vauxoo/ruff-odoo (stable company fork, remote "stb")
       ^
       | (dev branches pushed here first)
-Vauxoo-dev/ruff (personal dev fork, remote "dev")
+Vauxoo-dev/ruff-odoo (personal dev fork, remote "dev")
 ```
 
-- **Push target**: always `dev` (`Vauxoo-dev/ruff`) unless the user explicitly says otherwise.
-- **PR target**: always `stb` (`Vauxoo/ruff`), never `astral` (`astral-sh/ruff`). This repo's
+- **Push target**: always `dev` (`Vauxoo-dev/ruff-odoo`) unless the user explicitly says otherwise.
+- **PR target**: always `stb` (`Vauxoo/ruff-odoo`), never `astral` (`astral-sh/ruff`). This repo's
   custom Odoo rules are Vauxoo-specific and are not meant to be contributed upstream to
   astral-sh — see the `add-odoo-rule` skill for why.
 
@@ -45,7 +45,7 @@ Vauxoo-dev/ruff (personal dev fork, remote "dev")
    of commits behind will show a polluted diff full of unrelated upstream history.
 5. Push to the `dev` remote first (`git push dev <branch>`).
 6. Create the PR with `gh pr create`, targeting `stb`'s repo explicitly
-   (`gh pr create --repo Vauxoo/ruff --base main --head Vauxoo-dev:<branch> ...`) since the head
+   (`gh pr create --repo Vauxoo/ruff-odoo --base main --head Vauxoo-dev:<branch> ...`) since the head
    branch lives on a different fork/remote than the PR target repo.
 7. Report the final branch name, target branch, and PR URL.
 
@@ -77,5 +77,5 @@ Vauxoo-dev/ruff (personal dev fork, remote "dev")
 
 **User:** Open the PR for the ODOO rules against Vauxoo.
 **Action:** The agent confirms `odoo-custom` is rebased on `stb/main`, pushes to `dev`, then runs
-`gh pr create --repo Vauxoo/ruff --base main --head Vauxoo-dev:odoo-custom --title "..." --body "..."`
+`gh pr create --repo Vauxoo/ruff-odoo --base main --head Vauxoo-dev:odoo-custom --title "..." --body "..."`
 with no AI attribution anywhere, and reports the PR URL.

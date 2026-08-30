@@ -162,9 +162,27 @@ The guidance in this section applies to edits to the Vauxoo-specific `OD` rule g
 
 ### Related skills
 
-When the task matches a more specific ODOO workflow, also read and follow that skill from the repository root:
+Read `.agents/skills/add-odoo-rule/SKILL.md` before any edit under
+`crates/ruff_linter/src/rules/odoo/`, whether the task adds a rule or changes one that
+already exists, and without waiting to be asked for it by name. It carries the per-rule
+checklist — the `codes.rs` numbering blocks, which dispatch file a check belongs in, the
+`registry.rs` `lint_source` arm whose absence makes a token rule silently report nothing,
+and the verification list to run before calling a rule done. Skipping it produces rules that
+compile and never fire.
 
-- Adding a new custom Odoo lint rule (ported from pylint-odoo or OCA's odoo-pre-commit-hooks): `.agents/skills/add-odoo-rule/SKILL.md`.
+Two things make it easy to miss, so do not wait for the tooling to surface it:
+
+- It is not installed under `~/.claude/skills/`. It ships as a repository plugin
+    (`.agents/.claude-plugin/`, marketplace `ruff-agent-skills`), and `.claude/settings.json`
+    enables only `ty-skills`, so the skill never appears in the agent's skill listing. Read
+    the `SKILL.md` file directly instead of trying to invoke it by name.
+- A session whose working directory is not this checkout — a scratch context directory, say
+    — does not load this `AGENTS.md` either. When work targets this repository, read both
+    files by path.
+
+The other two apply when the task matches them, and follow the same "read the file from the
+repository root" rule:
+
 - Opening a Pull Request on GitHub or a Merge Request on GitLab/git.vauxoo.com for this repo: `.agents/skills/create-pr-mr/SKILL.md`.
 - Rebasing/syncing this fork onto the latest astral-sh/ruff upstream: `.agents/skills/sync-astral-upstream/SKILL.md`.
 
@@ -178,10 +196,19 @@ its documentation is written. Only `docs-odoo/index.md` and `docs-odoo/preview.m
 hand-written and checked in; `rules.md`, `settings.md` and `rules/*.md` are generated and
 gitignored.
 
-To review the site locally, generate it and then build or serve it with
-`mkdocs build --strict -f mkdocs-odoo.yml`. Always use `--strict`: it is what turns a
-broken link or a missing anchor in a doc comment into an error, and it is what the
-`mkdocs (odoo)` CI job runs.
+To review the site locally, generate it and then build or serve it. `mkdocs` is not a
+development dependency of this checkout — `uv run --only-group dev` does not provide it and
+a bare `mkdocs` is "command not found" unless you happen to have one on `PATH`. Take the
+pinned set the `mkdocs (odoo)` CI job installs, so that a local build fails on the same
+things CI does:
+
+```sh
+uv run --no-project --with-requirements docs/requirements.txt mkdocs build --strict -f mkdocs-odoo.yml
+```
+
+`--no-project` is what keeps `uv run` from building Ruff from source first. Always use
+`--strict`: it is what turns a broken link or a missing anchor in a doc comment into an
+error, and it is what that CI job runs.
 
 Two constraints are easy to break without noticing:
 
