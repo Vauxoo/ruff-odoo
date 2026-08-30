@@ -3305,7 +3305,7 @@ pub struct OdooOptions {
     pub attribute_deprecated: Option<Vec<String>>,
     /// The methods whose override must call `super()` (`ODW8106`). Setting it replaces the built-in list.
     #[option(
-        default = r#"["copy", "create", "default_get", "read", "setUp", "setUpClass", "tearDown", "tearDownClass", "unlink", "write"]"#,
+        default = r#"["copy", "create", "default_get", "init", "read", "setUp", "setUpClass", "tearDown", "tearDownClass", "unlink", "write"]"#,
         value_type = "list[str]",
         example = r#"
             # Only the ORM writes matter to us.

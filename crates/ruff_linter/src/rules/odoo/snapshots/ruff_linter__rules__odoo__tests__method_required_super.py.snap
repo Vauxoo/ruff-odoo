@@ -10,3 +10,33 @@ ODW8106 Missing `super` call in "write" method
   |         ^^^^^
 5 |         return True
   |
+
+ODW8106 Missing `super` call in "init" method
+  --> method_required_super.py:30:9
+   |
+28 |     # `analytic.mixin.init` creates a gin index for `sale_order_line`; dropping the
+29 |     # `super()` call drops the index.
+30 |     def init(self):
+   |         ^^^^
+31 |         self.env.cr.execute("CREATE INDEX ...")
+   |
+
+ODW8106 Missing `super` call in "init" method
+  --> method_required_super.py:46:9
+   |
+44 |     _inherits = {"my.model": "my_model_id"}
+45 |
+46 |     def init(self):
+   |         ^^^^
+47 |         self.env.cr.execute("CREATE INDEX ...")
+   |
+
+ODW8106 Missing `super` call in "write" method
+  --> method_required_super.py:57:9
+   |
+55 |         self.env.cr.execute("CREATE INDEX ...")
+56 |
+57 |     def write(self, vals):
+   |         ^^^^^
+58 |         return True
+   |

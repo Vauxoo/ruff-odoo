@@ -10,3 +10,13 @@ ODW8106 Missing `super` call in "write" method
   |         ^^^^^
 5 |         return True
   |
+
+ODW8106 Missing `super` call in "write" method
+  --> method_required_super.py:57:9
+   |
+55 |         self.env.cr.execute("CREATE INDEX ...")
+56 |
+57 |     def write(self, vals):
+   |         ^^^^^
+58 |         return True
+   |
