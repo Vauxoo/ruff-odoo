@@ -223,6 +223,17 @@ cross-module inference (see Scope discipline above).
    Expect "All docs are formatted correctly." On failure it prints the exact `///` rewrite to
    paste into the rule file. It takes a few minutes (one `ruff format` subprocess per snippet
    across all ~900 rules), so run it in the background.
+
+   The same job then builds the `OD`/`OAPP` documentation site, which is where a broken link
+   or a missing anchor in a doc comment turns into an error. Build it after
+   `cargo dev generate-odoo-docs`, with the pinned dependency set CI installs — `mkdocs` is
+   not a development dependency of this checkout, so a bare `mkdocs` is "command not found"
+   and `uv run --only-group dev` does not provide it either:
+   ```
+   uv run --no-project --with-requirements docs/requirements.txt mkdocs build --strict -f mkdocs-odoo.yml
+   ```
+   `--no-project` is what keeps `uv run` from building Ruff from source first, and `--strict`
+   is the whole point of running it. Expect it to end with "Documentation built in …".
 6. `cargo fmt` (verify with `cargo fmt --check`) — CI has a dedicated formatting job that fails
    on any diff, and hand-written fix-building code (long `Edit::range_replacement(...)` calls,
    nested builders) frequently comes out slightly off rustfmt style. Run it before every push,
