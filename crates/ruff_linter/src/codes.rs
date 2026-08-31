@@ -1037,6 +1037,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "C8120") => rules::odoo::rules::ManifestSummaryMultiline,
         (Odoo, "C8501") => rules::odoo::rules::HeaderComments,
         (Odoo, "C8502") => rules::odoo::rules::PylintDisableComment,
+        (Odoo, "C9501") => rules::odoo::rules::ManifestDependsUnsorted,
         (Odoo, "E8101") => rules::odoo::rules::ManifestAuthorString,
         (Odoo, "E8102") => rules::odoo::rules::InvalidCommit,
         (Odoo, "E8103") => rules::odoo::rules::SqlInjection,

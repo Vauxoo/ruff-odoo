@@ -1,0 +1,258 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:24:5
+   |
+22 | {
+23 |     "name": "Unsorted",
+24 |     "depends": [
+   |     ^^^^^^^^^
+25 |         "sale",
+26 |         "account",
+   |
+help: Sort "depends" alphabetically
+   |
+24 |     "depends": [
+   -         "sale",
+25 |         "account",
+26 |         "base",
+27 +         "sale",
+28 |     ],
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:35:5
+   |
+33 | {
+34 |     "name": "Unsorted With Comments",
+35 |     "depends": [
+   |     ^^^^^^^^^
+36 |         # sale has to come first because of the widget
+37 |         # (second line of the same comment block)
+   |
+help: Sort "depends" alphabetically
+   |
+35 |     "depends": [
+36 +         "account",  # analytic distribution
+37 +         "base",
+38 |         # sale has to come first because of the widget
+39 |         # (second line of the same comment block)
+40 |         "sale",
+   -         "account",  # analytic distribution
+   -         "base",
+41 |     ],
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:47:5
+   |
+45 | {
+46 |     "name": "Unsorted No Trailing Comma",
+47 |     "depends": [
+   |     ^^^^^^^^^
+48 |         "sale",
+49 |         "account",
+   |
+help: Sort "depends" alphabetically
+   |
+47 |     "depends": [
+48 +         "account",
+49 +         "base",
+50 |         "sale",
+   -         "account",
+   -         "base"
+51 |     ],
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:57:5
+   |
+55 | {
+56 |     "name": "Unsorted Last Entry Stays Last",
+57 |     "depends": [
+   |     ^^^^^^^^^
+58 |         "base",
+59 |         "account",
+   |
+help: Sort "depends" alphabetically
+   |
+57 |     "depends": [
+58 +         "account",
+59 |         "base",
+   -         "account",
+   -         "sale"
+60 +         "sale",
+61 |     ],
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:68:5
+   |
+66 | {
+67 |     "name": "Unsorted Bracket Comments",
+68 |     "depends": [  # keep me sorted
+   |     ^^^^^^^^^
+69 |         "sale",
+70 |         "account",
+   |
+help: Sort "depends" alphabetically
+   |
+68 |     "depends": [  # keep me sorted
+69 +         "account",
+70 |         "sale",
+   -         "account",
+71 |         # TODO: drop base once the glue module lands
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:78:5
+   |
+76 | {
+77 |     "name": "Unsorted Two Per Line",
+78 |     "depends": [
+   |     ^^^^^^^^^
+79 |         "sale", "account",
+80 |         "base",
+   |
+help: Sort "depends" alphabetically
+   |
+78 |     "depends": [
+   -         "sale", "account",
+79 +         "account",
+80 |         "base",
+81 +         "sale",
+82 |     ],
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:87:5
+   |
+85 | {
+86 |     "name": "Unsorted Hanging Bracket",
+87 |     "depends": ["sale",
+   |     ^^^^^^^^^
+88 |                 "account"],
+89 | }
+   |
+help: Sort "depends" alphabetically
+   |
+86 |     "name": "Unsorted Hanging Bracket",
+   -     "depends": ["sale",
+   -                 "account"],
+87 +     "depends": [
+88 +         "account",
+89 +         "sale",
+90 +     ],
+91 | }
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+  --> __manifest__.py:94:5
+   |
+92 | {
+93 |     "name": "Unsorted Closing Bracket",
+94 |     "depends": [
+   |     ^^^^^^^^^
+95 |         "sale",
+96 |         "account"],
+   |
+help: Sort "depends" alphabetically
+   |
+94 |     "depends": [
+95 +         "account",
+96 |         "sale",
+   -         "account"],
+97 +     ],
+98 | }
+   |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:100:29
+    |
+ 99 | # Single-line list: reordered in place, layout and missing trailing comma left alone.
+100 | {"name": "Unsorted Inline", "depends": ["sale", "account", "base"]}
+    |                             ^^^^^^^^^
+101 |
+102 | # Duplicates keep their relative order.
+    |
+help: Sort "depends" alphabetically
+    |
+99  | # Single-line list: reordered in place, layout and missing trailing comma left alone.
+    - {"name": "Unsorted Inline", "depends": ["sale", "account", "base"]}
+100 + {"name": "Unsorted Inline", "depends": ["account", "base", "sale"]}
+101 |
+    |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:105:5
+    |
+103 | {
+104 |     "name": "Unsorted Duplicated",
+105 |     "depends": [
+    |     ^^^^^^^^^
+106 |         "sale",
+107 |         "account",
+    |
+help: Sort "depends" alphabetically
+    |
+105 |     "depends": [
+106 +         "account",
+107 |         "sale",
+    -         "account",
+108 |         "sale",
+    |
+
+ODC9501 [*] Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:115:5
+    |
+113 | {
+114 |     "name": "Unsorted Underscore",
+115 |     "depends": [
+    |     ^^^^^^^^^
+116 |         "salemodule",
+117 |         "sale_stock",
+    |
+help: Sort "depends" alphabetically
+    |
+115 |     "depends": [
+116 +         "sale_stock",
+117 |         "salemodule",
+    -         "sale_stock",
+118 |     ],
+    |
+
+ODC9501 Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:125:5
+    |
+123 | {
+124 |     "name": "Unsorted Blank Line",
+125 |     "depends": [
+    |     ^^^^^^^^^
+126 |         "sale",
+    |
+help: Sort "depends" alphabetically
+
+ODC9501 Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:136:5
+    |
+134 | {
+135 |     "name": "Unsorted Two Per Line Commented",
+136 |     "depends": [
+    |     ^^^^^^^^^
+137 |         "sale", "account",  # which one is this about?
+138 |         "base",
+    |
+help: Sort "depends" alphabetically
+
+ODC9501 Manifest key "depends" is not sorted alphabetically
+   --> __manifest__.py:145:5
+    |
+143 | {
+144 |     "name": "Unsorted Split Entry",
+145 |     "depends": [
+    |     ^^^^^^^^^
+146 |         "sale",
+147 |         "acc"
+    |
+help: Sort "depends" alphabetically
