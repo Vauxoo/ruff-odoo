@@ -1,0 +1,190 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9501 [*] Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:10:5
+   |
+ 9 |     # ODE9501: the common shape, one entry with a key, a definition and a message.
+10 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+11 |         ("name_uniq", "unique (name)", "The name must be unique!"),
+12 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+   |
+9  |     # ODE9501: the common shape, one entry with a key, a definition and a message.
+   -     _sql_constraints = [
+   -         ("name_uniq", "unique (name)", "The name must be unique!"),
+   -     ]
+10 +     _name_uniq = models.Constraint("unique (name)", "The name must be unique!")
+11 |
+   |
+
+ODE9501 [*] Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:19:5
+   |
+18 |     # ODE9501: several entries, and one of them with no message at all.
+19 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+20 |         ("check_amount", "CHECK (amount > 0)", "The amount must be positive."),
+21 |         ("account_uniq", "unique (account_id, date)"),
+   |
+help: Replace with `models.Constraint` attributes
+   |
+18 |     # ODE9501: several entries, and one of them with no message at all.
+   -     _sql_constraints = [
+   -         ("check_amount", "CHECK (amount > 0)", "The amount must be positive."),
+   -         ("account_uniq", "unique (account_id, date)"),
+   -     ]
+19 +     _check_amount = models.Constraint(
+20 +         "CHECK (amount > 0)",
+21 +         "The amount must be positive.",
+22 +     )
+23 +     _account_uniq = models.Constraint("unique (account_id, date)")
+24 |
+   |
+
+ODE9501 [*] Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:29:5
+   |
+28 |     # ODE9501: written on a single line, and with a translated message.
+29 |     _sql_constraints = [("qty_uniq", "unique (qty)", _("Quantity must be unique."))]
+   |     ^^^^^^^^^^^^^^^^
+help: Replace with `models.Constraint` attributes
+   |
+28 |     # ODE9501: written on a single line, and with a translated message.
+   -     _sql_constraints = [("qty_uniq", "unique (qty)", _("Quantity must be unique."))]
+29 +     _qty_uniq = models.Constraint("unique (qty)", _("Quantity must be unique."))
+30 |
+   |
+
+ODE9501 [*] Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:37:5
+   |
+35 |     # ODE9501: a message too long to keep the call on one line once rewritten, so the fix
+36 |     # expands it with one argument per line and a magic trailing comma.
+37 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+38 |         (
+39 |             "product_location_uniq",
+   |
+help: Replace with `models.Constraint` attributes
+   |
+36 |     # expands it with one argument per line and a magic trailing comma.
+   -     _sql_constraints = [
+   -         (
+   -             "product_location_uniq",
+   -             "unique (product_id, location_id, lot_id, package_id, owner_id)",
+   -             "A quant can only exist once per product, location, lot, package and owner.",
+   -         ),
+   -     ]
+37 +     _product_location_uniq = models.Constraint(
+38 +         "unique (product_id, location_id, lot_id, package_id, owner_id)",
+39 +         "A quant can only exist once per product, location, lot, package and owner.",
+40 +     )
+41 |
+   |
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:50:5
+   |
+49 |     # ODE9501, but no fix: the value is not a list of tuples this rule can take apart.
+50 |     _sql_constraints = BASE_SQL_CONSTRAINTS
+   |     ^^^^^^^^^^^^^^^^
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:57:5
+   |
+56 |     # ODE9501, but no fix: extending another model's list is not a literal either.
+57 |     _sql_constraints = ProjectTask._sql_constraints + [
+   |     ^^^^^^^^^^^^^^^^
+58 |         ("name_uniq", "unique (name)", "The name must be unique!"),
+59 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:66:5
+   |
+65 |     # ODE9501, but no fix: `_name_uniq` would become `__name_uniq`, which Python mangles.
+66 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+67 |         ("_name_uniq", "unique (name)", "The name must be unique!"),
+68 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:75:5
+   |
+74 |     # ODE9501, but no fix: the key cannot be spelled as an attribute.
+75 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+76 |         ("name uniq", "unique (name)", "The name must be unique!"),
+77 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:86:5
+   |
+85 |     # ODE9501, but no fix: the class already binds `_barcode_uniq`.
+86 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+87 |         ("barcode_uniq", "unique (barcode)", "The barcode must be unique!"),
+88 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints.py:95:5
+   |
+94 |     # ODE9501, but no fix: both entries would land on `_name_uniq`.
+95 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+96 |         ("name_uniq", "unique (name)", "The name must be unique!"),
+97 |         ("name_uniq", "unique (complete_name)", "The complete name must be unique!"),
+   |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+   --> deprecated_sql_constraints.py:105:5
+    |
+104 |     # ODE9501, but no fix: the rewrite would drop the comment inside the list.
+105 |     _sql_constraints = [
+    |     ^^^^^^^^^^^^^^^^
+106 |         # Only enforced on records created after the migration.
+107 |         ("name_uniq", "unique (name)", "The name must be unique!"),
+    |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+   --> deprecated_sql_constraints.py:115:5
+    |
+114 |     # ODE9501, but no fix: the message is spread over two lines.
+115 |     _sql_constraints = [
+    |     ^^^^^^^^^^^^^^^^
+116 |         (
+117 |             "name_uniq",
+    |
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+   --> deprecated_sql_constraints.py:129:5
+    |
+128 |     # ODE9501, but no fix: an empty list has no attribute to be rewritten into.
+129 |     _sql_constraints = []
+    |     ^^^^^^^^^^^^^^^^
+help: Replace with `models.Constraint` attributes
+
+ODE9501 Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+   --> deprecated_sql_constraints.py:136:5
+    |
+135 |     # ODE9501, but no fix: four elements is not a shape `models.Constraint` accepts.
+136 |     _sql_constraints = [
+    |     ^^^^^^^^^^^^^^^^
+137 |         ("name_uniq", "unique (name)", "The name must be unique!", "extra"),
+138 |     ]
+    |
+help: Replace with `models.Constraint` attributes
