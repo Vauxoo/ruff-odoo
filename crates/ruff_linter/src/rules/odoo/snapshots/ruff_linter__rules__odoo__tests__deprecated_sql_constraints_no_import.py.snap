@@ -1,0 +1,25 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9501 [*] Model attribute `_sql_constraints` is no longer supported since Odoo 19.0, define `models.Constraint` attributes on the model instead
+  --> deprecated_sql_constraints_no_import.py:8:5
+   |
+ 7 |     # ODE9501: `models` is not bound here, so the fix has to import it as well.
+ 8 |     _sql_constraints = [
+   |     ^^^^^^^^^^^^^^^^
+ 9 |         ("name_uniq", "unique (name)", "The currency name must be unique!"),
+10 |     ]
+   |
+help: Replace with `models.Constraint` attributes
+  |
+1 | from odoo.models import Model
+2 + from odoo import models
+3 |
+--------------------------------------------------------------------------------
+8 |     # ODE9501: `models` is not bound here, so the fix has to import it as well.
+  -     _sql_constraints = [
+  -         ("name_uniq", "unique (name)", "The currency name must be unique!"),
+  -     ]
+9 +     _name_uniq = models.Constraint("unique (name)", "The currency name must be unique!")
+  |
+note: This is an unsafe fix and may change runtime behavior

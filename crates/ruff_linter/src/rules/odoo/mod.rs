@@ -225,6 +225,14 @@ mod tests {
         Rule::DeprecatedOsvExpression,
         Path::new("deprecated_osv_expression_domain_imported.py")
     )]
+    #[test_case(
+        Rule::DeprecatedSqlConstraints,
+        Path::new("deprecated_sql_constraints.py")
+    )]
+    #[test_case(
+        Rule::DeprecatedSqlConstraints,
+        Path::new("deprecated_sql_constraints_no_import.py")
+    )]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
@@ -271,6 +279,43 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::DeprecatedOsvExpression)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `_sql_constraints` still works up to 18.0, so a project that says so is not reported.
+    #[test]
+    fn deprecated_sql_constraints_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_sql_constraints_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_sql_constraints.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedSqlConstraints)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// With 19.0 configured, `models.Constraint` is known to exist, so the same rewrite that
+    /// is offered as an unsafe fix without the setting becomes a safe one.
+    #[test]
+    fn deprecated_sql_constraints_safe_at_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_sql_constraints_safe_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_sql_constraints.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedSqlConstraints)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);

@@ -1055,6 +1055,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "E8301") => rules::odoo::rules::TranslationFormatTruncated,
         (Odoo, "E8305") => rules::odoo::rules::TranslationTooManyArgs,
         (Odoo, "E8306") => rules::odoo::rules::TranslationTooFewArgs,
+        (Odoo, "E9501") => rules::odoo::rules::DeprecatedSqlConstraints,
         (Odoo, "F8101") => rules::odoo::rules::ResourceNotExist,
         (Odoo, "R8101") => rules::odoo::rules::OdooExceptionWarning,
         (Odoo, "R8180") => rules::odoo::rules::ConsiderMergingClassesInherited,

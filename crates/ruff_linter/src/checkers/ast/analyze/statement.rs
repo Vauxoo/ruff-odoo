@@ -1509,6 +1509,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::AttributeDeprecated) {
                 odoo::rules::attribute_deprecated(checker, assign);
             }
+            if checker.is_rule_enabled(Rule::DeprecatedSqlConstraints) {
+                odoo::rules::deprecated_sql_constraints(checker, assign);
+            }
             if checker.any_rule_enabled(&[
                 Rule::MethodCompute,
                 Rule::MethodSearch,
