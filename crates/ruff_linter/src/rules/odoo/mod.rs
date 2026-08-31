@@ -380,6 +380,64 @@ mod tests {
         Ok(())
     }
 
+    /// 20.0 deleted every one of these methods, so the call raises `AttributeError` instead of
+    /// warning and the message says "was removed" — except `read_group`, which 20.0 brought
+    /// back as the public spelling of `_read_group` and which is therefore not reported at all.
+    #[test]
+    fn deprecated_odoo_method_call_at_odoo_20() -> Result<()> {
+        let snapshot = "deprecated_odoo_method_call_at_odoo_20".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_method_call.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(20, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// 19.0 is the one release where `read_group` is deprecated but still there, so it is
+    /// reported next to the 18.0 entries rather than dropped as it is on 20.0.
+    #[test]
+    fn deprecated_odoo_method_call_at_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_odoo_method_call_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_method_call.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The access hooks only became dead overrides in 18.0, so a project on 17.0 keeps
+    /// overriding them and is told about `fields_view_get` alone.
+    #[test]
+    fn deprecated_odoo_model_method_at_odoo_17() -> Result<()> {
+        let snapshot = "deprecated_odoo_model_method_at_odoo_17".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_model_method.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooModelMethod)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
     /// `Controller` only got its `env` property in Odoo 19.0, so up to 18.0 a call in a
     /// controller is reported without a fix: rewriting it would raise `AttributeError`.
     #[test]
