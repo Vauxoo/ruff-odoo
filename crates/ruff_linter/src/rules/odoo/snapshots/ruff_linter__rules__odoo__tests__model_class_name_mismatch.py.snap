@@ -1,0 +1,62 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9503 Class `Partner` does not match model `res.partner`. Rename it to `ResPartner`.
+  --> model_class_name_mismatch.py:79:7
+   |
+78 | # ODW9503: named after another model entirely.
+79 | class Partner(models.Model):
+   |       ^^^^^^^
+80 |     _inherit = "res.partner"
+   |
+
+ODW9503 Class `Picking` does not match model `stock.picking`. Rename it to `StockPicking`.
+  --> model_class_name_mismatch.py:83:7
+   |
+83 | class Picking(models.Model):
+   |       ^^^^^^^
+84 |     _inherit = "stock.picking"
+   |
+
+ODW9503 Class `Uom` does not match model `uom.uom`. Rename it to `UomUom`.
+  --> model_class_name_mismatch.py:87:7
+   |
+87 | class Uom(models.Model):
+   |       ^^^
+88 |     _inherit = "uom.uom"
+   |
+
+ODW9503 Class `MessageMailLinkPreview` does not match model `mail.message.link.preview`. Rename it to `MailMessageLinkPreview`.
+  --> model_class_name_mismatch.py:92:7
+   |
+91 | # ODW9503: the words are right but in the wrong order.
+92 | class MessageMailLinkPreview(models.Model):
+   |       ^^^^^^^^^^^^^^^^^^^^^^
+93 |     _name = "mail.message.link.preview"
+   |
+
+ODW9503 Class `EventMailRegistration` does not match model `event.mail.slot`. Rename it to `EventMailSlot`.
+  --> model_class_name_mismatch.py:97:7
+   |
+96 | # ODW9503: a leftover from before the model was renamed.
+97 | class EventMailRegistration(models.Model):
+   |       ^^^^^^^^^^^^^^^^^^^^^
+98 |     _name = "event.mail.slot"
+   |
+
+ODW9503 Class `HrDepartureWizard` does not match model `hr.version.wizard`. Rename it to `HrVersionWizard`.
+   --> model_class_name_mismatch.py:101:7
+    |
+101 | class HrDepartureWizard(models.TransientModel):
+    |       ^^^^^^^^^^^^^^^^^
+102 |     _name = "hr.version.wizard"
+    |
+
+ODW9503 Class `PeppolClarification` does not match model `account.peppol.clarification`. Rename it to `AccountPeppolClarification`.
+   --> model_class_name_mismatch.py:106:7
+    |
+105 | # ODW9503: missing the module prefix the model carries.
+106 | class PeppolClarification(models.Model):
+    |       ^^^^^^^^^^^^^^^^^^^
+107 |     _name = "account.peppol.clarification"
+    |

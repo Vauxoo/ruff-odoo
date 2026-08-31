@@ -89,6 +89,10 @@ mod tests {
     #[test_case(Rule::AttributeDeprecated, Path::new("attribute_deprecated.py"))]
     #[test_case(Rule::MissingReturn, Path::new("missing_return.py"))]
     #[test_case(
+        Rule::ModelClassNameMismatch,
+        Path::new("model_class_name_mismatch.py")
+    )]
+    #[test_case(
         Rule::OdooAddonsRelativeImport,
         Path::new("odoo_addons_relative_import/my_module/models/foo.py")
     )]
@@ -271,6 +275,25 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::DeprecatedOsvExpression)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The convention landed in Odoo 19.0 (commit `f10bd8dd`); a project on an earlier series
+    /// named these classes freely, exactly as Odoo's own addons did at the time.
+    #[test]
+    fn model_class_name_mismatch_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "model_class_name_mismatch_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/model_class_name_mismatch.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::ModelClassNameMismatch)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
