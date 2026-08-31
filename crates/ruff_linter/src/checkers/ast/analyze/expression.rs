@@ -1492,6 +1492,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::ManifestDataDuplicated) {
                 odoo::rules::manifest_data_duplicated(checker, dict, checker.path);
             }
+            if checker.is_rule_enabled(Rule::ManifestDependsUnsorted) {
+                odoo::rules::manifest_depends_unsorted(checker, dict, checker.path);
+            }
             if checker.is_rule_enabled(Rule::ResourceNotExist) {
                 odoo::rules::resource_not_exist(checker, dict, checker.path);
             }

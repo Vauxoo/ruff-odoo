@@ -159,6 +159,10 @@ mod tests {
         Rule::ManifestDataDuplicated,
         Path::new("manifest_data_duplicated/__manifest__.py")
     )]
+    #[test_case(
+        Rule::ManifestDependsUnsorted,
+        Path::new("manifest_depends_unsorted/__manifest__.py")
+    )]
     #[test_case(Rule::TranslationRequired, Path::new("translation_required.py"))]
     #[test_case(
         Rule::TranslationRequired,
