@@ -137,6 +137,14 @@ cross-module inference (see Scope discipline above).
    `avoid-`, `prefer-`, `consider-`, etc. (checked by the `rule_naming_convention` test) — e.g. use
    `VimComment`, not `UseVimComment`, even if the original pylint-odoo message said "Use of vim
    comment" (that phrasing is fine for the `message()` string, just not the struct/code name).
+
+   The **module file** is named after the check it holds, in `snake_case`, and a module holding a
+   family of related checks is named after the family. Keep siblings in the same shape — same word
+   order, same singular/plural — so the pair reads as a pair: `deprecated_odoo_method_call.rs`
+   (the call site) alongside `deprecated_odoo_method_name.rs` (the definition), not
+   `deprecated_method_names.rs`. The module name is also what a commit message uses as its scope
+   (see [Commit messages](#commit-messages)), so a name that does not pair with its sibling shows
+   up in the log forever.
 7. **Registry ordering** — `Linter::Odoo` in `registry.rs`'s `Linter` enum must stay alphabetically
    positioned by its doc-comment name (`odoo`, between `NumPy-specific rules` and
    `[pandas-vet](...)`) — checked by the `linter_sorting` test. If a rebase moves things around,
@@ -253,6 +261,29 @@ cross-module inference (see Scope discipline above).
    `cargo llvm-cov -p ruff_linter --lib --summary-only -- rules::odoo` (install once with `cargo
    install cargo-llvm-cov --locked` + `rustup component add llvm-tools-preview`), then grep the
    `rules/odoo/` lines from the output.
+
+## Commit messages
+
+The `target` names the check(s) the commit works on: the rule **module**, in `snake_case`,
+spelled exactly like its file under `crates/ruff_linter/src/rules/odoo/rules/`. Several checks in
+one commit means several targets, comma-separated:
+
+```
+[IMP] deprecated_odoo_method_call, deprecated_odoo_method_name: track the removal of the access methods Odoo dropped in 20.0
+[IMP] no_search_all: extend the list of models known to grow
+[FIX] prefer_env_translation: align the check with its fix in controllers
+```
+
+A bare `odoo:` target is only for a change that belongs to no particular check — the plugin
+scaffold, a shared helper in `rules/odoo/helpers.rs`, the `Settings` struct, the registry wiring.
+Reaching for `odoo:` because the commit happens to touch two rule files is exactly what this rule
+exists to prevent: from the log alone the reader cannot tell which checks changed behaviour, and
+that is the one thing they need when a `pre-commit-vauxoo` bump suddenly starts reporting
+something new across every project.
+
+The rest of the format is the Odoo standard (`[TAG] target: summary`) covered by the
+`odoo-commit-message-guidelines` skill — this section only settles what `target` is in this repo.
+The PR title carries the same target as the commit it squashes.
 
 ## Before opening a PR
 
