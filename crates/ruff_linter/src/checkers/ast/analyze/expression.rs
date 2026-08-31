@@ -260,6 +260,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                     if checker.is_rule_enabled(Rule::RegexFlagAlias) {
                         refurb::rules::regex_flag_alias(checker, expr);
                     }
+                    if checker.is_rule_enabled(Rule::DeprecatedOsvExpression) {
+                        odoo::rules::deprecated_osv_expression(checker, expr);
+                    }
                     if checker.is_rule_enabled(Rule::Airflow3Removal) {
                         airflow::rules::airflow_3_removal_expr(checker, expr);
                     }
@@ -406,6 +409,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                 odoo::rules::prefer_env_attribute(checker, attribute);
             }
             if attribute.ctx == ExprContext::Load {
+                if checker.is_rule_enabled(Rule::DeprecatedOsvExpression) {
+                    odoo::rules::deprecated_osv_expression(checker, expr);
+                }
                 if checker.any_rule_enabled(&[
                     Rule::SuspiciousPickleUsage,
                     Rule::SuspiciousMarshalUsage,

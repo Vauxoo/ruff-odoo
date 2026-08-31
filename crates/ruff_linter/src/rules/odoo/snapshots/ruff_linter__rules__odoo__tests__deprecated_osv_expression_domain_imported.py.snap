@@ -1,0 +1,19 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9502 [*] `odoo.osv.expression.AND` is deprecated since Odoo 19.0. Use `Domain.AND` instead.
+ --> deprecated_osv_expression_domain_imported.py:5:1
+  |
+4 | # The fix reuses the `Domain` already in scope instead of importing it again.
+5 | expression.AND([domain, [("state", "=", "draft")]])
+  | ^^^^^^^^^^^^^^
+6 | Domain.AND([domain, [("state", "=", "draft")]])
+  |
+help: Replace with `Domain.AND`
+  |
+4 | # The fix reuses the `Domain` already in scope instead of importing it again.
+  - expression.AND([domain, [("state", "=", "draft")]])
+5 | Domain.AND([domain, [("state", "=", "draft")]])
+6 + Domain.AND([domain, [("state", "=", "draft")]])
+  |
+note: This is an unsafe fix and may change runtime behavior
