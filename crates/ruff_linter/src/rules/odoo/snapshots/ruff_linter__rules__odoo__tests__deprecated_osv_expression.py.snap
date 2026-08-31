@@ -1,0 +1,321 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9502 [*] `odoo.osv.expression.AND` is deprecated since Odoo 19.0. Use `Domain.AND` instead.
+ --> deprecated_osv_expression.py:7:1
+  |
+6 | # Fixable: a pure forwarder to a `Domain` attribute.
+7 | expression.AND([domain, [("state", "=", "draft")]])
+  | ^^^^^^^^^^^^^^
+8 | expression.OR([domain, [("state", "=", "draft")]])
+9 | expression.TRUE_DOMAIN
+  |
+help: Replace with `Domain.AND`
+  |
+4 | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5 + from odoo.fields import Domain
+6 |
+7 | # Fixable: a pure forwarder to a `Domain` attribute.
+  - expression.AND([domain, [("state", "=", "draft")]])
+8 + Domain.AND([domain, [("state", "=", "draft")]])
+9 | expression.OR([domain, [("state", "=", "draft")]])
+  |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.OR` is deprecated since Odoo 19.0. Use `Domain.OR` instead.
+  --> deprecated_osv_expression.py:8:1
+   |
+ 6 | # Fixable: a pure forwarder to a `Domain` attribute.
+ 7 | expression.AND([domain, [("state", "=", "draft")]])
+ 8 | expression.OR([domain, [("state", "=", "draft")]])
+   | ^^^^^^^^^^^^^
+ 9 | expression.TRUE_DOMAIN
+10 | expression.FALSE_DOMAIN
+   |
+help: Replace with `Domain.OR`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+7  | # Fixable: a pure forwarder to a `Domain` attribute.
+8  | expression.AND([domain, [("state", "=", "draft")]])
+   - expression.OR([domain, [("state", "=", "draft")]])
+9  + Domain.OR([domain, [("state", "=", "draft")]])
+10 | expression.TRUE_DOMAIN
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.TRUE_DOMAIN` is deprecated since Odoo 19.0. Use `Domain.TRUE` instead.
+  --> deprecated_osv_expression.py:9:1
+   |
+ 7 | expression.AND([domain, [("state", "=", "draft")]])
+ 8 | expression.OR([domain, [("state", "=", "draft")]])
+ 9 | expression.TRUE_DOMAIN
+   | ^^^^^^^^^^^^^^^^^^^^^^
+10 | expression.FALSE_DOMAIN
+   |
+help: Replace with `Domain.TRUE`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+7  | # Fixable: a pure forwarder to a `Domain` attribute.
+8  | expression.AND([domain, [("state", "=", "draft")]])
+9  | expression.OR([domain, [("state", "=", "draft")]])
+   - expression.TRUE_DOMAIN
+10 + Domain.TRUE
+11 | expression.FALSE_DOMAIN
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.FALSE_DOMAIN` is deprecated since Odoo 19.0. Use `Domain.FALSE` instead.
+  --> deprecated_osv_expression.py:10:1
+   |
+ 8 | expression.OR([domain, [("state", "=", "draft")]])
+ 9 | expression.TRUE_DOMAIN
+10 | expression.FALSE_DOMAIN
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | # The same members reached through the other import shapes.
+   |
+help: Replace with `Domain.FALSE`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+10 | expression.TRUE_DOMAIN
+   - expression.FALSE_DOMAIN
+11 + Domain.FALSE
+12 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.AND` is deprecated since Odoo 19.0. Use `Domain.AND` instead.
+  --> deprecated_osv_expression.py:13:1
+   |
+12 | # The same members reached through the other import shapes.
+13 | odoo.osv.expression.AND([domain, [("state", "=", "draft")]])
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+14 | expr.OR([domain, [("state", "=", "draft")]])
+15 | AND([domain, [("state", "=", "draft")]])
+   |
+help: Replace with `Domain.AND`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+13 | # The same members reached through the other import shapes.
+   - odoo.osv.expression.AND([domain, [("state", "=", "draft")]])
+14 + Domain.AND([domain, [("state", "=", "draft")]])
+15 | expr.OR([domain, [("state", "=", "draft")]])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.OR` is deprecated since Odoo 19.0. Use `Domain.OR` instead.
+  --> deprecated_osv_expression.py:14:1
+   |
+12 | # The same members reached through the other import shapes.
+13 | odoo.osv.expression.AND([domain, [("state", "=", "draft")]])
+14 | expr.OR([domain, [("state", "=", "draft")]])
+   | ^^^^^^^
+15 | AND([domain, [("state", "=", "draft")]])
+16 | OR([domain, [("state", "=", "draft")]])
+   |
+help: Replace with `Domain.OR`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+14 | odoo.osv.expression.AND([domain, [("state", "=", "draft")]])
+   - expr.OR([domain, [("state", "=", "draft")]])
+15 + Domain.OR([domain, [("state", "=", "draft")]])
+16 | AND([domain, [("state", "=", "draft")]])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.AND` is deprecated since Odoo 19.0. Use `Domain.AND` instead.
+  --> deprecated_osv_expression.py:15:1
+   |
+13 | odoo.osv.expression.AND([domain, [("state", "=", "draft")]])
+14 | expr.OR([domain, [("state", "=", "draft")]])
+15 | AND([domain, [("state", "=", "draft")]])
+   | ^^^
+16 | OR([domain, [("state", "=", "draft")]])
+17 | TRUE_DOMAIN
+   |
+help: Replace with `Domain.AND`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+15 | expr.OR([domain, [("state", "=", "draft")]])
+   - AND([domain, [("state", "=", "draft")]])
+16 + Domain.AND([domain, [("state", "=", "draft")]])
+17 | OR([domain, [("state", "=", "draft")]])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.OR` is deprecated since Odoo 19.0. Use `Domain.OR` instead.
+  --> deprecated_osv_expression.py:16:1
+   |
+14 | expr.OR([domain, [("state", "=", "draft")]])
+15 | AND([domain, [("state", "=", "draft")]])
+16 | OR([domain, [("state", "=", "draft")]])
+   | ^^
+17 | TRUE_DOMAIN
+   |
+help: Replace with `Domain.OR`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+16 | AND([domain, [("state", "=", "draft")]])
+   - OR([domain, [("state", "=", "draft")]])
+17 + Domain.OR([domain, [("state", "=", "draft")]])
+18 | TRUE_DOMAIN
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 [*] `odoo.osv.expression.TRUE_DOMAIN` is deprecated since Odoo 19.0. Use `Domain.TRUE` instead.
+  --> deprecated_osv_expression.py:17:1
+   |
+15 | AND([domain, [("state", "=", "draft")]])
+16 | OR([domain, [("state", "=", "draft")]])
+17 | TRUE_DOMAIN
+   | ^^^^^^^^^^^
+18 |
+19 | # Reported without a fix: the replacement is not a drop-in.
+   |
+help: Replace with `Domain.TRUE`
+   |
+4  | from odoo.osv.expression import AND, OR, TRUE_DOMAIN, is_leaf, normalize_domain
+5  + from odoo.fields import Domain
+6  |
+--------------------------------------------------------------------------------
+17 | OR([domain, [("state", "=", "draft")]])
+   - TRUE_DOMAIN
+18 + Domain.TRUE
+19 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9502 `odoo.osv.expression.normalize_domain` is deprecated since Odoo 19.0. Use `Domain(...)` instead.
+  --> deprecated_osv_expression.py:20:1
+   |
+19 | # Reported without a fix: the replacement is not a drop-in.
+20 | expression.normalize_domain(domain)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21 | expression.distribute_not(domain)
+22 | expression.is_false(self, domain)
+   |
+
+ODW9502 `odoo.osv.expression.distribute_not` is deprecated since Odoo 19.0. Use `Domain(...)` instead — it distributes the negation on construction.
+  --> deprecated_osv_expression.py:21:1
+   |
+19 | # Reported without a fix: the replacement is not a drop-in.
+20 | expression.normalize_domain(domain)
+21 | expression.distribute_not(domain)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+22 | expression.is_false(self, domain)
+23 | expression.domain_combine_anies(domain, self)
+   |
+
+ODW9502 `odoo.osv.expression.is_false` is deprecated since Odoo 19.0. Use `Domain(...).is_false()` instead.
+  --> deprecated_osv_expression.py:22:1
+   |
+20 | expression.normalize_domain(domain)
+21 | expression.distribute_not(domain)
+22 | expression.is_false(self, domain)
+   | ^^^^^^^^^^^^^^^^^^^
+23 | expression.domain_combine_anies(domain, self)
+24 | expression.combine("&", [], [], domains)
+   |
+
+ODW9502 `odoo.osv.expression.domain_combine_anies` is deprecated since Odoo 19.0. Use `Domain(...).optimize(model)` instead.
+  --> deprecated_osv_expression.py:23:1
+   |
+21 | expression.distribute_not(domain)
+22 | expression.is_false(self, domain)
+23 | expression.domain_combine_anies(domain, self)
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | expression.combine("&", [], [], domains)
+25 | expression.is_leaf(domain[0])
+   |
+
+ODW9502 `odoo.osv.expression.combine` is deprecated since Odoo 19.0. Use `Domain.AND` or `Domain.OR` instead.
+  --> deprecated_osv_expression.py:24:1
+   |
+22 | expression.is_false(self, domain)
+23 | expression.domain_combine_anies(domain, self)
+24 | expression.combine("&", [], [], domains)
+   | ^^^^^^^^^^^^^^^^^^
+25 | expression.is_leaf(domain[0])
+26 | normalize_domain(domain)
+   |
+
+ODW9502 `odoo.osv.expression.is_leaf` is deprecated since Odoo 19.0. Use `odoo.fields.Domain` instead.
+  --> deprecated_osv_expression.py:25:1
+   |
+23 | expression.domain_combine_anies(domain, self)
+24 | expression.combine("&", [], [], domains)
+25 | expression.is_leaf(domain[0])
+   | ^^^^^^^^^^^^^^^^^^
+26 | normalize_domain(domain)
+27 | is_leaf(domain[0])
+   |
+
+ODW9502 `odoo.osv.expression.normalize_domain` is deprecated since Odoo 19.0. Use `Domain(...)` instead.
+  --> deprecated_osv_expression.py:26:1
+   |
+24 | expression.combine("&", [], [], domains)
+25 | expression.is_leaf(domain[0])
+26 | normalize_domain(domain)
+   | ^^^^^^^^^^^^^^^^
+27 | is_leaf(domain[0])
+28 | expression.TRUE_LEAF
+   |
+
+ODW9502 `odoo.osv.expression.is_leaf` is deprecated since Odoo 19.0. Use `odoo.fields.Domain` instead.
+  --> deprecated_osv_expression.py:27:1
+   |
+25 | expression.is_leaf(domain[0])
+26 | normalize_domain(domain)
+27 | is_leaf(domain[0])
+   | ^^^^^^^
+28 | expression.TRUE_LEAF
+29 | expression.NOT_OPERATOR
+   |
+
+ODW9502 `odoo.osv.expression.TRUE_LEAF` is deprecated since Odoo 19.0. Use `Domain.TRUE` instead.
+  --> deprecated_osv_expression.py:28:1
+   |
+26 | normalize_domain(domain)
+27 | is_leaf(domain[0])
+28 | expression.TRUE_LEAF
+   | ^^^^^^^^^^^^^^^^^^^^
+29 | expression.NOT_OPERATOR
+30 | expression.NEGATIVE_TERM_OPERATORS
+   |
+
+ODW9502 `odoo.osv.expression.NOT_OPERATOR` is deprecated since Odoo 19.0. Use the `Domain` operators (`~`, `&`, `|`) instead.
+  --> deprecated_osv_expression.py:29:1
+   |
+27 | is_leaf(domain[0])
+28 | expression.TRUE_LEAF
+29 | expression.NOT_OPERATOR
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+30 | expression.NEGATIVE_TERM_OPERATORS
+   |
+
+ODW9502 `odoo.osv.expression.NEGATIVE_TERM_OPERATORS` is deprecated since Odoo 19.0. Use `Domain.NEGATIVE_OPERATORS` instead — it is a mapping, not a set.
+  --> deprecated_osv_expression.py:30:1
+   |
+28 | expression.TRUE_LEAF
+29 | expression.NOT_OPERATOR
+30 | expression.NEGATIVE_TERM_OPERATORS
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

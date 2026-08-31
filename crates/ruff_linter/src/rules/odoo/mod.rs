@@ -217,6 +217,14 @@ mod tests {
         Rule::DeprecatedOdooMethodCall,
         Path::new("deprecated_odoo_method_call.py")
     )]
+    #[test_case(
+        Rule::DeprecatedOsvExpression,
+        Path::new("deprecated_osv_expression.py")
+    )]
+    #[test_case(
+        Rule::DeprecatedOsvExpression,
+        Path::new("deprecated_osv_expression_domain_imported.py")
+    )]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
@@ -244,6 +252,25 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::NoSearchAll)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// `odoo.osv.expression` is only deprecated from 19.0 on, and `odoo.fields.Domain`, the
+    /// replacement the fix imports, does not exist before it.
+    #[test]
+    fn deprecated_osv_expression_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "deprecated_osv_expression_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_osv_expression.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOsvExpression)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
