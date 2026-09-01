@@ -1057,6 +1057,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "E8305") => rules::odoo::rules::TranslationTooManyArgs,
         (Odoo, "E8306") => rules::odoo::rules::TranslationTooFewArgs,
         (Odoo, "E9501") => rules::odoo::rules::DeprecatedSqlConstraints,
+        (Odoo, "E9502") => rules::odoo::rules::RemovedApiReturns,
         (Odoo, "F8101") => rules::odoo::rules::ResourceNotExist,
         (Odoo, "R8101") => rules::odoo::rules::OdooExceptionWarning,
         (Odoo, "R8180") => rules::odoo::rules::ConsiderMergingClassesInherited,
@@ -1090,6 +1091,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "W8502") => rules::odoo::rules::DeprecatedOdooMethodCall,
         (Odoo, "W9501") => rules::odoo::rules::M2mRelationIsLabel,
         (Odoo, "W9502") => rules::odoo::rules::DeprecatedOsvExpression,
+        (Odoo, "W9503") => rules::odoo::rules::MissingApiReturns,
         // odoo app: rules that only apply to paid apps (manifests with a "price" key),
         // published on the Odoo Apps store. Kept as a separate linter (rather than nested
         // under "OD") so that selecting "OD" doesn't also select these. That separation is

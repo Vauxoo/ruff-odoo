@@ -364,6 +364,142 @@ mod tests {
     /// project on 18.0 sees the 18.0 entries and none of the 19.0 ones (`read_group`,
     /// `check_field_access_rights`, `toggle_active`).
     #[test]
+    fn missing_api_returns_at_odoo_18() -> Result<()> {
+        let snapshot = "missing_api_returns_at_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_api_returns_at_odoo_17() -> Result<()> {
+        let snapshot = "missing_api_returns_at_odoo_17".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_api_returns_at_odoo_16() -> Result<()> {
+        let snapshot = "missing_api_returns_at_odoo_16".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(16, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_api_returns_at_odoo_19() -> Result<()> {
+        let snapshot = "missing_api_returns_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn missing_api_returns_unconfigured() -> Result<()> {
+        let snapshot = "missing_api_returns_unconfigured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: None,
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::MissingApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn removed_api_returns_at_odoo_19() -> Result<()> {
+        let snapshot = "removed_api_returns_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RemovedApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn removed_api_returns_at_odoo_18() -> Result<()> {
+        let snapshot = "removed_api_returns_at_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RemovedApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
+    fn removed_api_returns_unconfigured() -> Result<()> {
+        let snapshot = "removed_api_returns_unconfigured".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/api_returns.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: None,
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RemovedApiReturns)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    #[test]
     fn deprecated_odoo_method_call_at_odoo_18() -> Result<()> {
         let snapshot = "deprecated_odoo_method_call_at_odoo_18".to_string();
         let diagnostics = test_path(

@@ -1,0 +1,43 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9502 `api.returns` was removed in Odoo 19.0 and raises at import. Remove it — `call_kw` downgrades every recordset result on its own.
+ --> api_returns.py:3:22
+  |
+1 | import odoo
+2 | from odoo import api, models
+3 | from odoo.api import returns
+  |                      ^^^^^^^
+
+ODE9502 `api.returns` was removed in Odoo 19.0 and raises at import. Remove it — `call_kw` downgrades every recordset result on its own.
+  --> api_returns.py:54:6
+   |
+52 |     _inherit = "project.task"
+53 |
+54 |     @api.returns("mail.message", lambda value: value.id)
+   |      ^^^^^^^^^^^
+55 |     def message_post(self, **kwargs):
+56 |         return super().message_post(**kwargs)
+   |
+
+ODE9502 `api.returns` was removed in Odoo 19.0 and raises at import. Remove it — `call_kw` downgrades every recordset result on its own.
+  --> api_returns.py:62:6
+   |
+60 |     _inherit = "project.task"
+61 |
+62 |     @returns("mail.message", lambda value: value.id)
+   |      ^^^^^^^
+63 |     def message_post(self, **kwargs):
+64 |         return super().message_post(**kwargs)
+   |
+
+ODE9502 `api.returns` was removed in Odoo 19.0 and raises at import. Remove it — `call_kw` downgrades every recordset result on its own.
+  --> api_returns.py:70:6
+   |
+68 |     _inherit = "project.task"
+69 |
+70 |     @odoo.api.returns("mail.message", lambda value: value.id)
+   |      ^^^^^^^^^^^^^^^^
+71 |     def message_post(self, **kwargs):
+72 |         return super().message_post(**kwargs)
+   |

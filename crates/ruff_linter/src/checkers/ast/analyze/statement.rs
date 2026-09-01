@@ -106,6 +106,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::MissingReturn) {
                 odoo::rules::missing_return(checker, function_def);
             }
+            if checker.is_rule_enabled(Rule::MissingApiReturns) {
+                odoo::rules::missing_api_returns(checker, function_def);
+            }
             if checker.any_rule_enabled(&[Rule::DeprecatedNameGet, Rule::DeprecatedOdooModelMethod])
             {
                 odoo::rules::deprecated_method_names(checker, function_def);
@@ -746,6 +749,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             let module = module.as_deref();
             if checker.is_rule_enabled(Rule::OdooAddonsRelativeImport) {
                 odoo::rules::odoo_addons_relative_import(checker, import_from, checker.path);
+            }
+            if checker.is_rule_enabled(Rule::RemovedApiReturns) {
+                odoo::rules::removed_api_returns_import(checker, import_from);
             }
             if checker.is_rule_enabled(Rule::TestFolderImported) {
                 odoo::rules::test_folder_imported(checker, stmt, checker.path);

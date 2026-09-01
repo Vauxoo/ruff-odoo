@@ -1,0 +1,81 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9503 [*] `message_post` overrides a method decorated with `@api.returns`, which `_inherit` does not carry over — only Python bases do. Without it the override returns a recordset over RPC instead of an id. Add `@api.returns("mail.message", lambda value: value.id)`.
+  --> api_returns.py:12:9
+   |
+10 |     _inherit = "project.task"
+11 |
+12 |     def message_post(self, **kwargs):  # ODW9503
+   |         ^^^^^^^^^^^^
+13 |         return super().message_post(**kwargs)
+   |
+help: Add `@api.returns("mail.message", lambda value: value.id)`
+   |
+11 |
+12 +     @api.returns("mail.message", lambda value: value.id)
+13 |     def message_post(self, **kwargs):  # ODW9503
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9503 [*] `message_notify` overrides a method decorated with `@api.returns`, which `_inherit` does not carry over — only Python bases do. Without it the override returns a recordset over RPC instead of an id. Add `@api.returns("mail.message", lambda value: value.id)`.
+  --> api_returns.py:19:9
+   |
+17 |     _inherit = "mail.thread"
+18 |
+19 |     def message_notify(self, **kwargs):  # ODW9503 (17.0+)
+   |         ^^^^^^^^^^^^^^
+20 |         return super().message_notify(**kwargs)
+   |
+help: Add `@api.returns("mail.message", lambda value: value.id)`
+   |
+18 |
+19 +     @api.returns("mail.message", lambda value: value.id)
+20 |     def message_notify(self, **kwargs):  # ODW9503 (17.0+)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9503 [*] `find_or_create` overrides a method decorated with `@api.returns`, which `_inherit` does not carry over — only Python bases do. Without it the override returns a recordset over RPC instead of an id. Add `@api.returns("self", lambda value: value.id)`.
+  --> api_returns.py:26:9
+   |
+24 |     _inherit = "res.partner"
+25 |
+26 |     def find_or_create(self, emails, **kwargs):  # ODW9503
+   |         ^^^^^^^^^^^^^^
+27 |         return super().find_or_create(emails, **kwargs)
+   |
+help: Add `@api.returns("self", lambda value: value.id)`
+   |
+25 |
+26 +     @api.returns("self", lambda value: value.id)
+27 |     def find_or_create(self, emails, **kwargs):  # ODW9503
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9503 `channel_get` overrides a method decorated with `@api.returns`, which `_inherit` does not carry over — only Python bases do. Without it the override returns a recordset over RPC instead of an id. Add `@api.returns("self", lambda channels: Store(channels).get_result())`.
+  --> api_returns.py:36:9
+   |
+34 |     _inherit = ["discuss.channel"]
+35 |
+36 |     def channel_get(self, partners_to=None, **kwargs):  # ODW9503, 17.0 != 18.0 decorator
+   |         ^^^^^^^^^^^
+37 |         return super().channel_get(partners_to=partners_to, **kwargs)
+   |
+help: Add `@api.returns("self", lambda channels: Store(channels).get_result())`
+
+ODW9503 [*] `create_or_replace` overrides a method decorated with `@api.returns`, which `_inherit` does not carry over — only Python bases do. Without it the override returns a recordset over RPC instead of an id. Add `@api.returns("self", lambda value: value.id)`.
+  --> api_returns.py:44:9
+   |
+42 |     _inherit = "ir.filters"
+43 |
+44 |     def create_or_replace(self, vals):  # ODW9503
+   |         ^^^^^^^^^^^^^^^^^
+45 |         return super().create_or_replace(vals)
+   |
+help: Add `@api.returns("self", lambda value: value.id)`
+   |
+43 |
+44 +     @api.returns("self", lambda value: value.id)
+45 |     def create_or_replace(self, vals):  # ODW9503
+   |
+note: This is an unsafe fix and may change runtime behavior

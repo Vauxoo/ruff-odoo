@@ -1,3 +1,4 @@
+pub(crate) use api_returns::*;
 pub(crate) use attribute_deprecated::*;
 pub(crate) use attribute_string_redundant::*;
 pub(crate) use bad_builtin_groupby::*;
@@ -55,6 +56,7 @@ pub(crate) use unused_logger::*;
 pub(crate) use use_vim_comment::*;
 pub(crate) use website_manifest_key_not_valid_uri::*;
 
+mod api_returns;
 mod attribute_deprecated;
 mod attribute_string_redundant;
 mod bad_builtin_groupby;
