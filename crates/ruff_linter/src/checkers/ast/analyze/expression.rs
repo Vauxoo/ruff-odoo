@@ -1409,6 +1409,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::DeprecatedOdooMethodCall) {
                 odoo::rules::deprecated_odoo_method_call(checker, call);
             }
+            if checker.is_rule_enabled(Rule::InvalidOdooMethodCall) {
+                odoo::rules::invalid_odoo_method_call(checker, call);
+            }
             if checker.any_rule_enabled(&[
                 Rule::TranslationContainsVariable,
                 Rule::TranslationPositionalUsed,
