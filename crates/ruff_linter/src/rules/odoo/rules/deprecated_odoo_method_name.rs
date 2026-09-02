@@ -136,7 +136,7 @@ const DEPRECATED_MODEL_METHODS: &[DeprecatedModelMethod] = &[
 ];
 
 /// ODE8146, ODW8160
-pub(crate) fn deprecated_method_names(checker: &Checker, function_def: &ast::StmtFunctionDef) {
+pub(crate) fn deprecated_odoo_method_name(checker: &Checker, function_def: &ast::StmtFunctionDef) {
     let ScopeKind::Class(class_def) = checker.semantic().current_scope().kind else {
         return;
     };
