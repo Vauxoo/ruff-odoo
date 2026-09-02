@@ -31,6 +31,20 @@ use crate::{Edit, Fix, FixAvailability};
 /// ```python
 /// groups = self._read_group(domain, ["partner_id"], ["amount:sum"])
 /// ```
+///
+/// ## References
+/// - [`read_group` on 19.0][read-group-19] — the last release that ships the deprecated one.
+/// - [`read_group` on 20.0][read-group-20] — the name reused for an RPC adapter over
+///   `_read_group`, taking `(domain, groupby, aggregates, ...)` and returning ids.
+/// - [`_read_group`][read-group-private] — unchanged since 16.0, and what backend code wants.
+/// - [`check_access_rights` on 19.0][check-access-rights] — the access methods, still present.
+/// - [`_check_access` on 20.0][check-access-20] — itself deprecated there, for `_access_domain`.
+///
+/// [read-group-19]: https://github.com/odoo/odoo/blob/457684cc3377cda5167a4002aa1816b4aa15699f/odoo/orm/models.py#L2752-L2893
+/// [read-group-20]: https://github.com/odoo/odoo/blob/928ae2ba164022a51cdfe548dec9491c61339a5f/odoo/orm/models.py#L1915-L1978
+/// [read-group-private]: https://github.com/odoo/odoo/blob/928ae2ba164022a51cdfe548dec9491c61339a5f/odoo/orm/models.py#L1980-L2070
+/// [check-access-rights]: https://github.com/odoo/odoo/blob/457684cc3377cda5167a4002aa1816b4aa15699f/odoo/orm/models.py#L4166-L4179
+/// [check-access-20]: https://github.com/odoo/odoo/blob/928ae2ba164022a51cdfe548dec9491c61339a5f/odoo/orm/models.py#L3549-L3573
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.14")]
 pub(crate) struct DeprecatedOdooMethodCall {
@@ -39,6 +53,11 @@ pub(crate) struct DeprecatedOdooMethodCall {
     /// The version that dropped the method, set only when the configured `odoo-version` is
     /// already at or past it, so that the message can say "removed" instead of "deprecated".
     removed: Option<OdooVersion>,
+    /// The version that reused the name for a different method, set only when the configured
+    /// `odoo-version` is already at or past it. Only `read_group` has one.
+    replaced: Option<OdooVersion>,
+    /// The keyword that gave the call away as the pre-replacement API.
+    legacy_keyword: Option<String>,
     replacement: String,
     rename: Option<String>,
 }
@@ -52,14 +71,21 @@ impl Violation for DeprecatedOdooMethodCall {
             name,
             since,
             removed,
+            replaced,
+            legacy_keyword,
             replacement,
             ..
         } = self;
-        match removed {
-            Some(removed) => format!(
+        match (removed, replaced, legacy_keyword) {
+            (_, Some(replaced), Some(keyword)) => format!(
+                "`{name}` was replaced in Odoo {replaced}: the name is back as the RPC adapter \
+                 over `_read_group`, whose signature has no `{keyword}`, so this is still the \
+                 pre-{replaced} API. {replacement}"
+            ),
+            (Some(removed), _, _) => format!(
                 "`{name}` was removed in Odoo {removed} (deprecated since {since}). {replacement}"
             ),
-            None => format!("`{name}` is deprecated since Odoo {since}. {replacement}"),
+            _ => format!("`{name}` is deprecated since Odoo {since}. {replacement}"),
         }
     }
 
@@ -78,10 +104,14 @@ struct DeprecatedMethod {
     /// The Odoo version that deleted the method outright. Past it the call raises
     /// `AttributeError` rather than warning, which the message says instead.
     removed: Option<OdooVersion>,
-    /// The last Odoo version the deprecation applies to. Only `read_group` needs one: Odoo
-    /// brought the name back in 20.0 for the new API, so from there on the call is correct
-    /// again and must not be reported.
+    /// The last Odoo version the deprecation applies to.
     until: Option<OdooVersion>,
+    /// The version that reused the name for a different method. From there on the call is only
+    /// reported when it carries one of `legacy_keywords`, which no current signature accepts —
+    /// anything else is indistinguishable from a correct use of the new method.
+    reintroduced: Option<OdooVersion>,
+    /// Keywords only the pre-`reintroduced` signature ever accepted.
+    legacy_keywords: &'static [&'static str],
     /// Prose naming the replacement, appended to the diagnostic message.
     replacement: &'static str,
     /// The new method name, set only where the deprecated method is a pure one-line
@@ -99,7 +129,10 @@ struct DeprecatedMethod {
 /// unable to spell its version at all.
 const REMOVED_AFTER_ODOO_19: Option<OdooVersion> = Some(OdooVersion::new(20, 0));
 
-/// Methods marked `@api.deprecated` in Odoo's `odoo/orm/models.py`.
+/// Methods marked `@api.deprecated` in Odoo's `odoo/orm/models.py`, up to 19.0.
+///
+/// From 20.0 that decorator is gone from the file: the deprecations there are marked with
+/// `odoo.tools.func.deprecated` instead, so a newer entry has to be read from that list.
 ///
 /// Only the core ORM is covered: addon-specific deprecations (`ir.cron._notify_progress`,
 /// `ir.http.get_currencies`, ...) are left out, since their names are not distinctive enough
@@ -110,10 +143,12 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
+        reintroduced: None,
+        legacy_keywords: &[],
         // Not a rename: `raise_exception=False` has to become `has_access`, and the deprecated
         // method checks the model through `self.browse()` rather than the records in `self`.
         replacement: "Use `check_access` instead, or `has_access` where a boolean is needed; \
-                      an override belongs in `_check_access`.",
+                      an override belongs in `_check_access`, or `_access_domain` from 20.0.",
         rename: None,
     },
     DeprecatedMethod {
@@ -121,7 +156,10 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
-        replacement: "Use `check_access` instead; an override belongs in `_check_access`.",
+        reintroduced: None,
+        legacy_keywords: &[],
+        replacement: "Use `check_access` instead; an override belongs in `_check_access`, \
+                      or `_access_domain` from 20.0.",
         rename: Some("check_access"),
     },
     DeprecatedMethod {
@@ -129,7 +167,10 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
-        replacement: "Use `_filtered_access` instead; an override belongs in `_check_access`.",
+        reintroduced: None,
+        legacy_keywords: &[],
+        replacement: "Use `_filtered_access` instead; an override belongs in `_check_access`, \
+                      or `_access_domain` from 20.0.",
         rename: Some("_filtered_access"),
     },
     DeprecatedMethod {
@@ -137,7 +178,10 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
-        replacement: "Use `_filtered_access` instead; an override belongs in `_check_access`.",
+        reintroduced: None,
+        legacy_keywords: &[],
+        replacement: "Use `_filtered_access` instead; an override belongs in `_check_access`, \
+                      or `_access_domain` from 20.0.",
         rename: Some("_filtered_access"),
     },
     DeprecatedMethod {
@@ -145,6 +189,8 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
+        reintroduced: None,
+        legacy_keywords: &[],
         // Not a rename: `_check_recursion` returns `not self._has_cycle(...)`, so the caller
         // has to flip the condition too.
         replacement: "Use `not _has_cycle(...)` instead — the result is inverted.",
@@ -155,18 +201,23 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(18, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
+        reintroduced: None,
+        legacy_keywords: &[],
         replacement: "Use `not _has_cycle(...)` instead — the result is inverted.",
         rename: None,
     },
     DeprecatedMethod {
         name: "read_group",
         since: OdooVersion::new(19, 0),
-        // Deleted alongside the others, but 20.0 reintroduced the name as the public spelling
-        // of `_read_group`, so no stable release ever ships without it. Between the two, 20.0
-        // is the one a project can be on, and there the call is correct — hence a plain upper
-        // bound rather than a removal.
+        // Deleted alongside the others, then 20.0 reused the name for a different method: an
+        // RPC adapter over `_read_group` taking `(domain, groupby, aggregates, ...)` and
+        // returning ids, where the old one took `(domain, fields, groupby, ..., lazy)` and
+        // returned dicts. So it is not a removal, and it is not correct either — from 20.0 the
+        // call is only reported when a keyword gives away the old API.
         removed: None,
-        until: Some(OdooVersion::new(19, 0)),
+        until: None,
+        reintroduced: Some(OdooVersion::new(20, 0)),
+        legacy_keywords: &["lazy", "orderby"],
         replacement: "Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.",
         rename: None,
     },
@@ -175,7 +226,10 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(19, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
-        replacement: "Use `_check_field_access`, or `fields_get` to list the allowed fields.",
+        reintroduced: None,
+        legacy_keywords: &[],
+        replacement: "Use `check_field_access` (`_check_field_access` before 20.0), or \
+                      `fields_get` to list the allowed fields.",
         rename: None,
     },
     DeprecatedMethod {
@@ -183,6 +237,8 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
         since: OdooVersion::new(19, 0),
         removed: REMOVED_AFTER_ODOO_19,
         until: None,
+        reintroduced: None,
+        legacy_keywords: &[],
         replacement: "Use `action_archive` or `action_unarchive` depending on the intent.",
         rename: None,
     },
@@ -215,6 +271,32 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
             .is_some_and(|configured| configured >= *removed)
     });
 
+    // Past the version that reused the name, the call is ambiguous: the same expression is
+    // either a stale pre-replacement call or a correct use of the new method, and only a
+    // keyword the new signature does not accept tells them apart. Report nothing otherwise —
+    // a false positive here would land on code that is right.
+    let replaced = method.reintroduced.filter(|reintroduced| {
+        checker
+            .settings()
+            .odoo
+            .odoo_version
+            .is_some_and(|configured| configured >= *reintroduced)
+    });
+    let legacy_keyword = if replaced.is_some() {
+        let Some(keyword) = call.arguments.keywords.iter().find_map(|keyword| {
+            let name = keyword.arg.as_ref()?;
+            method
+                .legacy_keywords
+                .contains(&name.as_str())
+                .then(|| name.to_string())
+        }) else {
+            return;
+        };
+        Some(keyword)
+    } else {
+        None
+    };
+
     // Only inside a method of an Odoo model class, mirroring pylint-odoo's scoping. The
     // receiver itself is left unchecked: it is routinely a recordset held in a local
     // (`orders.toggle_active()`), which no amount of static analysis would resolve.
@@ -243,6 +325,8 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
             name: method.name.to_string(),
             since: method.since,
             removed,
+            replaced,
+            legacy_keyword,
             replacement: method.replacement.to_string(),
             rename: method.rename.map(ToString::to_string),
         },

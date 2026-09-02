@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8502 `check_access_rights` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
+ODW8502 `check_access_rights` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:8:14
    |
  7 |     def deprecated_in_18(self):
@@ -11,7 +11,7 @@ ODW8502 `check_access_rights` was removed in Odoo 20.0 (deprecated since 18.0). 
 10 |         self._filter_access_rules("read")
    |
 
-ODW8502 [*] `check_access_rule` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `check_access_rule` was removed in Odoo 20.0 (deprecated since 18.0). Use `check_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:9:14
    |
  7 |     def deprecated_in_18(self):
@@ -30,7 +30,7 @@ help: Replace with `check_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:10:14
    |
  8 |         self.check_access_rights("read")
@@ -49,7 +49,7 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules_python` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules_python` was removed in Odoo 20.0 (deprecated since 18.0). Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:11:14
    |
  9 |         self.check_access_rule("write")
@@ -89,7 +89,7 @@ ODW8502 `_check_m2m_recursion` was removed in Odoo 20.0 (deprecated since 18.0).
 15 |     def deprecated_in_19(self):
    |
 
-ODW8502 `check_field_access_rights` was removed in Odoo 20.0 (deprecated since 19.0). Use `_check_field_access`, or `fields_get` to list the allowed fields.
+ODW8502 `check_field_access_rights` was removed in Odoo 20.0 (deprecated since 19.0). Use `check_field_access` (`_check_field_access` before 20.0), or `fields_get` to list the allowed fields.
   --> deprecated_odoo_method_call.py:17:14
    |
 15 |     def deprecated_in_19(self):
@@ -108,4 +108,26 @@ ODW8502 `toggle_active` was removed in Odoo 20.0 (deprecated since 19.0). Use `a
    |                                        ^^^^^^^^^^^^^
 19 |
 20 |     def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False):
+   |
+
+ODW8502 `read_group` was replaced in Odoo 20.0: the name is back as the RPC adapter over `_read_group`, whose signature has no `lazy`, so this is still the pre-20.0 API. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:53:21
+   |
+51 |     def with_lazy(self):
+52 |         # `lazy` is not in the 20.0 signature, so this is unambiguously the pre-20.0 API.
+53 |         return self.read_group([], ["amount:sum"], ["partner_id"], lazy=False)
+   |                     ^^^^^^^^^^
+54 |
+55 |     def with_orderby(self):
+   |
+
+ODW8502 `read_group` was replaced in Odoo 20.0: the name is back as the RPC adapter over `_read_group`, whose signature has no `orderby`, so this is still the pre-20.0 API. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:57:21
+   |
+55 |     def with_orderby(self):
+56 |         # Same for `orderby`, which 20.0 renamed to `order`.
+57 |         return self.read_group([], ["amount:sum"], ["partner_id"], orderby="partner_id")
+   |                     ^^^^^^^^^^
+58 |
+59 |     def positional_only(self):
    |

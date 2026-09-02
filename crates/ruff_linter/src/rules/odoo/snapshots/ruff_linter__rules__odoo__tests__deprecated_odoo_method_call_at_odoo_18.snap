@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
+ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:8:14
    |
  7 |     def deprecated_in_18(self):
@@ -11,7 +11,7 @@ ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` 
 10 |         self._filter_access_rules("read")
    |
 
-ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:9:14
    |
  7 |     def deprecated_in_18(self):
@@ -30,7 +30,7 @@ help: Replace with `check_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:10:14
    |
  8 |         self.check_access_rights("read")
@@ -49,7 +49,7 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:11:14
    |
  9 |         self.check_access_rule("write")

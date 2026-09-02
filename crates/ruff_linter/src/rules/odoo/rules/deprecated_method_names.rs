@@ -68,6 +68,15 @@ impl Violation for DeprecatedNameGet {
 /// ## Options
 /// - `lint.odoo.deprecated-odoo-model-methods`
 ///
+/// ## References
+/// - [`check_access_rights` on 19.0][check-access-rights] — the last release that defines
+///   the four access methods, all four `@api.deprecated`.
+/// - [`_check_access` on 20.0][hook-20] — the hook they folded into, deprecated in turn
+///   for `_access_domain`, so an override written for 18.0 has one more move to make.
+///
+/// [check-access-rights]: https://github.com/odoo/odoo/blob/457684cc3377cda5167a4002aa1816b4aa15699f/odoo/orm/models.py#L4166-L4179
+/// [hook-20]: https://github.com/odoo/odoo/blob/928ae2ba164022a51cdfe548dec9491c61339a5f/odoo/orm/models.py#L3549-L3573
+///
 /// Setting it drops the version gating the built-in list carries.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2")]

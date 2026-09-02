@@ -43,3 +43,24 @@ class OrdinaryPythonClass:
 def module_level_read_group():
     """A plain function call is not an ORM call."""
     return read_group([], [], [])
+
+
+class LegacyReadGroupKeywords(models.Model):
+    _inherit = "sale.order"
+
+    def with_lazy(self):
+        # `lazy` is not in the 20.0 signature, so this is unambiguously the pre-20.0 API.
+        return self.read_group([], ["amount:sum"], ["partner_id"], lazy=False)
+
+    def with_orderby(self):
+        # Same for `orderby`, which 20.0 renamed to `order`.
+        return self.read_group([], ["amount:sum"], ["partner_id"], orderby="partner_id")
+
+    def positional_only(self):
+        # Indistinguishable from a correct 20.0 call once the name came back, so from 20.0 this
+        # one is deliberately not reported.
+        return self.read_group([], ["partner_id"], ["amount:sum"])
+
+    def new_api(self):
+        # A genuine 20.0 call: groupby then aggregates, and `order`, not `orderby`.
+        return self.read_group([], ["partner_id"], ["amount:sum"], order="partner_id")

@@ -1,7 +1,7 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
+ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:8:14
    |
  7 |     def deprecated_in_18(self):
@@ -11,7 +11,7 @@ ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` 
 10 |         self._filter_access_rules("read")
    |
 
-ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `check_access_rule` is deprecated since Odoo 18.0. Use `check_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:9:14
    |
  7 |     def deprecated_in_18(self):
@@ -30,7 +30,7 @@ help: Replace with `check_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:10:14
    |
  8 |         self.check_access_rights("read")
@@ -49,7 +49,7 @@ help: Replace with `_filtered_access`
    |
 note: This is an unsafe fix and may change runtime behavior
 
-ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`.
+ODW8502 [*] `_filter_access_rules_python` is deprecated since Odoo 18.0. Use `_filtered_access` instead; an override belongs in `_check_access`, or `_access_domain` from 20.0.
   --> deprecated_odoo_method_call.py:11:14
    |
  9 |         self.check_access_rule("write")
@@ -99,7 +99,7 @@ ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend
 18 |         self.env["my.model"].browse(1).toggle_active()
    |
 
-ODW8502 `check_field_access_rights` is deprecated since Odoo 19.0. Use `_check_field_access`, or `fields_get` to list the allowed fields.
+ODW8502 `check_field_access_rights` is deprecated since Odoo 19.0. Use `check_field_access` (`_check_field_access` before 20.0), or `fields_get` to list the allowed fields.
   --> deprecated_odoo_method_call.py:17:14
    |
 15 |     def deprecated_in_19(self):
@@ -130,3 +130,44 @@ ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend
 27 |
 28 |     def replacements(self):
    |
+
+ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:53:21
+   |
+51 |     def with_lazy(self):
+52 |         # `lazy` is not in the 20.0 signature, so this is unambiguously the pre-20.0 API.
+53 |         return self.read_group([], ["amount:sum"], ["partner_id"], lazy=False)
+   |                     ^^^^^^^^^^
+54 |
+55 |     def with_orderby(self):
+   |
+
+ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:57:21
+   |
+55 |     def with_orderby(self):
+56 |         # Same for `orderby`, which 20.0 renamed to `order`.
+57 |         return self.read_group([], ["amount:sum"], ["partner_id"], orderby="partner_id")
+   |                     ^^^^^^^^^^
+58 |
+59 |     def positional_only(self):
+   |
+
+ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:62:21
+   |
+60 |         # Indistinguishable from a correct 20.0 call once the name came back, so from 20.0 this
+61 |         # one is deliberately not reported.
+62 |         return self.read_group([], ["partner_id"], ["amount:sum"])
+   |                     ^^^^^^^^^^
+63 |
+64 |     def new_api(self):
+   |
+
+ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+  --> deprecated_odoo_method_call.py:66:21
+   |
+64 |     def new_api(self):
+65 |         # A genuine 20.0 call: groupby then aggregates, and `order`, not `orderby`.
+66 |         return self.read_group([], ["partner_id"], ["amount:sum"], order="partner_id")
+   |                     ^^^^^^^^^^
