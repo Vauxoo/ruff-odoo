@@ -1090,6 +1090,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleGroup, Rule)> {
         (Odoo, "W8502") => rules::odoo::rules::DeprecatedOdooMethodCall,
         (Odoo, "W9501") => rules::odoo::rules::M2mRelationIsLabel,
         (Odoo, "W9502") => rules::odoo::rules::DeprecatedOsvExpression,
+        (Odoo, "W9503") => rules::odoo::rules::DuplicateFieldDeclaration,
         // odoo app: rules that only apply to paid apps (manifests with a "price" key),
         // published on the Odoo Apps store. Kept as a separate linter (rather than nested
         // under "OD") so that selecting "OD" doesn't also select these. That separation is
