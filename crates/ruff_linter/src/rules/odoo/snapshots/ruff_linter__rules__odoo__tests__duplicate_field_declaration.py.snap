@@ -1,0 +1,164 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9503 Field `category_ids` is declared multiple times; only the declaration on line 17 takes effect
+  --> duplicate_field_declaration.py:11:5
+   |
+ 9 |     # OD: the two declarations name different comodels and different relation tables; only
+10 |     # the last one is created, so the first names a table that never exists.
+11 |     category_ids = fields.Many2many(
+   |     ^^^^^^^^^^^^ this declaration has no effect
+12 |         "res.partner.category.report",
+13 |         relation="res_partner_res_partner_category_report_rel",
+   |
+  ::: duplicate_field_declaration.py:17:5
+   |
+15 |     )
+16 |     comment = fields.Text()
+17 |     category_ids = fields.Many2many(
+   |     ------------ this declaration takes effect
+18 |         "res.partner.category",
+19 |         relation="res_partner_res_partner_category_rel",
+   |
+help: Remove all but the last declaration of `category_ids`
+
+ODW9503 Field `summary_info` is declared multiple times; only the declaration on line 36 takes effect
+  --> duplicate_field_declaration.py:28:5
+   |
+27 |     # OD: byte-for-byte identical declarations, repeated further down the class.
+28 |     summary_info = fields.Char(compute="_compute_summary")
+   |     ^^^^^^^^^^^^ this declaration has no effect
+29 |     summary_names = fields.Char(compute="_compute_summary")
+30 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |
+  ::: duplicate_field_declaration.py:36:5
+   |
+34 |             order.summary_info = ""
+35 |
+36 |     summary_info = fields.Char(compute="_compute_summary")
+   |     ------------ this declaration takes effect
+37 |     summary_names = fields.Char(compute="_compute_summary")
+38 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |
+help: Remove all but the last declaration of `summary_info`
+
+ODW9503 Field `summary_names` is declared multiple times; only the declaration on line 37 takes effect
+  --> duplicate_field_declaration.py:29:5
+   |
+27 |     # OD: byte-for-byte identical declarations, repeated further down the class.
+28 |     summary_info = fields.Char(compute="_compute_summary")
+29 |     summary_names = fields.Char(compute="_compute_summary")
+   |     ^^^^^^^^^^^^^ this declaration has no effect
+30 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |
+  ::: duplicate_field_declaration.py:37:5
+   |
+36 |     summary_info = fields.Char(compute="_compute_summary")
+37 |     summary_names = fields.Char(compute="_compute_summary")
+   |     ------------- this declaration takes effect
+38 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |
+help: Remove all but the last declaration of `summary_names`
+
+ODW9503 Field `has_multiple_lines` is declared multiple times; only the declaration on line 38 takes effect
+  --> duplicate_field_declaration.py:30:5
+   |
+28 |     summary_info = fields.Char(compute="_compute_summary")
+29 |     summary_names = fields.Char(compute="_compute_summary")
+30 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |     ^^^^^^^^^^^^^^^^^^ this declaration has no effect
+31 |
+32 |     def _compute_summary(self):
+   |
+  ::: duplicate_field_declaration.py:38:5
+   |
+36 |     summary_info = fields.Char(compute="_compute_summary")
+37 |     summary_names = fields.Char(compute="_compute_summary")
+38 |     has_multiple_lines = fields.Boolean(compute="_compute_summary")
+   |     ------------------ this declaration takes effect
+help: Remove all but the last declaration of `has_multiple_lines`
+
+ODW9503 Field `amount` is declared multiple times; only the declaration on line 48 takes effect
+  --> duplicate_field_declaration.py:46:5
+   |
+44 |     # OD: every declaration but the last is dead, and all three are listed under a single
+45 |     # diagnostic.
+46 |     amount = fields.Float()
+   |     ^^^^^^ this declaration has no effect
+47 |     amount = fields.Monetary()
+   |     ------ also has no effect
+48 |     amount = fields.Integer()
+   |     ------ this declaration takes effect
+help: Remove all but the last declaration of `amount`
+
+ODW9503 Field `note` is declared multiple times; only the declaration on line 56 takes effect
+  --> duplicate_field_declaration.py:55:5
+   |
+54 |     # OD: an AbstractModel is a model too.
+55 |     note = fields.Text()
+   |     ^^^^ this declaration has no effect
+56 |     note = fields.Html()
+   |     ---- this declaration takes effect
+help: Remove all but the last declaration of `note`
+
+ODW9503 Field `partner_id` is declared multiple times; only the declaration on line 64 takes effect
+  --> duplicate_field_declaration.py:63:5
+   |
+62 |     # OD: so is a TransientModel.
+63 |     partner_id = fields.Many2one("res.partner")
+   |     ^^^^^^^^^^ this declaration has no effect
+64 |     partner_id = fields.Many2one("res.users")
+   |     ---------- this declaration takes effect
+help: Remove all but the last declaration of `partner_id`
+
+ODW9503 Field `note` is declared multiple times; only the declaration on line 72 takes effect
+  --> duplicate_field_declaration.py:71:5
+   |
+70 |     # OD: the base is the same class, reached through an aliased import.
+71 |     note = fields.Text()
+   |     ^^^^ this declaration has no effect
+72 |     note = fields.Html()
+   |     ---- this declaration takes effect
+help: Remove all but the last declaration of `note`
+
+ODW9503 Field `amount` is declared multiple times; only the declaration on line 80 takes effect
+  --> duplicate_field_declaration.py:79:5
+   |
+78 |     # OD: an annotated assignment binds the name just like a plain one.
+79 |     amount: float = fields.Float()
+   |     ^^^^^^ this declaration has no effect
+80 |     amount: float = fields.Monetary()
+   |     ------ this declaration takes effect
+help: Remove all but the last declaration of `amount`
+
+ODW9503 Field `note` is declared multiple times; only the declaration on line 90 takes effect
+  --> duplicate_field_declaration.py:88:5
+   |
+86 |     # OD: a bare annotation binds nothing when the class body runs, so it does not stand
+87 |     # between these two declarations.
+88 |     note = fields.Text()
+   |     ^^^^ this declaration has no effect
+89 |     note: str
+90 |     note = fields.Html()
+   |     ---- this declaration takes effect
+help: Remove all but the last declaration of `note`
+
+ODW9503 Field `debit` is declared multiple times; only the declaration on line 98 takes effect
+  --> duplicate_field_declaration.py:97:5
+   |
+96 |     # OD: a chained assignment declares both names, and both are declared again below.
+97 |     debit = credit = fields.Monetary()
+   |     ^^^^^ this declaration has no effect
+98 |     debit = credit = fields.Float()
+   |     ----- this declaration takes effect
+help: Remove all but the last declaration of `debit`
+
+ODW9503 Field `credit` is declared multiple times; only the declaration on line 98 takes effect
+  --> duplicate_field_declaration.py:97:13
+   |
+96 |     # OD: a chained assignment declares both names, and both are declared again below.
+97 |     debit = credit = fields.Monetary()
+   |             ^^^^^^ this declaration has no effect
+98 |     debit = credit = fields.Float()
+   |             ------ this declaration takes effect
+help: Remove all but the last declaration of `credit`

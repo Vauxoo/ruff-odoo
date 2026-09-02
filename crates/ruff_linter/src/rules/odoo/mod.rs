@@ -237,6 +237,10 @@ mod tests {
         Rule::DeprecatedSqlConstraints,
         Path::new("deprecated_sql_constraints_no_import.py")
     )]
+    #[test_case(
+        Rule::DuplicateFieldDeclaration,
+        Path::new("duplicate_field_declaration.py")
+    )]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
