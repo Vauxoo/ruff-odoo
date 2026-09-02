@@ -108,7 +108,7 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             }
             if checker.any_rule_enabled(&[Rule::DeprecatedNameGet, Rule::DeprecatedOdooModelMethod])
             {
-                odoo::rules::deprecated_method_names(checker, function_def);
+                odoo::rules::deprecated_odoo_method_name(checker, function_def);
             }
             if checker.is_rule_enabled(Rule::InvalidFunctionName) {
                 pep8_naming::rules::invalid_function_name(
