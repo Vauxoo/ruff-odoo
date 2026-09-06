@@ -177,6 +177,26 @@ pub(crate) fn is_odoo_model_class(semantic: &SemanticModel, class_def: &ast::Stm
     })
 }
 
+/// Returns `true` if `class_def` inherits from something that is not a Python builtin.
+///
+/// A far looser test than [`is_odoo_model_class`], and deliberately so: an Odoo addon
+/// defines models, controllers, wizards, report parsers and mixins, and only the first of
+/// those inherits `models.Model` by that literal name. A controller inherits
+/// `http.Controller`, a class in a large addon inherits another class of the addon, and both
+/// still hold Odoo code calling Odoo methods. What this excludes is the rest of a Python
+/// file: `class Foo:`, `class Bar(object):` and `class MyError(Exception):` are Python, not
+/// Odoo, and a method name matched inside one says nothing about the ORM.
+pub(crate) fn inherits_non_builtin(
+    semantic: &SemanticModel,
+    class_def: &ast::StmtClassDef,
+) -> bool {
+    class_def.bases().iter().any(|base| {
+        // A base resolving to nothing at all -- imported from a module the checker did not
+        // read, which is every Odoo import -- counts: unresolvable is not builtin.
+        semantic.resolve_builtin_symbol(base).is_none()
+    })
+}
+
 /// Returns the field type (e.g. `"Many2one"`) if `func` is an access on `fields`, as in
 /// `fields.Many2one(...)`.
 pub(crate) fn odoo_field_type(func: &Expr) -> Option<&str> {

@@ -1,0 +1,21 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+  --> removed_odoo_method_call.py:14:16
+   |
+12 |     def labels(self):
+13 |         # Gone in 18.0, so reported on 18.0 and on everything after it.
+14 |         return self.name_get()
+   |                ^^^^^^^^^^^^^^^
+15 |
+16 |     def rebuild(self):
+   |
+
+ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+  --> removed_odoo_method_call.py:75:16
+   |
+73 |     def render(self, partner):
+74 |         # A removed method on a plain local, inside an Odoo class: still reported.
+75 |         return partner.name_get()
+   |                ^^^^^^^^^^^^^^^^^^

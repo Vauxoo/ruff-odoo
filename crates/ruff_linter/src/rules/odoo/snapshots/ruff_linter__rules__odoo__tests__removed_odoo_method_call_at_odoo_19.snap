@@ -1,0 +1,61 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9503 `_where_calc` was removed from the Odoo ORM in 19.0
+  --> removed_odoo_method_call.py:10:16
+   |
+ 8 |     def matching(self, domain):
+ 9 |         # Gone in 19.0, and nothing else in the ORM answers to the name.
+10 |         return self._where_calc(domain)
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 |     def labels(self):
+   |
+
+ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+  --> removed_odoo_method_call.py:14:16
+   |
+12 |     def labels(self):
+13 |         # Gone in 18.0, so reported on 18.0 and on everything after it.
+14 |         return self.name_get()
+   |                ^^^^^^^^^^^^^^^
+15 |
+16 |     def rebuild(self):
+   |
+
+ODE9503 `_setup_fields` was removed from the Odoo ORM in 19.0
+  --> removed_odoo_method_call.py:18:9
+   |
+16 |     def rebuild(self):
+17 |         # 19.0 kept a module level `_setup_fields`, which does not make the call work.
+18 |         self._setup_fields()
+   |         ^^^^^^^^^^^^^^^^^^^^
+19 |         self.clear_caches()
+   |
+
+ODE9503 `clear_caches` was removed from the Odoo ORM in 19.0
+  --> removed_odoo_method_call.py:19:9
+   |
+17 |         # 19.0 kept a module level `_setup_fields`, which does not make the call work.
+18 |         self._setup_fields()
+19 |         self.clear_caches()
+   |         ^^^^^^^^^^^^^^^^^^^
+20 |
+21 |     def still_there(self, domain):
+   |
+
+ODE9503 `_where_calc` was removed from the Odoo ORM in 19.0
+  --> removed_odoo_method_call.py:46:16
+   |
+44 |         sale_obj = request.env["sale.order"]
+45 |         # The shape a migration leaves behind: the model in a local, in a controller.
+46 |         return sale_obj._where_calc(domain)
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+  --> removed_odoo_method_call.py:75:16
+   |
+73 |     def render(self, partner):
+74 |         # A removed method on a plain local, inside an Odoo class: still reported.
+75 |         return partner.name_get()
+   |                ^^^^^^^^^^^^^^^^^^

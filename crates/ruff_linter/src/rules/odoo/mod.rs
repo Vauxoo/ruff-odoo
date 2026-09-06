@@ -1,5 +1,6 @@
 //! Rules from [odoo](https://pypi.org/project/pylint-odoo/).
 pub(crate) mod helpers;
+pub(crate) mod removals;
 pub(crate) mod rules;
 pub mod settings;
 pub(crate) mod signatures;
@@ -25,6 +26,7 @@ mod tests {
         Path::new("manifest_deprecated_key/__manifest__.py")
     )]
     #[test_case(Rule::InvalidOdooMethodCall, Path::new("invalid_odoo_method_call.py"))]
+    #[test_case(Rule::RemovedOdooMethodCall, Path::new("removed_odoo_method_call.py"))]
     #[test_case(Rule::UseVimComment, Path::new("use_vim_comment.py"))]
     #[test_case(Rule::ExceptPass, Path::new("except_pass.py"))]
     #[test_case(Rule::MethodRequiredSuper, Path::new("method_required_super.py"))]
@@ -289,6 +291,26 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::InvalidOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot.to_string(), diagnostics);
+        Ok(())
+    }
+
+    /// Which methods are gone depends on the version: 18.0 dropped `name_get` while
+    /// `_where_calc` still worked there, and 19.0 dropped that one too.
+    #[test_case(18, 0, "removed_odoo_method_call_at_odoo_18"; "odoo 18.0")]
+    #[test_case(19, 0, "removed_odoo_method_call_at_odoo_19"; "odoo 19.0")]
+    #[test_case(20, 0, "removed_odoo_method_call_at_odoo_20"; "odoo 20.0")]
+    fn removed_odoo_method_call_at_version(major: u16, minor: u16, snapshot: &str) -> Result<()> {
+        let diagnostics = test_path(
+            Path::new("odoo/removed_odoo_method_call.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(major, minor)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RemovedOdooMethodCall)
             },
         )?;
         assert_diagnostics!(snapshot.to_string(), diagnostics);
