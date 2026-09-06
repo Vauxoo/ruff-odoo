@@ -193,6 +193,32 @@ pub(crate) fn class_defines_method(class_def: &ast::StmtClassDef, name: &str) ->
     })
 }
 
+/// Returns `true` if the class body declares `model` through `_name` or `_inherit`.
+///
+/// Both spellings count, and `_inherit` is read as either a single name or a list of them,
+/// because Odoo merges the class into every model it names.
+pub(crate) fn class_declares_model(class_def: &ast::StmtClassDef, model: &str) -> bool {
+    class_def.body.iter().any(|stmt| {
+        let ast::Stmt::Assign(assign) = stmt else {
+            return false;
+        };
+        if !assign.targets.iter().any(
+            |target| matches!(target, Expr::Name(name) if name.id == "_name" || name.id == "_inherit"),
+        ) {
+            return false;
+        }
+        match assign.value.as_ref() {
+            Expr::StringLiteral(literal) => literal.value.to_str() == model,
+            Expr::List(ast::ExprList { elts, .. }) | Expr::Tuple(ast::ExprTuple { elts, .. }) => {
+                elts.iter().any(
+                    |elt| matches!(elt, Expr::StringLiteral(literal) if literal.value.to_str() == model),
+                )
+            }
+            _ => false,
+        }
+    })
+}
+
 /// Renders `expr` as a dotted name (e.g. `self.env.cr`) if it's a chain of attribute accesses
 /// rooted at a plain name; returns `None` for anything else (calls, subscripts, etc.).
 pub(crate) fn dotted_name(expr: &Expr) -> Option<String> {

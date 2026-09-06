@@ -2,6 +2,7 @@
 pub(crate) mod helpers;
 pub(crate) mod rules;
 pub mod settings;
+pub(crate) mod signatures;
 
 #[cfg(test)]
 mod tests {
@@ -23,6 +24,7 @@ mod tests {
         Rule::ManifestDeprecatedKey,
         Path::new("manifest_deprecated_key/__manifest__.py")
     )]
+    #[test_case(Rule::InvalidOdooMethodCall, Path::new("invalid_odoo_method_call.py"))]
     #[test_case(Rule::UseVimComment, Path::new("use_vim_comment.py"))]
     #[test_case(Rule::ExceptPass, Path::new("except_pass.py"))]
     #[test_case(Rule::MethodRequiredSuper, Path::new("method_required_super.py"))]
@@ -268,6 +270,44 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::NoSearchAll)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The signatures the rule binds against are the ones the configured version declares,
+    /// so the same fixture reports a different set on 18.0 than on 20.0.
+    #[test_case(18, 0, "invalid_odoo_method_call_at_odoo_18"; "odoo 18.0")]
+    #[test_case(20, 0, "invalid_odoo_method_call_at_odoo_20"; "odoo 20.0")]
+    fn invalid_odoo_method_call_at_version(major: u16, minor: u16, snapshot: &str) -> Result<()> {
+        let diagnostics = test_path(
+            Path::new("odoo/invalid_odoo_method_call.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(major, minor)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::InvalidOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot.to_string(), diagnostics);
+        Ok(())
+    }
+
+    /// No stub ships for 15.0, so there is nothing to bind against and the rule stays silent
+    /// rather than answering from the nearest version it does know.
+    #[test]
+    fn invalid_odoo_method_call_without_stub() -> Result<()> {
+        let snapshot = "invalid_odoo_method_call_without_stub".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/invalid_odoo_method_call.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(15, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::InvalidOdooMethodCall)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
