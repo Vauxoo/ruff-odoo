@@ -1,11 +1,11 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast::{self as ast, Expr, Stmt};
+use ruff_python_ast::{self as ast};
 use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
 
 /// ## What it does
@@ -42,26 +42,14 @@ impl Violation for NoRaiseUnlink {
     }
 }
 
-/// Returns `true` if the class body assigns `_name` or `_inherit` (the marker of a real
-/// Odoo model definition, matching pylint-odoo's `_is_unlink`).
-fn class_has_model_attributes(class_def: &ast::StmtClassDef) -> bool {
-    class_def.body.iter().any(|stmt| {
-        let Stmt::Assign(assign) = stmt else {
-            return false;
-        };
-        assign.targets.iter().any(|target| {
-            matches!(target, Expr::Name(name) if name.id == "_name" || name.id == "_inherit")
-        })
-    })
-}
-
 /// ODE8140
 pub(crate) fn no_raise_unlink(checker: &Checker, raise: &ast::StmtRaise) {
     // Deletion constraints only moved out of `unlink()` in Odoo 15.0.
     if !odoo_version_applies(checker, Some(OdooVersion::new(15, 0)), None) {
         return;
     }
-    let mut scopes = checker.semantic().current_scopes();
+    let semantic = checker.semantic();
+    let mut scopes = semantic.current_scopes();
     let in_unlink_method = scopes.any(|scope| {
         matches!(scope.kind, ScopeKind::Function(function_def) if function_def.name.as_str() == "unlink")
     });
@@ -71,7 +59,7 @@ pub(crate) fn no_raise_unlink(checker: &Checker, raise: &ast::StmtRaise) {
     // After `any()` consumed up to the function scope, the remaining scopes are its
     // ancestors — the class (if any) is among them.
     let in_model_class = scopes.any(|scope| {
-        matches!(scope.kind, ScopeKind::Class(class_def) if class_has_model_attributes(class_def))
+        matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def))
     });
     if !in_model_class {
         return;
