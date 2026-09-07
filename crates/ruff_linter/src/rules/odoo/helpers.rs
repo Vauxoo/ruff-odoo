@@ -154,11 +154,51 @@ fn is_literal_evaluable_expr(expr: &Expr) -> bool {
     }
 }
 
-/// Returns `true` if `class_def`'s bases include an Odoo model base (`models.Model`,
-/// `TransientModel`, ...) resolved through imports, e.g. `from odoo import models` or
-/// `from odoo.models import Model`. A bare `Model` base from an unrelated `models` module
-/// doesn't count.
+/// Returns `true` if the class body assigns `_name` or `_inherit` at its root.
+///
+/// One of the two is what makes a class a model: Odoo's registry keys a model by `_name`,
+/// and a class without it extends the models its `_inherit` lists. A class that declares
+/// neither adds nothing to the registry, whatever it inherits from.
+///
+/// `_inherits` is deliberately not accepted on its own. It is delegation, not definition —
+/// a class using it still has to name itself through `_name`, so it is already covered.
+pub(crate) fn class_declares_model_attribute(class_def: &ast::StmtClassDef) -> bool {
+    class_def.body.iter().any(|stmt| {
+        let targets: &[Expr] = match stmt {
+            ast::Stmt::Assign(assign) => &assign.targets,
+            ast::Stmt::AnnAssign(assign) => std::slice::from_ref(&assign.target),
+            _ => return false,
+        };
+        targets.iter().any(
+            |target| matches!(target, Expr::Name(name) if name.id == "_name" || name.id == "_inherit"),
+        )
+    })
+}
+
+/// Returns `true` if `class_def` is an Odoo model, which takes **both** halves:
+///
+/// 1. a base resolving to an Odoo model base (`models.Model`, `TransientModel`,
+///    `AbstractModel`) through imports, e.g. `from odoo import models` or
+///    `from odoo.models import Model` — a bare `Model` base from an unrelated `models`
+///    module doesn't count; and
+/// 2. a `_name` or `_inherit` assignment in the class body.
+///
+/// Requiring the base alone was too loose. A class inheriting `models.Model` without
+/// declaring either attribute defines no model — it is a base class other model classes
+/// import, a scaffold, or dead code — and rules about fields, ORM methods and `self`
+/// recordsets have nothing to say about it.
+///
+/// Requiring the attribute alone would be too loose in the other direction: OCA's
+/// `component` framework reuses `_name` and `_inherit` to name components, which are not
+/// ORM records, so `class Foo(Component): _inherit = "base"` would be reported as a model.
+///
+/// Both halves together are also enough. Odoo models are not built by subclassing another
+/// model class in Python — a model extends another through `_inherit`, not through a base —
+/// so there is no chain to follow, and the direct base is the whole answer.
 pub(crate) fn is_odoo_model_class(semantic: &SemanticModel, class_def: &ast::StmtClassDef) -> bool {
+    if !class_declares_model_attribute(class_def) {
+        return false;
+    }
     let Some(arguments) = class_def.arguments.as_deref() else {
         return false;
     };
