@@ -177,11 +177,23 @@ pub(crate) fn class_declares_model_attribute(class_def: &ast::StmtClassDef) -> b
 
 /// Returns `true` if `class_def` is an Odoo model, which takes **both** halves:
 ///
-/// 1. a base resolving to an Odoo model base (`models.Model`, `TransientModel`,
-///    `AbstractModel`) through imports, e.g. `from odoo import models` or
-///    `from odoo.models import Model` — a bare `Model` base from an unrelated `models`
-///    module doesn't count; and
+/// 1. a base resolving to an Odoo model base through imports, e.g. `from odoo import
+///    models` or `from odoo.models import Model` — a bare `Model` base from an unrelated
+///    `models` module doesn't count; and
 /// 2. a `_name` or `_inherit` assignment in the class body.
+///
+/// The model bases are the ones `odoo/models/__init__.py` exports: `Model`,
+/// `TransientModel`, `AbstractModel` (an alias of `BaseModel`), `BaseModel` itself, and
+/// `CachedModel`. `BaseModel` is what Odoo subclasses for a report over a SQL view, and
+/// `CachedModel` arrived in 20.0 for the registry-cached models — `res.company`,
+/// `res.currency`, `res.lang`, `res.country`, `website`. Both are accepted on every
+/// version: nothing else in the ecosystem is called `models.CachedModel`, so accepting it
+/// against an older Odoo cannot produce a false positive, and gating it on the version
+/// would mean threading `odoo-version` into a helper that otherwise never needs it.
+///
+/// `MetaModel` is exported too but is the metaclass, not a base. `Constraint` and the
+/// other table objects are exported from the same module and are not models: they define
+/// no `_name`/`_inherit`, so the attribute half already rejects them.
 ///
 /// Requiring the base alone was too loose. A class inheriting `models.Model` without
 /// declaring either attribute defines no model — it is a base class other model classes
@@ -211,7 +223,7 @@ pub(crate) fn is_odoo_model_class(semantic: &SemanticModel, class_def: &ast::Stm
             Some([
                 "odoo",
                 "models",
-                "Model" | "TransientModel" | "AbstractModel"
+                "Model" | "TransientModel" | "AbstractModel" | "BaseModel" | "CachedModel"
             ])
         )
     })
