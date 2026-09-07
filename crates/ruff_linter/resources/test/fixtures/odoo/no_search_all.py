@@ -1,4 +1,6 @@
 from odoo import models
+from odoo.http import request
+from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 
 class MyModel(models.Model):
@@ -94,3 +96,14 @@ class PrototypeCopy(models.Model):
         # `_name` plus `_inherit` copies the model into a new table of its own, so `self` is
         # `my.move.snapshot` and not the `account.move` it was built from.
         return self.search([])
+
+
+class MyController(WebsiteSale):
+    """A controller names its model through `request.env[...]`, never through `self`."""
+
+    def values(self):
+        # Reported: the subscript names the model whatever the surrounding class is.
+        partners = request.env["res.partner"].search([])
+        # Not reported: `self` in a controller is the controller, not a recordset.
+        self.search([])
+        return partners

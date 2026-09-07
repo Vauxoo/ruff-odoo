@@ -1,4 +1,6 @@
 from odoo import models
+from odoo.http import request
+from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 
 class MyModel(models.Model):
@@ -43,3 +45,13 @@ class OrdinaryPythonClass:
 def module_level_read_group():
     """A plain function call is not an ORM call."""
     return read_group([], [], [])
+
+
+class MyController(WebsiteSale):
+    """The same deprecated call in a controller reads `request.env[...]`."""
+
+    def values(self):
+        # Reported: the `env[...]` subscript proves the receiver is a recordset.
+        request.env["res.partner"].check_access_rights("read")
+        # Not reported: a plain local in a controller proves nothing.
+        worksheet.check_access_rights("read")
