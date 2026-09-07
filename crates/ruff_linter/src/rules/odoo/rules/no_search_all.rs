@@ -7,7 +7,9 @@ use ruff_text_size::{Ranged, TextRange, TextSize};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::is_odoo_model_class;
+use std::path::Path;
+
+use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_file};
 
 /// ## What it does
 /// Checks for `search([])`/`search_read([])` calls with an empty domain and no `limit` on a
@@ -149,7 +151,7 @@ const RECORDSET_PASSTHROUGH_METHODS: &[&str] = &[
 ];
 
 /// ODW8163
-pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall) {
+pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     let method = match call.func.as_ref() {
         Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr.as_str(),
         Expr::Name(ast::ExprName { id, .. }) => id.as_str(),
@@ -171,6 +173,11 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall) {
     // what carries the rule into a controller, where the shape is
     // `request.env["res.partner"].search([])` and there is no model class in sight.
     let model_class = enclosing_model_class(checker);
+    // Dropping that requirement would otherwise reach a test or a migration script, where
+    // loading every record of a model is the point rather than the defect.
+    if model_class.is_none() && is_structural_non_code_file(path) {
+        return;
+    }
 
     let domain = call.arguments.args.first().or_else(|| {
         call.arguments

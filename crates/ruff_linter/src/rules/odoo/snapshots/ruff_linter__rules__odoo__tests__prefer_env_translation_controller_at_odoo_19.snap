@@ -1,196 +1,50 @@
 ---
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
-ODW8161 Better using self.env._
- --> prefer_env_translation.py:6:16
-  |
-5 | # No fix: `self.env` needs a `self`, and there is none out here.
-6 | MODULE_LEVEL = _("at module level")
-  |                ^
-help: Replace with `self.env._`
-
-ODW8161 Better using self.env._
-  --> prefer_env_translation.py:10:12
-   |
- 9 | def outside_a_class():
-10 |     return _("in a plain function")
-   |            ^
-help: Replace with `self.env._`
-
-ODW8161 Better using self.env._
-  --> prefer_env_translation.py:16:16
-   |
-14 |     def method(self):
-15 |         # No fix: the class is not an Odoo one, so its `self` carries no `env`.
-16 |         return _("in a plain class")
-   |                ^
-help: Replace with `self.env._`
-
-ODW8161 Better using self.env._
-  --> prefer_env_translation.py:23:13
-   |
-22 |     # No fix: a call in the class body is an attribute, not a method.
-23 |     LABEL = _("class attribute")
-   |             ^
-24 |
-25 |     def my_method(self):
-   |
-help: Replace with `self.env._`
-
 ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:26:16
+  --> main.py:10:16
    |
-25 |     def my_method(self):
-26 |         return _("old translated")
-   |                ^
-27 |
-28 |     def other_method(self):
-   |
-help: Replace with `self.env._`
-   |
-25 |     def my_method(self):
-   -         return _("old translated")
-26 +         return self.env._("old translated")
-27 |
-   |
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:29:16
-   |
-28 |     def other_method(self):
-29 |         return _lt("also old")
-   |                ^^^
-30 |
-31 |     def imported_under_another_name(self):
-   |
-help: Replace with `self.env._`
-   |
-28 |     def other_method(self):
-   -         return _lt("also old")
-29 +         return self.env._("also old")
-30 |
-   |
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:33:16
-   |
-31 |     def imported_under_another_name(self):
-32 |         # What the function resolves to is what matters, not what it is called here.
-33 |         return lt("aliased import")
-   |                ^^
-34 |
-35 |     def nested_calls(self):
-   |
-help: Replace with `self.env._`
-   |
-32 |         # What the function resolves to is what matters, not what it is called here.
-   -         return lt("aliased import")
-33 +         return self.env._("aliased import")
-34 |
-   |
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:36:16
-   |
-35 |     def nested_calls(self):
-36 |         return _("outer %s", _("inner"))
-   |                ^
-37 |
-38 |     def already_fixed(self):
-   |
-help: Replace with `self.env._`
-   |
-35 |     def nested_calls(self):
-   -         return _("outer %s", _("inner"))
-36 +         return self.env._("outer %s", _("inner"))
-37 |
-   |
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:36:30
-   |
-35 |     def nested_calls(self):
-36 |         return _("outer %s", _("inner"))
-   |                              ^
-37 |
-38 |     def already_fixed(self):
-   |
-help: Replace with `self.env._`
-   |
-35 |     def nested_calls(self):
-   -         return _("outer %s", _("inner"))
-36 +         return _("outer %s", self.env._("inner"))
-37 |
-   |
-
-ODW8161 Better using self.env._
-  --> prefer_env_translation.py:43:16
-   |
-41 |     @staticmethod
-42 |     def static_method():
-43 |         return _("no self")
-   |                ^
-44 |
-45 |     def nested_function(self):
-   |
-help: Replace with `self.env._`
-
-ODW8161 Better using self.env._
-  --> prefer_env_translation.py:47:20
-   |
-45 |     def nested_function(self):
-46 |         def inner():
-47 |             return _("no self in the inner function")
-   |                    ^
-48 |
-49 |         return inner
-   |
-help: Replace with `self.env._`
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:57:16
-   |
-55 |         # Reported, and fixed, only from Odoo 19.0 on, the version that gave `Controller` its
-56 |         # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
-57 |         return _("in a controller")
+ 8 |         # Reported, and fixed, only from Odoo 19.0 on, the version that gave `Controller` its
+ 9 |         # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
+10 |         return _("in a controller")
    |                ^
 help: Replace with `self.env._`
    |
-56 |         # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
+9  |         # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
    -         return _("in a controller")
-57 +         return self.env._("in a controller")
-58 |
+10 +         return self.env._("in a controller")
+11 |
    |
 
 ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:64:16
+  --> main.py:17:16
    |
-62 | class InheritedController(WebsiteSale):
-63 |     def _prepare_values(self):
-64 |         return _("in an inherited controller")
+15 | class InheritedController(WebsiteSale):
+16 |     def _prepare_values(self):
+17 |         return _("in an inherited controller")
    |                ^
 help: Replace with `self.env._`
    |
-63 |     def _prepare_values(self):
+16 |     def _prepare_values(self):
    -         return _("in an inherited controller")
-64 +         return self.env._("in an inherited controller")
-65 |
+17 +         return self.env._("in an inherited controller")
+18 |
    |
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:70:16
+  --> main.py:23:16
    |
-68 | class Store:
-69 |     def label(self):
-70 |         return _("in a baseless helper")
+21 | class Store:
+22 |     def label(self):
+23 |         return _("in a baseless helper")
    |                ^
 help: Replace with `self.env._`
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:76:16
+  --> main.py:29:16
    |
-74 | class MyError(Exception):
-75 |     def label(self):
-76 |         return _("in an exception")
+27 | class MyError(Exception):
+28 |     def label(self):
+29 |         return _("in an exception")
    |                ^
 help: Replace with `self.env._`

@@ -1404,10 +1404,10 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                 odoo::rules::super_method_mismatch(checker, call);
             }
             if checker.is_rule_enabled(Rule::NoSearchAll) {
-                odoo::rules::no_search_all(checker, call);
+                odoo::rules::no_search_all(checker, call, checker.path);
             }
             if checker.is_rule_enabled(Rule::DeprecatedOdooMethodCall) {
-                odoo::rules::deprecated_odoo_method_call(checker, call);
+                odoo::rules::deprecated_odoo_method_call(checker, call, checker.path);
             }
             if checker.is_rule_enabled(Rule::InvalidOdooMethodCall) {
                 odoo::rules::invalid_odoo_method_call(checker, call);

@@ -1,0 +1,20 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8161 Better using self.env._
+  --> api_client.py:26:25
+   |
+24 |     def from_params(self, service, params):
+25 |         # Reported without a fix: no `self.env` here to rewrite to.
+26 |         raise UserError(_("BadRequest %s") % params)
+   |                         ^
+help: Replace with `self.env._`
+
+ODW8161 Better using self.env._
+  --> api_client.py:31:16
+   |
+29 | class ApiClient(http.Dispatcher):
+30 |     def label(self):
+31 |         return _("not a controller either")
+   |                ^
+help: Replace with `self.env._`

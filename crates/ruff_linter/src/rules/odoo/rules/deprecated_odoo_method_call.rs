@@ -5,7 +5,11 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
+use std::path::Path;
+
+use crate::rules::odoo::helpers::{
+    is_odoo_model_class, is_structural_non_code_file, odoo_version_applies,
+};
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability};
 
@@ -205,7 +209,7 @@ fn is_environment_subscript(expr: &Expr) -> bool {
 }
 
 /// ODW8502
-pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCall) {
+pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     // A bare `read_group(...)` is a plain function, not an ORM call.
     let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {
         return;
@@ -246,7 +250,7 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
     let in_model_class = semantic.current_scopes().any(
         |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def)),
     );
-    if !in_model_class && !is_environment_subscript(value) {
+    if !in_model_class && (!is_environment_subscript(value) || is_structural_non_code_file(path)) {
         return;
     }
 
