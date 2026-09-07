@@ -56,6 +56,9 @@ pub(crate) fn wrap_string_literal(
     pieces
 }
 
+/// The file names Odoo accepts for a module manifest, current and legacy.
+const MANIFEST_FILES: [&str; 2] = ["__manifest__.py", "__openerp__.py"];
+
 /// Returns `true` if `path` is an Odoo module manifest file (`__manifest__.py`, or the
 /// legacy `__openerp__.py` name).
 pub(crate) fn is_manifest_file(path: &Path) -> bool {
@@ -232,22 +235,82 @@ pub(crate) fn is_odoo_model_class(semantic: &SemanticModel, class_def: &ast::Stm
 /// Directory names Odoo itself requires, whose contents are never controllers.
 ///
 /// These are not a naming convention: the test loader collects from a directory literally
-/// called `tests`, and the migration runner looks for `migrations/<version>/`. An addon
-/// cannot rename them and keep working, so reading them is reading structure, not guessing.
-/// `models/`, `controllers/` and `wizard/` are the opposite — pure convention, which is why
-/// nothing here consults them.
-const ODOO_STRUCTURAL_NON_CODE_DIRS: [&str; 2] = ["tests", "migrations"];
+/// called `tests`, and [`odoo/modules/migration.py`][migration] collects migration scripts
+/// from `<module>/migrations` and `<module>/upgrades`. An addon cannot rename them and keep
+/// working.
+///
+/// [migration]: https://github.com/odoo/odoo/blob/7fce330d6c9337043bf5ef4a398db23f1e5c1303/odoo/modules/migration.py#L139-L142
+const ODOO_STRUCTURAL_NON_CODE_DIRS: [&str; 3] = ["tests", "migrations", "upgrades"];
 
-/// Returns `true` if `path` sits under a `tests/` or `migrations/` directory.
-fn in_structural_non_code_dir(path: &Path) -> bool {
-    path.parent().is_some_and(|parent| {
-        parent.components().any(|component| {
-            component
-                .as_os_str()
-                .to_str()
-                .is_some_and(|name| ODOO_STRUCTURAL_NON_CODE_DIRS.contains(&name))
-        })
-    })
+/// Directory names that hold controllers. Unlike the ones above these *are* convention, so
+/// they only ever narrow the file-level signal, never stand in for it.
+const ODOO_CONTROLLER_DIRS: [&str; 2] = ["controller", "controllers"];
+
+/// The directory holding the `__manifest__.py` (or legacy `__openerp__.py`) that `path`
+/// belongs to, walking up from the file.
+///
+/// Every directory question here is asked *inside* an addon and never above it. A checkout
+/// living under a path that happens to contain a directory called `tests` — a CI runner's
+/// `/builds/tests/repo`, a monorepo's `tests/addons` — would otherwise silence the rules for
+/// the whole project, and a repository called `controllers` would turn every file in it into
+/// a controller.
+fn odoo_addon_root(path: &Path) -> Option<&Path> {
+    let mut current = path.parent()?;
+    loop {
+        if MANIFEST_FILES
+            .iter()
+            .any(|manifest| current.join(manifest).is_file())
+        {
+            return Some(current);
+        }
+        current = current.parent()?;
+    }
+}
+
+/// The directory names between the addon root and `path`, or `None` when `path` is not in an
+/// addon at all.
+fn addon_relative_dirs(path: &Path) -> Option<Vec<&str>> {
+    let root = odoo_addon_root(path)?;
+    let relative = path.strip_prefix(root).ok()?;
+    Some(
+        relative
+            .parent()?
+            .components()
+            .filter_map(|component| component.as_os_str().to_str())
+            .collect(),
+    )
+}
+
+/// Returns `true` if `path` sits under the addon's `tests/`, `migrations/` or `upgrades/`.
+fn in_structural_non_code_dir(dirs: &[&str]) -> bool {
+    dirs.iter()
+        .any(|name| ODOO_STRUCTURAL_NON_CODE_DIRS.contains(name))
+}
+
+/// Returns `true` if `path` is a file Odoo runs outside the normal request cycle: a test, or
+/// a migration or upgrade script. Code there does deliberately what a rule would flag
+/// elsewhere — a test loads every record of a model on purpose, and so does a migration.
+///
+/// A file outside any addon answers `false`: it is not Odoo's to run either way, and the
+/// caller decides what that means.
+pub(crate) fn is_structural_non_code_file(path: &Path) -> bool {
+    addon_relative_dirs(path).is_some_and(|dirs| in_structural_non_code_dir(&dirs))
+}
+
+/// Returns `true` if `path` is where an addon keeps its controllers: under a
+/// `controller[s]/` directory at any depth inside the addon, so a nested layout such as
+/// `controllers/cors/main.py` counts, or in a file whose name starts with `controller`,
+/// which is how an addon small enough to skip the directory writes one
+/// (`auth_password_policy_portal/controllers.py`).
+fn in_controller_location(path: &Path, dirs: &[&str]) -> bool {
+    if dirs.iter().any(|name| ODOO_CONTROLLER_DIRS.contains(name)) {
+        return true;
+    }
+    // The stem, so the extension never enters the comparison: the linter only ever walks
+    // Python files, so `controllers.py` and `controller_portal.pyi` are the same question.
+    path.file_stem()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.starts_with("controller"))
 }
 
 /// Returns `true` if the file imports `odoo.http`, in any of its three spellings:
@@ -294,35 +357,46 @@ fn is_builtin_or_test_base(semantic: &SemanticModel, base: &Expr) -> bool {
 /// to 93.6%, and the 250 classes still missed are ones whose file imports nothing from
 /// `odoo.http` because everything they use came down from the inherited controller.
 ///
-/// The breadth costs precision, since a file holds more than the class of interest, so four
-/// exclusions narrow it back, each measured:
+/// The breadth costs precision, since a file holds more than the class of interest, so the
+/// signal is narrowed back, each step measured over the same corpus:
 ///
 /// - **not a model.** Model files import `odoo.http` too. Costs 2 classes.
 /// - **not baseless.** `class Foo:` in such a file is a data structure, as `Store` and
 ///   `StoreVersion` are in `mail/tools/discuss.py`. Removes 97.
 /// - **no builtin or test-case base.** `class Foo(Exception)` and `class T(HttpCase)` are
 ///   not controllers. Removes 325.
-/// - **not under `tests/` or `migrations/`.** Those directories import `odoo.http` in order
-///   to exercise it. `tests/` holds 21,720 classes of which 7 carry any controller
-///   evidence, and 4 of those 7 only appear to because they inherit a test helper that
-///   happens to live in a `controllers` package; the remaining 3 are `CTRLFake`-style
-///   stubs. `migrations/` holds 3 classes in the whole corpus and none is a controller.
+/// - **not under `tests/`, `migrations/` or `upgrades/`.** Those directories import
+///   `odoo.http` in order to exercise it. `tests/` holds 21,720 classes of which 7 carry
+///   any controller evidence, and 4 of those 7 only appear to because they inherit a test
+///   helper that happens to live in a `controllers` package; the remaining 3 are
+///   `CTRLFake`-style stubs.
+/// - **in a controller location**, which is where the rest of the over-reach goes. Left at
+///   the four exclusions above, 3,889 classes are flagged and 215 of them carry no
+///   independent evidence of being a controller. Adding the location test drops that to 22
+///   while losing 17, a tenth of a percent.
 ///
-/// What remains is 92.6% of controllers, and what it still over-reaches on is roughly 200
-/// classes: API clients, `IoT` drivers and OCA components sharing a file with HTTP code.
+/// A "controller location" is a `controller[s]/` directory at any depth inside the addon,
+/// which keeps nested layouts such as `im_livechat/controllers/cors/thread.py` (matching
+/// only the immediate parent would have cost 58 further classes), or a file named
+/// `controller*.py`, which is how an addon too small for the directory writes one, as
+/// `auth_password_policy_portal/controllers.py` does.
 ///
-/// The file's directory is never consulted beyond those two structural names. A controller
-/// in a root-level `controllers.py`, as `auth_password_policy_portal` has, is found the
-/// same way as one in `controllers/`.
+/// Every directory question is answered **inside the addon**, never above it: a checkout
+/// under a path containing a directory called `tests`, or a repository called `controllers`,
+/// must not decide this.
 pub(crate) fn is_odoo_controller_class(
     semantic: &SemanticModel,
     class_def: &ast::StmtClassDef,
     path: &Path,
 ) -> bool {
-    if in_structural_non_code_dir(path) {
+    if !file_imports_odoo_http(semantic) {
         return false;
     }
-    if !file_imports_odoo_http(semantic) {
+    // Outside an addon there is no Odoo module to serve routes from.
+    let Some(dirs) = addon_relative_dirs(path) else {
+        return false;
+    };
+    if in_structural_non_code_dir(&dirs) || !in_controller_location(path, &dirs) {
         return false;
     }
     if is_odoo_model_class(semantic, class_def) {

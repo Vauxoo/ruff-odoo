@@ -1,6 +1,5 @@
 from odoo import _, _lt, http, models
 from odoo import _ as lt
-from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 # No fix: `self.env` needs a `self`, and there is none out here.
 MODULE_LEVEL = _("at module level")
@@ -49,28 +48,10 @@ class MyModel(models.Model):
         return inner
 
 
+# A `Controller` base outside an addon is not a controller: the detector answers from the
+# addon a file belongs to, and this fixture belongs to none. The controller cases live in
+# `prefer_env_translation_controller/`, which has a manifest.
 class MyController(http.Controller):
     @http.route("/page", auth="public")
     def page(self):
-        # Reported, and fixed, only from Odoo 19.0 on, the version that gave `Controller` its
-        # `env`. On 18.0 there is no `self.env` here to recommend, so nothing is reported.
-        return _("in a controller")
-
-
-# A controller reached through another addon, with no `Controller` base and no route of its
-# own. The file importing `odoo.http` is the only local evidence there is.
-class InheritedController(WebsiteSale):
-    def _prepare_values(self):
-        return _("in an inherited controller")
-
-
-# A data structure sharing the file with HTTP code is not a controller: no `self.env`.
-class Store:
-    def label(self):
-        return _("in a baseless helper")
-
-
-# Neither is an exception.
-class MyError(Exception):
-    def label(self):
-        return _("in an exception")
+        return _("in a controller outside an addon")

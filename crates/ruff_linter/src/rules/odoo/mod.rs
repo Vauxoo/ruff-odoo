@@ -110,6 +110,10 @@ mod tests {
         Path::new("prefer_env_translation_not_odoo.py")
     )]
     #[test_case(
+        Rule::PreferEnvTranslation,
+        Path::new("prefer_env_translation_controller/models/api_client.py")
+    )]
+    #[test_case(
         Rule::ManifestSuperfluousKey,
         Path::new("manifest_superfluous_key/__manifest__.py")
     )]
@@ -135,6 +139,14 @@ mod tests {
         Path::new("deprecated_odoo_model_method.py")
     )]
     #[test_case(Rule::NoSearchAll, Path::new("no_search_all.py"))]
+    #[test_case(
+        Rule::NoSearchAll,
+        Path::new("no_search_all_addon/tests/test_search.py")
+    )]
+    #[test_case(
+        Rule::DeprecatedOdooMethodCall,
+        Path::new("no_search_all_addon/tests/test_deprecated.py")
+    )]
     #[test_case(Rule::NoRaiseUnlink, Path::new("no_raise_unlink.py"))]
     #[test_case(Rule::NoWriteInCompute, Path::new("no_write_in_compute.py"))]
     #[test_case(
@@ -510,7 +522,7 @@ mod tests {
     fn prefer_env_translation_controller_before_odoo_19() -> Result<()> {
         let snapshot = "prefer_env_translation_controller_before_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/prefer_env_translation.py"),
+            Path::new("odoo/prefer_env_translation_controller/controllers/main.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
@@ -528,7 +540,7 @@ mod tests {
     fn prefer_env_translation_controller_at_odoo_19() -> Result<()> {
         let snapshot = "prefer_env_translation_controller_at_odoo_19".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/prefer_env_translation.py"),
+            Path::new("odoo/prefer_env_translation_controller/controllers/main.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
@@ -547,7 +559,7 @@ mod tests {
     fn prefer_env_translation_suppressed_before_odoo_18() -> Result<()> {
         let snapshot = "prefer_env_translation_suppressed_before_odoo_18".to_string();
         let diagnostics = test_path(
-            Path::new("odoo/prefer_env_translation.py"),
+            Path::new("odoo/prefer_env_translation_controller/controllers/main.py"),
             &LinterSettings {
                 odoo: super::settings::Settings {
                     odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
