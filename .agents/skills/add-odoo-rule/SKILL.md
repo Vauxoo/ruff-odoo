@@ -142,9 +142,13 @@ cross-module inference (see Scope discipline above).
    family of related checks is named after the family. Keep siblings in the same shape — same word
    order, same singular/plural — so the pair reads as a pair: `deprecated_odoo_method_call.rs`
    (the call site) alongside `deprecated_odoo_method_name.rs` (the definition), not
-   `deprecated_method_names.rs`. The module name is also what a commit message uses as its scope
-   (see [Commit messages](#commit-messages)), so a name that does not pair with its sibling shows
-   up in the log forever.
+   `deprecated_method_names.rs`. A module name that does not pair with its sibling is a wart
+   every later reader has to decode, so get it right on the first commit.
+
+   The module file name is *not* what a commit message uses as its target: that is the rule
+   name in `kebab-case`, which is the same words with dashes when a module holds one check,
+   and something else entirely when it holds a family. See
+   [Commit messages](#commit-messages).
 7. **Registry ordering** — `Linter::Odoo` in `registry.rs`'s `Linter` enum must stay alphabetically
    positioned by its doc-comment name (`odoo`, between `NumPy-specific rules` and
    `[pandas-vet](...)`) — checked by the `linter_sorting` test. If a rebase moves things around,
@@ -264,15 +268,28 @@ cross-module inference (see Scope discipline above).
 
 ## Commit messages
 
-The `target` names the check(s) the commit works on: the rule **module**, in `snake_case`,
-spelled exactly like its file under `crates/ruff_linter/src/rules/odoo/rules/`. Several checks in
-one commit means several targets, comma-separated:
+The `target` names the check(s) the commit works on, spelled as the **rule name in
+`kebab-case`** — the name Ruff itself reports, the one `ruff rule` prints, the one in the
+`ODE9503 (removed-odoo-method-call)` form the diagnostics use, and the one
+`docs/rules/<name>.md` is generated under. It is *not* the module file's `snake_case`
+spelling. Several checks in one commit means several targets, comma-separated:
 
 ```
-[IMP] deprecated_odoo_method_call, deprecated_odoo_method_name: track the removal of the access methods Odoo dropped in 20.0
-[IMP] no_search_all: extend the list of models known to grow
-[FIX] prefer_env_translation: align the check with its fix in controllers
+[IMP] deprecated-odoo-method-call, deprecated-odoo-method-name: track the removal of the access methods Odoo dropped in 20.0
+[IMP] no-search-all: extend the list of models known to grow
+[FIX] prefer-env-translation: align the check with its fix in controllers
 ```
+
+> [!WARNING]
+> The log currently holds both spellings, because this section used to ask for
+> `snake_case`: `[ADD] invalid-odoo-method-call` (#68) and `[ADD] manifest-depends-unsorted`
+> (#59) next to `[ADD] removed_odoo_method_call` (#69) and
+> `[IMP] deprecated_odoo_method_call, deprecated_odoo_method_name` (#56). Kebab-case is the
+> one to use from now on. Do not "fix" the older commits; just stop adding to the pile.
+
+Where a module holds a family of checks, the target is the rule name of the check that
+changed, not the family's module name. A commit touching two rules that live in one file
+still names both rules.
 
 A bare `odoo:` target is only for a change that belongs to no particular check — the plugin
 scaffold, a shared helper in `rules/odoo/helpers.rs`, the `Settings` struct, the registry wiring.
