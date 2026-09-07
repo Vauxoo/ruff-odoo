@@ -1398,7 +1398,7 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                 odoo::rules::bad_builtin_groupby(checker, call);
             }
             if checker.is_rule_enabled(Rule::PreferEnvTranslation) {
-                odoo::rules::prefer_env_translation(checker, call);
+                odoo::rules::prefer_env_translation(checker, call, checker.path);
             }
             if checker.is_rule_enabled(Rule::SuperMethodMismatch) {
                 odoo::rules::super_method_mismatch(checker, call);
