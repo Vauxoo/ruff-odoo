@@ -43,3 +43,26 @@ class Helper:
 
     def unlink(self):
         raise ValueError("nope")
+
+
+# `CachedModel` is a model base too, added in Odoo 20.0 for the registry-cached models.
+class Company(models.CachedModel):
+    _inherit = "res.company"
+
+    def unlink(self):
+        raise UserError("Cannot delete")
+
+
+# `BaseModel` is what a report over a SQL view subclasses.
+class SkillReport(models.BaseModel):
+    _name = "hr.employee.skill.report"
+    _auto = False
+
+    def unlink(self):
+        raise UserError("Cannot delete")
+
+
+# `Constraint` ships from the same module and is a table object, not a model.
+class VirtualConstraint(models.Constraint):
+    def unlink(self):
+        raise UserError("Cannot delete")

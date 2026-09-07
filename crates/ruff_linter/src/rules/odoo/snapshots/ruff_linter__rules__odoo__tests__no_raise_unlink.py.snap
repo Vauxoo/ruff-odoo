@@ -17,3 +17,17 @@ ODE8140 No exceptions should be raised inside unlink() functions
 22 |     def unlink(self):
 23 |         raise UserError("Cannot delete")
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ODE8140 No exceptions should be raised inside unlink() functions
+  --> no_raise_unlink.py:53:9
+   |
+52 |     def unlink(self):
+53 |         raise UserError("Cannot delete")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ODE8140 No exceptions should be raised inside unlink() functions
+  --> no_raise_unlink.py:62:9
+   |
+61 |     def unlink(self):
+62 |         raise UserError("Cannot delete")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
