@@ -1,11 +1,15 @@
+use std::path::Path;
+
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::name::QualifiedName;
 use ruff_python_ast::{self as ast, Expr};
-use ruff_python_semantic::{ScopeKind, SemanticModel};
+use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
-use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
+use crate::rules::odoo::helpers::{
+    is_odoo_controller_class, is_odoo_model_class, odoo_version_applies,
+};
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -62,31 +66,15 @@ impl Violation for PreferEnvTranslation {
     }
 }
 
-/// Returns `true` if `class_def` derives from `odoo.http.Controller`.
-fn is_odoo_controller_class(semantic: &SemanticModel, class_def: &ast::StmtClassDef) -> bool {
-    let Some(arguments) = class_def.arguments.as_deref() else {
-        return false;
-    };
-    arguments.args.iter().any(|base| {
-        matches!(
-            semantic
-                .resolve_qualified_name(base)
-                .as_ref()
-                .map(QualifiedName::segments),
-            Some(["odoo", "http", "Controller"])
-        )
-    })
-}
-
 /// Returns `true` if `self.env` resolves inside `class_def`.
 ///
 /// A model always has it. A controller only got it in Odoo 19.0 ("[IMP] core: use self.env
 /// inside controllers"), which added the `env` property returning `request.env`. A controller
 /// on an earlier version never reaches here: [`in_controller_without_env`] has already
 /// returned from the rule, so by this point any controller is one that has an `env`.
-fn class_has_env(checker: &Checker, class_def: &ast::StmtClassDef) -> bool {
+fn class_has_env(checker: &Checker, class_def: &ast::StmtClassDef, path: &Path) -> bool {
     let semantic = checker.semantic();
-    is_odoo_model_class(semantic, class_def) || is_odoo_controller_class(semantic, class_def)
+    is_odoo_model_class(semantic, class_def) || is_odoo_controller_class(semantic, class_def, path)
 }
 
 /// Returns `true` for a call inside an `http.Controller` on an Odoo older than 19.0.
@@ -95,19 +83,19 @@ fn class_has_env(checker: &Checker, class_def: &ast::StmtClassDef) -> bool {
 /// the environment through `request.env` alone. There is therefore no `self.env._` to
 /// recommend there, which is why the call is left alone entirely rather than reported without
 /// a fix: the diagnostic would name a replacement that does not exist on that version.
-fn in_controller_without_env(checker: &Checker) -> bool {
+fn in_controller_without_env(checker: &Checker, path: &Path) -> bool {
     if odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None) {
         return false;
     }
     let semantic = checker.semantic();
     semantic.current_scopes().any(|scope| {
         matches!(scope.kind, ScopeKind::Class(class_def)
-            if is_odoo_controller_class(semantic, class_def))
+            if is_odoo_controller_class(semantic, class_def, path))
     })
 }
 
 /// ODW8161
-pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
+pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     if !odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
         return;
     }
@@ -129,7 +117,7 @@ pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
     if !is_odoo_translation && id != "_" && id != "_lt" {
         return;
     }
-    if in_controller_without_env(checker) {
+    if in_controller_without_env(checker, path) {
         return;
     }
 
@@ -159,7 +147,7 @@ pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall) {
         return;
     }
     let in_class_with_env = scopes.any(
-        |scope| matches!(scope.kind, ScopeKind::Class(class_def) if class_has_env(checker, class_def)),
+        |scope| matches!(scope.kind, ScopeKind::Class(class_def) if class_has_env(checker, class_def, path)),
     );
     if !in_class_with_env {
         return;
