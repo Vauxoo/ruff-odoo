@@ -2,100 +2,111 @@
 source: crates/ruff_linter/src/rules/odoo/mod.rs
 ---
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.partner", may impact performance.
-  --> no_search_all.py:8:24
+  --> no_search_all.py:10:24
    |
- 7 |     def action_all(self):
- 8 |         all_partners = self.env["res.partner"].search([])
+ 9 |     def action_all(self):
+10 |         all_partners = self.env["res.partner"].search([])
    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- 9 |         limited = self.env["res.partner"].search([], limit=100)
-10 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+11 |         limited = self.env["res.partner"].search([], limit=100)
+12 |         filtered = self.env["res.partner"].search([("active", "=", True)])
    |
 
 ODW8163 Using an empty domain `search_read([])` without a `limit` will load all records of "res.partner", may impact performance.
-  --> no_search_all.py:12:20
+  --> no_search_all.py:14:20
    |
-10 |         filtered = self.env["res.partner"].search([("active", "=", True)])
-11 |         counted = self.env["res.partner"].search([], count=True)
-12 |         read_all = self.env["res.partner"].search_read([])
+12 |         filtered = self.env["res.partner"].search([("active", "=", True)])
+13 |         counted = self.env["res.partner"].search([], count=True)
+14 |         read_all = self.env["res.partner"].search_read([])
    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-13 |         return all_partners, limited, filtered, counted, read_all
+15 |         return all_partners, limited, filtered, counted, read_all
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.partner", may impact performance.
-  --> no_search_all.py:17:24
+  --> no_search_all.py:19:24
    |
-15 |     def action_domain_variable(self):
-16 |         domain = []
-17 |         all_partners = self.env["res.partner"].search(domain)
+17 |     def action_domain_variable(self):
+18 |         domain = []
+19 |         all_partners = self.env["res.partner"].search(domain)
    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-18 |
-19 |         built_domain = []
+20 |
+21 |         built_domain = []
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.move", may impact performance.
-  --> no_search_all.py:33:17
+  --> no_search_all.py:35:17
    |
-31 |     def action_glob_match(self):
-32 |         # "account.move*" covers the lines too.
-33 |         moves = self.env["account.move"].search([])
+33 |     def action_glob_match(self):
+34 |         # "account.move*" covers the lines too.
+35 |         moves = self.env["account.move"].search([])
    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-34 |         lines = self.env["account.move.line"].search([])
-35 |         return moves, lines
+36 |         lines = self.env["account.move.line"].search([])
+37 |         return moves, lines
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.move.line", may impact performance.
-  --> no_search_all.py:34:17
+  --> no_search_all.py:36:17
    |
-32 |         # "account.move*" covers the lines too.
-33 |         moves = self.env["account.move"].search([])
-34 |         lines = self.env["account.move.line"].search([])
+34 |         # "account.move*" covers the lines too.
+35 |         moves = self.env["account.move"].search([])
+36 |         lines = self.env["account.move.line"].search([])
    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-35 |         return moves, lines
+37 |         return moves, lines
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "sale.order", may impact performance.
-  --> no_search_all.py:39:22
+  --> no_search_all.py:41:22
    |
-37 |     def action_model_through_variable(self):
-38 |         orders = self.env["sale.order"]
-39 |         all_orders = orders.search([])
+39 |     def action_model_through_variable(self):
+40 |         orders = self.env["sale.order"]
+41 |         all_orders = orders.search([])
    |                      ^^^^^^^^^^^^^^^^^
-40 |
-41 |         settings = self.env["res.config.settings"]
+42 |
+43 |         settings = self.env["res.config.settings"]
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "stock.move", may impact performance.
-  --> no_search_all.py:46:17
+  --> no_search_all.py:48:17
    |
-45 |     def action_passthrough_chain(self):
-46 |         moves = self.env["stock.move"].sudo().search([])
+47 |     def action_passthrough_chain(self):
+48 |         moves = self.env["stock.move"].sudo().search([])
    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-47 |         quants = self.env["stock.quant"].with_context(active_test=False).search([])
-48 |         return moves, quants
+49 |         quants = self.env["stock.quant"].with_context(active_test=False).search([])
+50 |         return moves, quants
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "stock.quant", may impact performance.
-  --> no_search_all.py:47:18
+  --> no_search_all.py:49:18
    |
-45 |     def action_passthrough_chain(self):
-46 |         moves = self.env["stock.move"].sudo().search([])
-47 |         quants = self.env["stock.quant"].with_context(active_test=False).search([])
+47 |     def action_passthrough_chain(self):
+48 |         moves = self.env["stock.move"].sudo().search([])
+49 |         quants = self.env["stock.quant"].with_context(active_test=False).search([])
    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-48 |         return moves, quants
+50 |         return moves, quants
    |
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.move", may impact performance.
-  --> no_search_all.py:62:16
+  --> no_search_all.py:64:16
    |
-60 |     def action_self_search(self):
-61 |         # `self` runs against the model the class declares.
-62 |         return self.search([])
+62 |     def action_self_search(self):
+63 |         # `self` runs against the model the class declares.
+64 |         return self.search([])
    |                ^^^^^^^^^^^^^^^
 
 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.move", may impact performance.
-  --> no_search_all.py:78:16
+  --> no_search_all.py:80:16
    |
-76 |     def action_self_search(self):
-77 |         # No `_name`, so the class extends every model it inherits: `self` is `account.move`.
-78 |         return self.search([])
+78 |     def action_self_search(self):
+79 |         # No `_name`, so the class extends every model it inherits: `self` is `account.move`.
+80 |         return self.search([])
    |                ^^^^^^^^^^^^^^^
+
+ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "res.partner", may impact performance.
+   --> no_search_all.py:106:20
+    |
+104 |     def values(self):
+105 |         # Reported: the subscript names the model whatever the surrounding class is.
+106 |         partners = request.env["res.partner"].search([])
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+107 |         # Not reported: `self` in a controller is the controller, not a recordset.
+108 |         self.search([])
+    |

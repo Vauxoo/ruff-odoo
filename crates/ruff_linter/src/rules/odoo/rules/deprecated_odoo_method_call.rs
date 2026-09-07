@@ -188,6 +188,22 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
     },
 ];
 
+/// Returns `true` if `expr` is an `<anything>.env["model.name"]` subscript, or a chain of
+/// recordset-preserving calls on one, as in `request.env["res.partner"].sudo()`.
+fn is_environment_subscript(expr: &Expr) -> bool {
+    match expr {
+        Expr::Subscript(ast::ExprSubscript { value, .. }) => matches!(
+            value.as_ref(),
+            Expr::Attribute(ast::ExprAttribute { attr, .. }) if attr == "env"
+        ),
+        Expr::Call(ast::ExprCall { func, .. }) => matches!(
+            func.as_ref(),
+            Expr::Attribute(ast::ExprAttribute { value, .. }) if is_environment_subscript(value)
+        ),
+        _ => false,
+    }
+}
+
 /// ODW8502
 pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCall) {
     // A bare `read_group(...)` is a plain function, not an ORM call.
@@ -215,16 +231,22 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
             .is_some_and(|configured| configured >= *removed)
     });
 
-    // Only inside a method of an Odoo model class, mirroring pylint-odoo's scoping. The
-    // receiver itself is left unchecked: it is routinely a recordset held in a local
+    // Inside a method of an Odoo model class, mirroring pylint-odoo's scoping, where the
+    // receiver is left unchecked: it is routinely a recordset held in a local
     // (`orders.toggle_active()`), which no amount of static analysis would resolve.
+    //
+    // Outside such a class the receiver has to prove itself instead, and an `env[...]`
+    // subscript does: the subscript yields a recordset whatever the surrounding scope is.
+    // That is what carries the rule into a controller, where the same call reads
+    // `request.env["res.partner"].check_access_rights("read")`.
     let semantic = checker.semantic();
     let ScopeKind::Function(function_def) = semantic.current_scope().kind else {
         return;
     };
-    if !semantic.current_scopes().any(
+    let in_model_class = semantic.current_scopes().any(
         |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def)),
-    ) {
+    );
+    if !in_model_class && !is_environment_subscript(value) {
         return;
     }
 

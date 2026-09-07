@@ -162,13 +162,15 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall) {
         return;
     }
 
-    // Only inside a method of an Odoo model class, mirroring pylint-odoo's scoping.
+    // Inside a method, which is where a recordset is reachable at all.
     let ScopeKind::Function(function_def) = checker.semantic().current_scope().kind else {
         return;
     };
-    let Some(model_class) = enclosing_model_class(checker) else {
-        return;
-    };
+    // The enclosing model class is what `self.search(...)` resolves against, so a call
+    // outside one still qualifies as long as it names its model through `env[...]`. That is
+    // what carries the rule into a controller, where the shape is
+    // `request.env["res.partner"].search([])` and there is no model class in sight.
+    let model_class = enclosing_model_class(checker);
 
     let domain = call.arguments.args.first().or_else(|| {
         call.arguments
@@ -238,10 +240,13 @@ fn enclosing_model_class<'a>(checker: &'a Checker) -> Option<&'a ast::StmtClassD
 /// (`sale = self.env["sale.order"]`), and `self.search(...)`, which runs against the models the
 /// enclosing class declares. An `env` subscript names exactly one model; `self` may name
 /// several, since a class can extend more than one.
+///
+/// `model_class` is `None` outside an Odoo model, in a controller for instance. Only the
+/// `env[...]` shapes resolve there: a bare `self` names the controller, not a recordset.
 fn called_models(
     checker: &Checker,
     call: &ast::ExprCall,
-    model_class: &ast::StmtClassDef,
+    model_class: Option<&ast::StmtClassDef>,
 ) -> Vec<String> {
     let Expr::Attribute(ast::ExprAttribute { value, .. }) = call.func.as_ref() else {
         return Vec::new();
@@ -250,7 +255,7 @@ fn called_models(
         Expr::Subscript(subscript) => env_subscript_model(subscript).into_iter().collect(),
         Expr::Name(name) => {
             if name.id.as_str() == "self" {
-                return declared_models(model_class);
+                return model_class.map(declared_models).unwrap_or_default();
             }
             let Some(assigned) = find_assigned_value(name.id.as_str(), checker.semantic()) else {
                 return Vec::new();
