@@ -1,0 +1,21 @@
+---
+source: crates/ruff/tests/cli/lint.rs
+info:
+  program: ruff
+  args:
+    - check
+    - "--no-cache"
+    - "--output-format"
+    - concise
+    - "--isolated"
+    - "--select"
+    - F821
+    - "."
+---
+success: false
+exit_code: 1
+----- stdout -----
+my_module/models.py:1:1: F821 Undefined name `undefined_name`
+Found 1 error.
+
+----- stderr -----

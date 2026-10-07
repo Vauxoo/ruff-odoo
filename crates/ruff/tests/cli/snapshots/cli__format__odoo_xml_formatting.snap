@@ -1,0 +1,40 @@
+---
+source: crates/ruff/tests/cli/format.rs
+info:
+  program: ruff
+  args:
+    - format
+    - "--no-cache"
+    - "--isolated"
+    - "--check"
+    - ir_cron.xml
+---
+success: false
+exit_code: 1
+----- stdout -----
+unformatted: File would be reformatted
+  --> ir_cron.xml:4:45
+   |
+3  |     <record id="ir_cron_sync" model="ir.cron">
+   -         <field name="code">model._cron_sync( force=True )</field>
+4  +         <field name="code">model._cron_sync(force=True)</field>
+5  |     </record>
+6  |     <record id="ir_cron_indented" model="ir.cron">
+7  |         <field name="code">
+   -             for partner in records.filtered(lambda p: p.credit&lt;0):
+   -                 partner.write({'note':'negative'})
+8  +             for partner in records.filtered(lambda p: p.credit &lt; 0):
+9  +                 partner.write({"note": "negative"})
+10 |         </field>
+--------------------------------------------------------------------------------
+17 |         <field name="code"><![CDATA[
+   - if records and records[0].credit<0 :
+   -     action = {'res_model':'res.partner'}
+18 + if records and records[0].credit < 0:
+19 +     action = {"res_model": "res.partner"}
+20 | ]]></field>
+   |
+
+1 file would be reformatted
+
+----- stderr -----

@@ -100,7 +100,9 @@ pub(crate) fn check(
             };
             check_toml(query, document, source_type)
         }
-        SourceType::Toml(_) | SourceType::Markdown => return DiagnosticsMap::default(),
+        SourceType::Toml(_) | SourceType::Markdown | SourceType::Xml => {
+            return DiagnosticsMap::default();
+        }
     };
 
     let CheckResult {

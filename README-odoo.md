@@ -138,6 +138,61 @@ This repository also defines the hooks directly (see [`.pre-commit-hooks.yaml`](
 but pointing `repo` at it builds Ruff from source with maturin on every environment creation, which
 is slow and requires a Rust toolchain. Prefer the mirror.
 
+## Python code in Odoo XML data files
+
+`ruff-odoo check` and `ruff-odoo format` also handle the Python that Odoo keeps in XML: the
+`code` field of every `ir.cron` and `ir.actions.server` record, and of every `base.automation`
+record, which up to 16.0 carries the code of the server action it delegates to. It works like the Markdown
+support of `ruff format`: the code is taken out of the document, checked or formatted as Python,
+and, for `format`, written back in place, leaving the rest of the file untouched.
+
+XML files are opted in, never discovered on their own. Pass them explicitly, as pre-commit does,
+or add them to `extend-include`:
+
+```toml
+[tool.ruff]
+extend-include = ["*.xml"]
+```
+
+With pre-commit, add `xml` to the files the hooks receive:
+
+```yaml
+      - id: ruff-check
+        types_or: [python, pyi, jupyter, xml]
+      - id: ruff-format
+        types_or: [python, pyi, jupyter, xml]
+```
+
+What is checked is exactly what Odoo runs, `safe_eval(code.strip(), ..., mode="exec")`:
+
+- Entities (`&lt;`, `&amp;`, …) and `CDATA` sections are decoded first, and every diagnostic is
+    reported at its line and column in the XML file.
+- A record whose `state` is set to anything other than `code` is skipped, since Odoo never runs
+    its code. A record that does not set `state` is checked: a scheduled action defaults to
+    `code`, and a record that only overrides the `code` of an existing action keeps the state
+    that action has. A `code` field filled from an `eval`, `ref`, `file` or `search` attribute is
+    skipped too.
+- The names Odoo puts in the evaluation context (`env`, `model`, `record`, `records`, `log`,
+    `time`, `datetime`, `UserError`, `Command`, …, and an AI tool's `ai` and arguments) count as
+    builtins, so they are not reported as undefined. They are the names of the configured
+    `lint.odoo.odoo-version`, from 12.0 to 20.0: `UserError` only from 14.0, `Command` from 15.0,
+    `_logger` and `payload` from 17.0. A version without a set of its own uses the closest one
+    before it, and the newest set applies when no version is configured.
+- Rules about the file rather than the code are turned off for the fields: `D100`, `CPY001`,
+    `I002`, `INP001`, `N999`, `A005`, `EXE001`, `EXE002` and `ODC8501`.
+- A body indented under its `<field>` tag is a syntax error when it holds several statements
+    (Odoo strips the first line only) and is reported as one. A single compound statement indented
+    that way runs, and is checked and formatted without the extra indentation, which `format`
+    then puts back. The line width is the code's own, the same for `format` and `E501`, without
+    that indentation. When the indentation cannot be removed without changing the program (a
+    multi-line string inside the body), the field is checked as it is and left unformatted.
+- `check --fix` never rewrites an XML file; `format` is the only tool that does. It keeps the
+    document's line endings, whatever `line-ending` says, and leaves alone a field that does not
+    parse: the syntax error is reported by `check`, not by `format`.
+- Some files are skipped without a diagnostic: XML that is not well-formed, a field that uses an
+    entity declared in a `DOCTYPE`, and XML that is not UTF-8. `--add-noqa` does not handle XML;
+    write the `# noqa` comments in the field by hand.
+
 ## Version scheme
 
 Fork releases use **four** components, `x.y.z.w`:

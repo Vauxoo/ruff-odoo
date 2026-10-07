@@ -18,6 +18,7 @@ use ruff_linter::message::{EmitterContext, create_panic_diagnostic, render_diagn
 use ruff_linter::settings::types::OutputFormat;
 use ruff_markdown::{MarkdownResult, format_code_blocks};
 use ruff_notebook::NotebookIndex;
+use ruff_odoo_xml::{XmlFormatResult, format_code_fields};
 use ruff_python_parser::ParseError;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thiserror::Error;
@@ -494,6 +495,20 @@ pub(crate) fn format_source(
                     Ok(FormattedSource::Formatted(SourceKind::Markdown(formatted)))
                 }
                 MarkdownResult::Unchanged => Ok(FormattedSource::Unchanged),
+            }
+        }
+        SourceKind::Xml(unformatted_document) => {
+            if range.is_some() {
+                return Err(FormatCommandError::RangeFormatNotSupported(
+                    path.map(Path::to_path_buf),
+                ));
+            }
+
+            match format_code_fields(unformatted_document, path, settings) {
+                XmlFormatResult::Formatted(formatted) => {
+                    Ok(FormattedSource::Formatted(SourceKind::Xml(formatted)))
+                }
+                XmlFormatResult::Unchanged => Ok(FormattedSource::Unchanged),
             }
         }
     }

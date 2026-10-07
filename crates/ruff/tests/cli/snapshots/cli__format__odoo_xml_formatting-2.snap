@@ -1,0 +1,16 @@
+---
+source: crates/ruff/tests/cli/format.rs
+info:
+  program: ruff
+  args:
+    - format
+    - "--no-cache"
+    - "--isolated"
+    - ir_cron.xml
+---
+success: true
+exit_code: 0
+----- stdout -----
+1 file reformatted
+
+----- stderr -----

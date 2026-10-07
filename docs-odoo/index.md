@@ -72,6 +72,27 @@ files.
 A few rules are configurable (allowed licenses, allowed categories, required manifest
 keys, and so on) under `[tool.ruff.lint.odoo]`; see [settings](settings.md#lintodoo).
 
+### Python code in XML data files
+
+The `code` field of `ir.cron`, `ir.actions.server` and (up to 16.0) `base.automation` records
+is checked and formatted too, once the XML files are opted in, either by passing them
+explicitly (as pre-commit does once `xml` is added to the hook's `types_or`) or with:
+
+```toml
+[tool.ruff]
+extend-include = ["*.xml"]
+```
+
+Diagnostics point at the line and column in the XML file. The code is taken exactly as Odoo
+runs it (`code.strip()`, entities and `CDATA` decoded), records whose `state` is not `code` are
+skipped, the names of Odoo's evaluation context in the configured `odoo-version` (`env`,
+`model`, `records`, `log`, …; the newest Odoo's when no version is set) are known, and rules
+about the file rather than the code (`D100`, `CPY001`, `I002`, `INP001`, `N999`, `A005`,
+`EXE001`, `EXE002`, `ODC8501`) are off. `check --fix` never rewrites an XML file; `format`
+does, keeping the markup, the escaping style, the line endings and the indentation under the
+tag. XML that is not well-formed or not UTF-8 is skipped without a diagnostic, and so is a field
+that uses an entity declared in a `DOCTYPE`.
+
 ## Versioning
 
 Releases use four components, `x.y.z.w`: `x.y.z` is the upstream Ruff release this fork is

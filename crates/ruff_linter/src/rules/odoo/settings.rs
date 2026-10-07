@@ -239,7 +239,7 @@ pub struct OdooVersion {
 }
 
 impl OdooVersion {
-    pub(crate) const fn new(major: u16, minor: u16) -> Self {
+    pub const fn new(major: u16, minor: u16) -> Self {
         Self { major, minor }
     }
 }

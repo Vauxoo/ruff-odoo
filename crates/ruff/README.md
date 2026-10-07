@@ -27,6 +27,7 @@ The following Ruff workspace members are also available:
 - [ruff_markdown](https://crates.io/crates/ruff_markdown)
 - [ruff_memory_usage](https://crates.io/crates/ruff_memory_usage)
 - [ruff_notebook](https://crates.io/crates/ruff_notebook)
+- [ruff_odoo_xml](https://crates.io/crates/ruff_odoo_xml)
 - [ruff_options_metadata](https://crates.io/crates/ruff_options_metadata)
 - [ruff_python_ast](https://crates.io/crates/ruff_python_ast)
 - [ruff_python_codegen](https://crates.io/crates/ruff_python_codegen)
