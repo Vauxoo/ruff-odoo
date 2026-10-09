@@ -30,6 +30,34 @@ pub struct Settings {
     pub deprecated_odoo_model_methods: ConfiguredList,
     pub no_search_all_models: ConfiguredList,
     pub readme_template_url: Option<String>,
+    /// Set while linting the body of an Odoo XML `code` field, and `None` everywhere else.
+    ///
+    /// It is never read from the configuration: `ruff_odoo_xml` fills it in on the settings it
+    /// clones for each field, which is how the rules learn that `env`, `model`, `record` and
+    /// `records` are the names Odoo injects rather than arbitrary module-level variables.
+    pub code_field: Option<CodeFieldContext>,
+}
+
+/// What the rules know about the Odoo XML `code` field they are linting.
+#[derive(Debug, Clone, Default, CacheKey)]
+pub struct CodeFieldContext {
+    /// The XML id the record's `model_id` field refers to, as written in the document
+    /// (`account.model_account_move`), if the record names one.
+    pub model_xmlid: Option<String>,
+}
+
+impl CodeFieldContext {
+    /// The model `model_xmlid` names, spelled with underscores in place of dots:
+    /// `account_move` for `account.model_account_move`.
+    ///
+    /// The XML id is built from the model name with every `.` replaced by `_`, so turning it
+    /// back into a model name is ambiguous (`data_merge.group` and `data.merge.group` share an
+    /// id). The underscore spelling is what can be compared without guessing.
+    pub(crate) fn underscored_model(&self) -> Option<&str> {
+        let xmlid = self.model_xmlid.as_deref()?;
+        let name = xmlid.split_once('.').map_or(xmlid, |(_, name)| name);
+        name.strip_prefix("model_")
+    }
 }
 
 impl Display for Settings {
@@ -149,6 +177,22 @@ impl ConfiguredList {
                 entries.iter().any(|pattern| matches(pattern, value))
             }
         }
+    }
+
+    /// Whether the model whose name is `underscored` once its dots become underscores matches
+    /// any entry of the list, reading each entry as a glob spelled the same way.
+    ///
+    /// This is how a model only known by its XML id is compared: see
+    /// [`CodeFieldContext::underscored_model`].
+    pub(crate) fn matches_glob_underscored(&self, underscored: &str, built_in: &[&str]) -> bool {
+        self.entries(built_in).any(|pattern| {
+            let pattern = pattern.replace('.', "_");
+            if pattern.contains(['*', '?', '[']) {
+                glob::Pattern::new(&pattern).is_ok_and(|pattern| pattern.matches(underscored))
+            } else {
+                pattern == underscored
+            }
+        })
     }
 
     /// Every entry of the list in effect.

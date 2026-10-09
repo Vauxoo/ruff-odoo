@@ -892,3 +892,203 @@ fn extract_strips_like_python() {
     let source = "<odoo><record id=\"c\" model=\"ir.cron\"><field name=\"code\">\u{1c}records.run()\u{1f}</field></record></odoo>";
     assert_eq!(codes(source), ["records.run()\n"]);
 }
+
+fn lint_odoo(source: &str, version: (u16, u16), rules: impl IntoIterator<Item = Rule>) -> String {
+    let path = Path::new("my_module/data/test.xml");
+    let mut settings = LinterSettings::for_rules(rules);
+    settings.odoo.odoo_version = Some(OdooVersion::new(version.0, version.1));
+    let index = LineIndex::from_source_text(source);
+    let mut diagnostics = lint_code_fields(path, None, source, &settings, flags::Noqa::Enabled);
+    diagnostics.sort_by_key(|diagnostic| diagnostic.range().map(TextRange::start));
+    diagnostics
+        .iter()
+        .map(|diagnostic| {
+            let location = index.line_column(diagnostic.range().unwrap().start(), source);
+            format!(
+                "{}:{} {} {}",
+                location.line,
+                location.column,
+                diagnostic.secondary_code_or_id(),
+                diagnostic.concise_message()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[test]
+fn extract_the_model_reference() {
+    let source = r#"<odoo>
+    <record id="by_ref" model="ir.cron">
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="code">model.action_post()</field>
+    </record>
+    <record id="by_eval" model="ir.actions.server">
+        <field name="code">model.action_post()</field>
+        <field name="model_id" eval="ref('sale.model_sale_order')"/>
+    </record>
+    <record id="none" model="ir.cron">
+        <field name="code">model.action_post()</field>
+    </record>
+</odoo>
+"#;
+    let references: Vec<_> = extract_code_fields(source)
+        .into_iter()
+        .map(|field| field.model_xmlid)
+        .collect();
+    assert_eq!(
+        references,
+        [
+            Some("account.model_account_move".to_string()),
+            Some("sale.model_sale_order".to_string()),
+            None,
+        ]
+    );
+}
+
+#[test]
+fn lint_runs_the_odoo_checks_on_the_injected_names() {
+    // `env`, `model`, `record` and `records` are what `self.env` and `self` are in a model.
+    let source = r#"<odoo>
+    <record id="cron" model="ir.cron">
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="code">
+env.cr.execute("DELETE FROM %s" % env.context["table"])
+env.cr.execute("DELETE FROM account_move WHERE id = %s", (record.id,))
+env.cr.commit()
+records.read_group([], [], [])
+env["res.partner"].check_access_rights("read")
+payload.check_access_rights("read")
+records.write()
+records.name_get()
+payload.name_get()
+records._cr.rollback()
+</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint_odoo(source, (19, 0), [
+        Rule::SqlInjection,
+        Rule::InvalidCommit,
+        Rule::DeprecatedOdooMethodCall,
+        Rule::InvalidOdooMethodCall,
+        Rule::RemovedOdooMethodCall,
+        Rule::PreferEnvAttribute,
+    ]), @r#"
+    5:1 ODE8103 SQL injection risk. Use parameters if you can. - More info https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst#no-sql-injection
+    7:1 ODE8102 Use of cr.commit() directly
+    8:9 ODW8502 `read_group` is deprecated since Odoo 19.0. Use `_read_group` in backend code, or `formatted_read_group` for a formatted result.
+    9:20 ODW8502 `check_access_rights` is deprecated since Odoo 18.0. Use `check_access` instead, or `has_access` where a boolean is needed; an override belongs in `_check_access`.
+    11:1 ODE9502 `write` requires argument `vals` in Odoo 19.0
+    12:1 ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+    14:1 ODW8165 Use "records.env.cr" instead of "records._cr" (deprecated since 19.0)
+    "#);
+}
+
+#[test]
+fn no_search_all_reports_an_unbounded_search_in_a_cron() {
+    // The shape of a cron that kept deadlocking against Odoo's own auto-post cron: it posted
+    // every draft journal entry its domain matched, in one transaction. The fix was a `limit`.
+    let before = r#"<odoo>
+    <record id="cron" model="ir.cron">
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="state">code</field>
+        <field name="code">
+today = datetime.date.today()
+am_ids = model.search([('state', '=', 'draft'), ('asset_id','!=', False), ('date', '=', today)])
+for am_id in am_ids:
+  am_id.action_post()
+        </field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint_odoo(before, (16, 0), [Rule::NoSearchAll]), @r#"7:10 ODW8163 Using `search(...)` without a `limit` in a cron or server action will load all matching records of "account.model_account_move" in one transaction, may impact performance."#);
+    let after = before.replace("today)])", "today)], limit=1000)");
+    assert_snapshot!(lint_odoo(&after, (16, 0), [Rule::NoSearchAll]), @"");
+}
+
+#[test]
+fn no_search_all_resolves_the_model_of_the_record() {
+    let source = r#"<odoo>
+    <record id="heavy" model="ir.cron">
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="code">
+model.search([])
+records.sudo().search_read([("state", "=", "draft")])
+model.search([], limit=1)
+env["res.users"].search([])
+env["stock.move"].search([])
+domain = []
+model.search(domain)
+</field>
+    </record>
+    <record id="underscored" model="ir.actions.server">
+        <field name="model_id" ref="data_merge.model_data_merge_group"/>
+        <field name="code">model.search([])</field>
+    </record>
+    <record id="light" model="ir.cron">
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="code">model.search([])</field>
+    </record>
+    <record id="unknown" model="ir.cron">
+        <field name="code">model.search([])</field>
+    </record>
+    <record id="rebound" model="ir.cron">
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="code">
+model = env["res.users"]
+model.search([])
+</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint_odoo(source, (19, 0), [Rule::NoSearchAll]), @r#"
+    5:1 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.model_account_move", may impact performance.
+    6:1 ODW8163 Using `search_read(...)` without a `limit` in a cron or server action will load all matching records of "account.model_account_move" in one transaction, may impact performance.
+    9:1 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "stock.move", may impact performance.
+    11:1 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.model_account_move", may impact performance.
+    16:28 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "data_merge.model_data_merge_group", may impact performance.
+    "#);
+}
+
+#[test]
+fn lint_keeps_module_semantics_for_the_odoo_checks() {
+    // A nested `def unlink()` is no model method, `action` is read back by Odoo, and a field
+    // has no `self`.
+    let source = r#"<odoo>
+    <record id="action" model="ir.actions.server">
+        <field name="code">
+def unlink():
+    raise UserError(env._("No"))
+action = {"type": "ir.actions.act_window_close"}
+self.env.cr.commit()
+</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint_odoo(source, (19, 0), [
+        Rule::NoRaiseUnlink,
+        Rule::UnusedVariable,
+        Rule::UndefinedName,
+    ]), @"7:1 F821 Undefined name `self`");
+}
+
+#[test]
+fn translation_checks_name_env_in_code_fields() {
+    let source = r#"<odoo>
+    <record id="action" model="ir.actions.server">
+        <field name="code">
+raise UserError("Nothing to post")
+_("Nothing to post")
+</field>
+    </record>
+</odoo>
+"#;
+    let rules = [Rule::TranslationRequired, Rule::PreferEnvTranslation];
+    assert_snapshot!(lint_odoo(source, (19, 0), rules), @r#"
+    4:17 ODC8107 String parameter on "UserError" requires translation. Use env._(...)
+    5:1 ODW8161 Better using env._
+    "#);
+    // Before 18.0 Odoo puts no translation function in the evaluation context at all.
+    assert_snapshot!(lint_odoo(source, (17, 0), rules), @"");
+}

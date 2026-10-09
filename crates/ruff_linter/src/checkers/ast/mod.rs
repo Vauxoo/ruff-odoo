@@ -513,6 +513,11 @@ impl<'a> Checker<'a> {
         self.parsed.tokens()
     }
 
+    /// The top-level statements of the module being checked.
+    pub(crate) fn module_body(&self) -> &'a [Stmt] {
+        self.parsed.suite()
+    }
+
     /// The [`Locator`] for the current file, which enables extraction of source code from byte
     /// offsets.
     pub(crate) const fn locator(&self) -> &'a Locator<'a> {

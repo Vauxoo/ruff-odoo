@@ -88,7 +88,11 @@ runs it (`code.strip()`, entities and `CDATA` decoded), records whose `state` is
 skipped, the names of Odoo's evaluation context in the configured `odoo-version` (`env`,
 `model`, `records`, `log`, …; the newest Odoo's when no version is set) are known, and rules
 about the file rather than the code (`D100`, `CPY001`, `I002`, `INP001`, `N999`, `A005`,
-`EXE001`, `EXE002`, `ODC8501`) are off. `check --fix` never rewrites an XML file; `format`
+`EXE001`, `EXE002`, `ODC8501`) are off. The `OD` rules take `env` for `self.env` and `model`,
+`record` and `records` for a recordset of the model the record's `model_id` refers to, so
+`env.cr.execute("..." % value)` is `ODE8103` and `records.name_get()` is `ODE9503` there as in
+a model method; `no-search-all` reports any `search` without a `limit` on a model known to grow,
+not only an empty domain, because the field runs in a single transaction. `check --fix` never rewrites an XML file; `format`
 does, keeping the markup, the escaping style, the line endings and the indentation under the
 tag. XML that is not well-formed or not UTF-8 is skipped without a diagnostic, and so is a field
 that uses an entity declared in a `DOCTYPE`.

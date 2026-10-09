@@ -1,12 +1,11 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr};
-use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
-use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
+use crate::rules::odoo::helpers::{is_recordset_name, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability};
 
@@ -99,14 +98,12 @@ pub(crate) fn prefer_env_attribute(checker: &Checker, attribute: &ast::ExprAttri
 }
 
 /// Returns `true` if `receiver` is something that carries an Odoo environment: `self` inside
-/// an Odoo model class, or the `odoo.http.request` singleton, which deprecated the same three
+/// an Odoo model class, a recordset Odoo injects into the code of a cron or server action
+/// (`records._cr`), or the `odoo.http.request` singleton, which deprecated the same three
 /// shortcuts in 19.0.
 fn receiver_is_odoo(checker: &Checker, receiver: &Expr, name: &str) -> bool {
     let semantic = checker.semantic();
     match name {
-        "self" => semantic.current_scopes().any(
-            |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def)),
-        ),
         // A local variable named `request` would shadow the import, so resolve it rather than
         // matching the name: only the real `odoo.http.request` counts.
         "request" => semantic
@@ -114,6 +111,6 @@ fn receiver_is_odoo(checker: &Checker, receiver: &Expr, name: &str) -> bool {
             .is_some_and(|qualified_name| {
                 matches!(qualified_name.segments(), ["odoo", "http", "request"])
             }),
-        _ => false,
+        _ => is_recordset_name(checker, name),
     }
 }

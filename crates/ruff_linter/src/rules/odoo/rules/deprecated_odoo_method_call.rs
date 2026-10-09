@@ -9,7 +9,8 @@ use crate::codes::Category;
 use std::path::Path;
 
 use crate::rules::odoo::helpers::{
-    is_odoo_model_class, is_structural_non_code_file, odoo_version_applies,
+    RecordsetScope, is_env_subscript, is_recordset_name, is_structural_non_code_file,
+    odoo_version_applies, recordset_scope,
 };
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability};
@@ -193,17 +194,28 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
     },
 ];
 
-/// Returns `true` if `expr` is an `<anything>.env["model.name"]` subscript, or a chain of
+/// Returns `true` if `expr` is an `env["model.name"]` subscript, or a chain of
 /// recordset-preserving calls on one, as in `request.env["res.partner"].sudo()`.
 fn is_environment_subscript(expr: &Expr) -> bool {
     match expr {
-        Expr::Subscript(ast::ExprSubscript { value, .. }) => matches!(
-            value.as_ref(),
-            Expr::Attribute(ast::ExprAttribute { attr, .. }) if attr == "env"
-        ),
+        Expr::Subscript(subscript) => is_env_subscript(subscript),
         Expr::Call(ast::ExprCall { func, .. }) => matches!(
             func.as_ref(),
             Expr::Attribute(ast::ExprAttribute { value, .. }) if is_environment_subscript(value)
+        ),
+        _ => false,
+    }
+}
+
+/// Returns `true` if `expr` is a recordset Odoo injects into a code field (`records`), or a
+/// chain of calls on one, as in `records.sudo()`.
+fn is_injected_recordset_chain(checker: &Checker, expr: &Expr) -> bool {
+    match expr {
+        Expr::Name(ast::ExprName { id, .. }) => is_recordset_name(checker, id),
+        Expr::Call(ast::ExprCall { func, .. }) => matches!(
+            func.as_ref(),
+            Expr::Attribute(ast::ExprAttribute { value, .. })
+                if is_injected_recordset_chain(checker, value)
         ),
         _ => false,
     }
@@ -244,21 +256,36 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
     // subscript does: the subscript yields a recordset whatever the surrounding scope is.
     // That is what carries the rule into a controller, where the same call reads
     // `request.env["res.partner"].check_access_rights("read")`.
-    let semantic = checker.semantic();
-    let ScopeKind::Function(function_def) = semantic.current_scope().kind else {
-        return;
+    //
+    // The code field of a cron or server action is a module body of its own, with no class
+    // around it: there the receiver has to be `env[...]` or one of the recordsets Odoo
+    // injects (`records.read_group(...)`), since a local named `payload` or `ai` is not one.
+    let function_def = match checker.semantic().current_scope().kind {
+        ScopeKind::Function(function_def) => Some(function_def),
+        _ => None,
     };
-    let in_model_class = semantic.current_scopes().any(
-        |scope| matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def)),
-    );
-    if !in_model_class && (!is_environment_subscript(value) || is_structural_non_code_file(path)) {
-        return;
+    match recordset_scope(checker) {
+        Some(RecordsetScope::Model(_)) if function_def.is_some() => {}
+        Some(RecordsetScope::CodeField(_)) => {
+            if !is_environment_subscript(value) && !is_injected_recordset_chain(checker, value) {
+                return;
+            }
+        }
+        _ => {
+            if function_def.is_none()
+                || !is_environment_subscript(value)
+                || is_structural_non_code_file(path)
+            {
+                return;
+            }
+        }
     }
 
     // An override of a deprecated method has to call `super().<same name>(...)` to keep the
     // chain working; Odoo's own addons do exactly that, tagged `@api.deprecated("Override of
     // a deprecated method")`. The override itself is the thing to remove, not this call.
-    if function_def.name.as_str() == method.name
+    if let Some(function_def) = function_def
+        && function_def.name.as_str() == method.name
         && let Expr::Call(super_call) = value.as_ref()
         && matches!(super_call.func.as_ref(), Expr::Name(name) if name.id == "super")
     {

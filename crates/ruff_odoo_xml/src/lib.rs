@@ -240,6 +240,9 @@ pub struct CodeField {
     /// The names the record adds to the evaluation context on top of [`eval_context_names`]: the
     /// `ai` dictionary and the arguments of an AI tool.
     pub names: Vec<String>,
+    /// The XML id the record's `model_id` refers to (`account.model_account_move`), which is
+    /// the model `model`, `record` and `records` belong to.
+    pub model_xmlid: Option<String>,
     /// How the body is written in the XML document.
     pub encoding: BodyEncoding,
     /// Whether the code starts a line of its own after some indentation, whether or not that
@@ -344,6 +347,10 @@ pub fn extract_code_fields(source: &str) -> Vec<CodeField> {
                     if field.marks_ai_tool {
                         record.ai_tool = true;
                     }
+                    if field.name.as_deref() == Some("model_id") {
+                        record.model_xmlid = field.reference;
+                        continue;
+                    }
                     if field.has_value_attribute {
                         if field.name.as_deref() == Some("state") {
                             // The state is computed; it may well be `code`.
@@ -379,6 +386,10 @@ pub fn extract_code_fields(source: &str) -> Vec<CodeField> {
                     let field = Field::new(&empty, after);
                     if field.marks_ai_tool {
                         record.ai_tool = true;
+                    }
+                    if field.name.as_deref() == Some("model_id") {
+                        record.model_xmlid = field.reference;
+                        continue;
                     }
                     if field.name.as_deref() == Some("state") {
                         // The state is computed, or empty; either way it is not known.
@@ -546,6 +557,8 @@ struct Record {
     ai_tool: bool,
     /// The JSON schema of the AI tool's arguments.
     ai_tool_schema: Option<String>,
+    /// The XML id the `model_id` field refers to.
+    model_xmlid: Option<String>,
 }
 
 impl Record {
@@ -556,6 +569,7 @@ impl Record {
             code: None,
             ai_tool: false,
             ai_tool_schema: None,
+            model_xmlid: None,
         }
     }
 
@@ -583,7 +597,7 @@ impl Record {
             Vec::new()
         };
         let decoded = decode(source, self.code?)?;
-        decoded.into_code_field(names)
+        decoded.into_code_field(names, self.model_xmlid)
     }
 }
 
@@ -615,6 +629,8 @@ struct Field {
     /// Whether the field marks its record as an AI tool: one only an AI tool sets, and not
     /// explicitly set to false.
     marks_ai_tool: bool,
+    /// The XML id the field refers to, through `ref="..."` or `eval="ref('...')"`.
+    reference: Option<String>,
     /// Whether the text before the first child is still being read.
     open: bool,
     body_start: TextSize,
@@ -632,11 +648,26 @@ impl Field {
             has_value_attribute: ["eval", "ref", "file", "search"]
                 .iter()
                 .any(|name| matches!(start.try_get_attribute(name), Ok(Some(_)))),
+            reference: attribute(start, "ref").or_else(|| {
+                attribute(start, "eval")
+                    .and_then(|value| eval_reference(&value).map(str::to_string))
+            }),
             open: true,
             body_start,
             body_end: body_start,
         }
     }
+}
+
+/// The XML id in an `eval="ref('...')"` attribute, the expression form of `ref="..."`.
+fn eval_reference(value: &str) -> Option<&str> {
+    let argument = value.trim().strip_prefix("ref(")?.strip_suffix(')')?.trim();
+    ['\'', '"'].iter().find_map(|quote| {
+        argument
+            .strip_prefix(*quote)?
+            .strip_suffix(*quote)
+            .filter(|xmlid| !xmlid.contains(['\'', '"']))
+    })
 }
 
 /// One character of decoded text and where it came from.
@@ -661,7 +692,7 @@ impl Decoded {
 
     /// Strips the text the way Python's `str.strip()` does and keeps what remains, or returns
     /// `None` if nothing does.
-    fn into_code_field(self, names: Vec<String>) -> Option<CodeField> {
+    fn into_code_field(self, names: Vec<String>, model_xmlid: Option<String>) -> Option<CodeField> {
         let first = self
             .chars
             .iter()
@@ -717,6 +748,7 @@ impl Decoded {
             code,
             indent,
             names,
+            model_xmlid,
             encoding,
             starts_indented,
             range: TextRange::new(first_char.origin.start(), last_char.origin.end()),

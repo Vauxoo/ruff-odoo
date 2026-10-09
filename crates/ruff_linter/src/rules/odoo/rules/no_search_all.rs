@@ -10,7 +10,10 @@ use crate::checkers::ast::Checker;
 use crate::codes::Category;
 use std::path::Path;
 
-use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_file};
+use crate::rules::odoo::helpers::{
+    RecordsetScope, env_subscript_model, is_injected_recordset, is_structural_non_code_file,
+    recordset_scope,
+};
 
 /// ## What it does
 /// Checks for `search([])`/`search_read([])` calls with an empty domain and no `limit` on a
@@ -26,6 +29,15 @@ use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_fi
 /// no `_name` extends every model its `_inherit` names, and one listed model is enough to
 /// report. A call whose model cannot be resolved — `self.env[model_name]`, the comodel of a
 /// relational field — is not reported.
+///
+/// In the `code` field of a cron or a server action, written in an Odoo XML data file, the
+/// `model`, `record` and `records` that Odoo injects resolve to the model the record's
+/// `model_id` refers to, and `env["..."]` resolves as it does in Python. There the rule also
+/// reports a search with a non-empty domain: the code runs in a single transaction, so every
+/// record a growing domain matches is loaded and then locked by whatever the code writes, for
+/// as long as the whole batch takes. A cron posting every draft journal entry of the day that
+/// way kept deadlocking against Odoo's own auto-post cron, which posts the same rows; the fix
+/// was a `limit`.
 ///
 /// ## Example
 /// ```python
@@ -47,15 +59,26 @@ use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_fi
 pub(crate) struct NoSearchAll {
     method: String,
     model: String,
+    empty_domain: bool,
 }
 
 impl Violation for NoSearchAll {
     #[derive_message_formats]
     fn message(&self) -> String {
-        let NoSearchAll { method, model } = self;
-        format!(
-            "Using an empty domain `{method}([])` without a `limit` will load all records of \"{model}\", may impact performance."
-        )
+        let NoSearchAll {
+            method,
+            model,
+            empty_domain,
+        } = self;
+        if *empty_domain {
+            format!(
+                "Using an empty domain `{method}([])` without a `limit` will load all records of \"{model}\", may impact performance."
+            )
+        } else {
+            format!(
+                "Using `{method}(...)` without a `limit` in a cron or server action will load all matching records of \"{model}\" in one transaction, may impact performance."
+            )
+        }
     }
 }
 
@@ -165,18 +188,22 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
         return;
     }
 
-    // Inside a method, which is where a recordset is reachable at all.
-    let ScopeKind::Function(function_def) = checker.semantic().current_scope().kind else {
-        return;
+    // Inside a method, which is where a recordset is reachable at all in a Python file, or
+    // anywhere in the code of a cron or server action, which is a module body of its own.
+    let scope = recordset_scope(checker);
+    let body = match checker.semantic().current_scope().kind {
+        ScopeKind::Function(function_def) => function_def.body.as_slice(),
+        _ if matches!(scope, Some(RecordsetScope::CodeField(_))) => checker.module_body(),
+        _ => return,
     };
     // The enclosing model class is what `self.search(...)` resolves against, so a call
     // outside one still qualifies as long as it names its model through `env[...]`. That is
     // what carries the rule into a controller, where the shape is
     // `request.env["res.partner"].search([])` and there is no model class in sight.
-    let model_class = enclosing_model_class(checker);
     // Dropping that requirement would otherwise reach a test or a migration script, where
-    // loading every record of a model is the point rather than the defect.
-    if model_class.is_none() && is_structural_non_code_file(path) {
+    // loading every record of a model is the point rather than the defect. A code field lives
+    // in a `data` directory, but it is the code a cron runs, so the rule follows it there.
+    if scope.is_none() && is_structural_non_code_file(path) {
         return;
     }
 
@@ -190,7 +217,8 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
     let Some(domain) = domain else {
         return;
     };
-    if !is_empty_domain(checker, function_def, domain, call.start()) {
+    let empty_domain = is_empty_domain(checker, body, domain, call.start());
+    if !empty_domain && !matches!(scope, Some(RecordsetScope::CodeField(_))) {
         return;
     }
 
@@ -207,15 +235,18 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
 
     // A call whose model cannot be resolved is left alone rather than reported blindly. A
     // class extending several models resolves to all of them, and one listed model is enough.
-    let Some(model) = called_models(checker, call, model_class)
-        .into_iter()
-        .find(|model| {
-            checker
-                .settings()
-                .odoo
-                .no_search_all_models
-                .matches_glob(model, HEAVY_MODELS)
-        })
+    let heavy_models = &checker.settings().odoo.no_search_all_models;
+    let Some(model) =
+        called_models(checker, call, scope)
+            .into_iter()
+            .find_map(|model| match model {
+                CalledModel::Named(name) => heavy_models
+                    .matches_glob(&name, HEAVY_MODELS)
+                    .then_some(name),
+                CalledModel::Referenced { xmlid, underscored } => heavy_models
+                    .matches_glob_underscored(&underscored, HEAVY_MODELS)
+                    .then_some(xmlid),
+            })
     else {
         return;
     };
@@ -224,22 +255,20 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
         NoSearchAll {
             method: method.to_string(),
             model,
+            empty_domain,
         },
         call.range(),
     );
 }
 
-/// The Odoo model class the call sits in, walking out through the enclosing scopes.
-fn enclosing_model_class<'a>(checker: &'a Checker) -> Option<&'a ast::StmtClassDef> {
-    let semantic = checker.semantic();
-    semantic
-        .current_scopes()
-        .find_map(|scope| match scope.kind {
-            ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def) => {
-                Some(class_def)
-            }
-            _ => None,
-        })
+/// A model `search` may run against.
+enum CalledModel {
+    /// A model known by its name, `account.move`.
+    Named(String),
+    /// The model of a code field, known only through the XML id its `model_id` refers to
+    /// (`account.model_account_move`), along with the model name that id spells once its dots
+    /// are underscores (`account_move`).
+    Referenced { xmlid: String, underscored: String },
 }
 
 /// The models `call` may run `search` against, if they can be resolved within this file.
@@ -249,27 +278,54 @@ fn enclosing_model_class<'a>(checker: &'a Checker) -> Option<&'a ast::StmtClassD
 /// enclosing class declares. An `env` subscript names exactly one model; `self` may name
 /// several, since a class can extend more than one.
 ///
-/// `model_class` is `None` outside an Odoo model, in a controller for instance. Only the
-/// `env[...]` shapes resolve there: a bare `self` names the controller, not a recordset.
+/// `scope` is `None` outside an Odoo model, in a controller for instance. Only the
+/// `env[...]` shapes resolve there: a bare `self` names the controller, not a recordset. In a
+/// code field, the injected `model`, `record` and `records` resolve to the record's `model_id`.
 fn called_models(
     checker: &Checker,
     call: &ast::ExprCall,
-    model_class: Option<&ast::StmtClassDef>,
-) -> Vec<String> {
+    scope: Option<RecordsetScope>,
+) -> Vec<CalledModel> {
     let Expr::Attribute(ast::ExprAttribute { value, .. }) = call.func.as_ref() else {
         return Vec::new();
     };
+    let named = |subscript| {
+        env_subscript_model(subscript)
+            .map(CalledModel::Named)
+            .into_iter()
+            .collect()
+    };
     match strip_passthrough_calls(value) {
-        Expr::Subscript(subscript) => env_subscript_model(subscript).into_iter().collect(),
+        Expr::Subscript(subscript) => named(subscript),
         Expr::Name(name) => {
-            if name.id.as_str() == "self" {
-                return model_class.map(declared_models).unwrap_or_default();
+            match scope {
+                Some(RecordsetScope::Model(class_def)) if name.id.as_str() == "self" => {
+                    return declared_models(class_def)
+                        .into_iter()
+                        .map(CalledModel::Named)
+                        .collect();
+                }
+                Some(RecordsetScope::CodeField(context))
+                    if is_injected_recordset(checker, name.id.as_str()) =>
+                {
+                    return context
+                        .model_xmlid
+                        .clone()
+                        .zip(context.underscored_model())
+                        .map(|(xmlid, underscored)| CalledModel::Referenced {
+                            xmlid,
+                            underscored: underscored.to_string(),
+                        })
+                        .into_iter()
+                        .collect();
+                }
+                _ => {}
             }
             let Some(assigned) = find_assigned_value(name.id.as_str(), checker.semantic()) else {
                 return Vec::new();
             };
             match strip_passthrough_calls(assigned) {
-                Expr::Subscript(subscript) => env_subscript_model(subscript).into_iter().collect(),
+                Expr::Subscript(subscript) => named(subscript),
                 _ => Vec::new(),
             }
         }
@@ -293,20 +349,6 @@ fn strip_passthrough_calls(expr: &Expr) -> &Expr {
         }
         current = value;
     }
-}
-
-/// The model named by an `<anything>.env["model.name"]` subscript.
-fn env_subscript_model(subscript: &ast::ExprSubscript) -> Option<String> {
-    let Expr::Attribute(ast::ExprAttribute { attr, .. }) = subscript.value.as_ref() else {
-        return None;
-    };
-    if attr.as_str() != "env" {
-        return None;
-    }
-    let Expr::StringLiteral(literal) = subscript.slice.as_ref() else {
-        return None;
-    };
-    Some(literal.value.to_str().to_string())
 }
 
 /// The models `self` runs against inside `class_def`.
@@ -358,12 +400,12 @@ fn class_attribute_models(class_def: &ast::StmtClassDef, attribute: &str) -> Vec
 }
 
 /// Returns `true` if `domain` is an empty-list literal, or a `Name` assigned (within
-/// `function_def`, the enclosing method) an empty-list literal with no
+/// `body`, the enclosing method or code field) an empty-list literal with no
 /// `.append`/`.extend`/`.insert` call on it between the assignment and `call_start` —
 /// mirroring pylint-odoo's handling of `domain = []; search(domain)`.
 fn is_empty_domain(
     checker: &Checker,
-    function_def: &ast::StmtFunctionDef,
+    body: &[ast::Stmt],
     domain: &Expr,
     call_start: TextSize,
 ) -> bool {
@@ -382,7 +424,7 @@ fn is_empty_domain(
                 range: TextRange::new(list.range().end(), call_start),
                 found: false,
             };
-            for stmt in &function_def.body {
+            for stmt in body {
                 collector.visit_stmt(stmt);
             }
             !collector.found

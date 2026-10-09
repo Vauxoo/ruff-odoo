@@ -3,14 +3,14 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ruff_python_ast::name::QualifiedName;
 use ruff_python_ast::{self as ast, Expr};
-use ruff_python_semantic::{Imported, SemanticModel};
+use ruff_python_semantic::{Imported, ScopeKind, SemanticModel};
 use ruff_python_trivia::{SimpleTokenKind, SimpleTokenizer};
 use ruff_text_size::{Ranged, TextLen, TextRange};
 
 use crate::Edit;
 use crate::checkers::ast::Checker;
 use crate::line_width::LineWidthBuilder;
-use crate::rules::odoo::settings::OdooVersion;
+use crate::rules::odoo::settings::{CodeFieldContext, OdooVersion};
 
 /// Renders `content` as string-literal pieces for a parenthesized implicit concatenation.
 ///
@@ -578,4 +578,84 @@ fn remove_sequence_element(ranges: &[TextRange], target: TextRange, source: &str
 /// Shared by `invalid-commit` (`ODE8102`) and `sql-injection` (`ODE8103`): both answer "is this
 /// a cursor?", both read the same `cursor-expr` setting, and a default written twice is a
 /// default that eventually disagrees with itself.
-pub(crate) const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr"];
+///
+/// `env.cr` goes beyond pylint-odoo's list. It is the cursor of the `env` that Odoo hands to
+/// the code of a cron or server action and to `post_init_hook(env)` and its siblings, and a
+/// query built with `%` or a `commit()` there is the same defect it is anywhere else.
+pub(crate) const CURSOR_EXPRS: &[&str] = &["cr", "self._cr", "self.cr", "self.env.cr", "env.cr"];
+
+/// The context of the Odoo XML `code` field being linted, or `None` for a Python file.
+pub(crate) fn code_field<'a>(checker: &'a Checker) -> Option<&'a CodeFieldContext> {
+    checker.settings().odoo.code_field.as_ref()
+}
+
+/// Where a recordset is within reach of the code being checked.
+#[derive(Clone, Copy)]
+pub(crate) enum RecordsetScope<'a> {
+    /// A method of an Odoo model class, where `self` is a recordset of the class's model.
+    Model(&'a ast::StmtClassDef),
+    /// The body of an Odoo XML `code` field, where Odoo injects `model`, `record` and
+    /// `records` into the evaluation context.
+    CodeField(&'a CodeFieldContext),
+}
+
+/// The [`RecordsetScope`] the code being checked sits in, if any.
+///
+/// An enclosing Odoo model class wins over the code field, so a class defined inside a field
+/// is judged as the class it is.
+pub(crate) fn recordset_scope<'a>(checker: &'a Checker) -> Option<RecordsetScope<'a>> {
+    let semantic = checker.semantic();
+    semantic
+        .current_scopes()
+        .find_map(|scope| match scope.kind {
+            ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def) => {
+                Some(RecordsetScope::Model(class_def))
+            }
+            _ => None,
+        })
+        .or_else(|| code_field(checker).map(RecordsetScope::CodeField))
+}
+
+/// The names Odoo binds to a recordset in the evaluation context of a `code` field.
+const INJECTED_RECORDSETS: &[&str] = &["model", "record", "records"];
+
+/// Returns `true` if `name` is one of the recordsets Odoo injects into a `code` field, and
+/// still refers to it: a field that rebinds `records` has its own value in it.
+pub(crate) fn is_injected_recordset(checker: &Checker, name: &str) -> bool {
+    code_field(checker).is_some()
+        && INJECTED_RECORDSETS.contains(&name)
+        && checker.semantic().has_builtin_binding(name)
+}
+
+/// Returns `true` if the bare `name` certainly holds a recordset where it is used: `self`
+/// inside an Odoo model class, or a recordset Odoo injects into a `code` field.
+pub(crate) fn is_recordset_name(checker: &Checker, name: &str) -> bool {
+    match recordset_scope(checker) {
+        Some(RecordsetScope::Model(_)) => name == "self",
+        Some(RecordsetScope::CodeField(_)) => is_injected_recordset(checker, name),
+        None => false,
+    }
+}
+
+/// Returns `true` if `expr` is an `env[...]` subscript: on an attribute, as in
+/// `self.env[...]` or `request.env[...]`, or on a bare `env`, as in a `code` field or a
+/// `post_init_hook(env)`.
+pub(crate) fn is_env_subscript(expr: &ast::ExprSubscript) -> bool {
+    match expr.value.as_ref() {
+        Expr::Name(ast::ExprName { id, .. }) => id == "env",
+        Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr == "env",
+        _ => false,
+    }
+}
+
+/// The model an `env["model.name"]` subscript names, if it is a string literal. See
+/// [`is_env_subscript`] for the shapes accepted.
+pub(crate) fn env_subscript_model(expr: &ast::ExprSubscript) -> Option<String> {
+    if !is_env_subscript(expr) {
+        return None;
+    }
+    let Expr::StringLiteral(literal) = expr.slice.as_ref() else {
+        return None;
+    };
+    Some(literal.value.to_str().to_string())
+}

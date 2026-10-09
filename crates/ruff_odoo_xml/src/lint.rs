@@ -6,6 +6,7 @@ use ruff_db::diagnostic::{Annotation, Diagnostic, Span};
 use ruff_linter::linter::{ParseSource, lint_only};
 use ruff_linter::package::PackageRoot;
 use ruff_linter::registry::Rule;
+use ruff_linter::rules::odoo::settings::CodeFieldContext;
 use ruff_linter::settings::{LinterSettings, flags};
 use ruff_linter::source_kind::SourceKind;
 use ruff_python_ast::PySourceType;
@@ -40,8 +41,10 @@ const FILE_LEVEL_RULES: &[Rule] = &[
 /// Each field is linted on its own, as the module Odoo compiles it into, with the names Odoo
 /// injects into its evaluation context in the configured `odoo-version` (and, for an AI tool,
 /// the tool's arguments) added to the
-/// builtins, and the rules that judge the file rather than the code turned off. Fixes are
-/// dropped: rewriting the XML document is left to the formatter.
+/// builtins, and the rules that judge the file rather than the code turned off. The `OD` rules
+/// are told they are in a code field, and which model its record's `model_id` names, so that
+/// they read `env`, `model`, `record` and `records` the way they read `self.env` and `self` in
+/// a model. Fixes are dropped: rewriting the XML document is left to the formatter.
 pub fn lint_code_fields(
     path: &Path,
     package: Option<PackageRoot<'_>>,
@@ -59,13 +62,11 @@ pub fn lint_code_fields(
 
     let mut diagnostics = Vec::new();
     for field in &fields {
-        let field_settings;
-        let settings = if field.names.is_empty() {
-            &settings
-        } else {
-            field_settings = with_builtins(&settings, &field.names);
-            &field_settings
-        };
+        let mut settings = with_builtins(&settings, &field.names);
+        settings.odoo.code_field = Some(CodeFieldContext {
+            model_xmlid: field.model_xmlid.clone(),
+        });
+        let settings = &settings;
         let source_kind = SourceKind::Python {
             code: field.code.clone(),
             is_stub: false,

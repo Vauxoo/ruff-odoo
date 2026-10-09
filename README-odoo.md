@@ -180,6 +180,19 @@ What is checked is exactly what Odoo runs, `safe_eval(code.strip(), ..., mode="e
     before it, and the newest set applies when no version is configured.
 - Rules about the file rather than the code are turned off for the fields: `D100`, `CPY001`,
     `I002`, `INP001`, `N999`, `A005`, `EXE001`, `EXE002` and `ODC8501`.
+- The `OD` rules read the code the way they read a method of the record's model: `env` is
+    `self.env`, and `model`, `record` and `records` are `self`, a recordset of the model the
+    record's `model_id` refers to. So `env.cr.execute("..." % value)` is `ODE8103`,
+    `env.cr.commit()` is `ODE8102`, `records.read_group(...)` is `ODW8502` on 19.0,
+    `records.name_get()` is `ODE9503`, and the translation rules recommend `env._` (and stay
+    silent before 18.0, where a field has no translation function). `env.cr` counts as a cursor
+    in Python files too, where it is the `env` of a `post_init_hook(env)`.
+- `ODW8163` (`no-search-all`) goes further in a field than in a method: a `search` or
+    `search_read` without a `limit` on a model known to grow is reported whatever its domain,
+    since the field runs in one transaction and holds every row it matched and wrote until it
+    ends. A cron posting every draft journal entry of the day that way kept deadlocking against
+    Odoo's own auto-post cron. The model of `model`, `record` and `records` is compared through
+    its XML id (`account.model_account_move`), with dots and underscores taken as equal.
 - A body indented under its `<field>` tag is a syntax error when it holds several statements
     (Odoo strips the first line only) and is reported as one. A single compound statement indented
     that way runs, and is checked and formatted without the extra indentation, which `format`

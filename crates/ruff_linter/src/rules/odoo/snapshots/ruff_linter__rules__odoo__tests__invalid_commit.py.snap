@@ -9,3 +9,11 @@ ODE8102 Use of cr.commit() directly
   |         ^^^^^^^^^^^^^^^^^^^^
 6 |         return super().write(vals)
   |
+
+ODE8102 Use of cr.commit() directly
+  --> invalid_commit.py:15:5
+   |
+13 | def post_init_hook(env):
+14 |     # Flagged: `env.cr` is the cursor of the environment Odoo hands to the hook.
+15 |     env.cr.commit()
+   |     ^^^^^^^^^^^^^^^

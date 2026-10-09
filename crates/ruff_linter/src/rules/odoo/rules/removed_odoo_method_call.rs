@@ -6,7 +6,9 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
-use crate::rules::odoo::helpers::{class_defines_method, inherits_non_builtin};
+use crate::rules::odoo::helpers::{
+    class_defines_method, code_field, inherits_non_builtin, is_env_subscript, is_injected_recordset,
+};
 use crate::rules::odoo::removals::removals_for;
 use crate::rules::odoo::settings::OdooVersion;
 use crate::rules::odoo::signatures::SHIPPED_VERSIONS;
@@ -121,7 +123,7 @@ pub(crate) fn removed_odoo_method_call(checker: &Checker, call: &ast::ExprCall) 
         }
         return;
     };
-    let Expr::Attribute(ast::ExprAttribute { attr, .. }) = call.func.as_ref() else {
+    let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {
         return;
     };
     let Some(removed_in) = removals.get(attr.as_str()).copied() else {
@@ -144,7 +146,16 @@ pub(crate) fn removed_odoo_method_call(checker: &Checker, call: &ast::ExprCall) 
         }
         in_odoo_class |= inherits_non_builtin(semantic, class_def);
     }
-    if !in_odoo_class {
+    // The code field of a cron or server action has no class to vouch for the receiver, so
+    // there the receiver has to be a recordset itself: one Odoo injects, or an `env[...]`.
+    // Anything else, `payload.name_get()` say, is not known to be one.
+    let recordset_in_code_field = code_field(checker).is_some()
+        && match value.as_ref() {
+            Expr::Name(ast::ExprName { id, .. }) => is_injected_recordset(checker, id),
+            Expr::Subscript(subscript) => is_env_subscript(subscript),
+            _ => false,
+        };
+    if !in_odoo_class && !recordset_in_code_field {
         return;
     }
 
