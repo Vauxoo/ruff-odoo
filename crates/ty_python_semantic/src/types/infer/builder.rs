@@ -68,7 +68,7 @@ use crate::types::diagnostic::{
     INVALID_ARGUMENT_TYPE, INVALID_ASSIGNMENT, INVALID_ATTRIBUTE_ACCESS, INVALID_DECLARATION,
     INVALID_ENUM_MEMBER_ANNOTATION, INVALID_LEGACY_TYPE_VARIABLE, INVALID_NEWTYPE,
     INVALID_PARAMSPEC, INVALID_TYPE_ALIAS_TYPE, INVALID_TYPE_FORM, INVALID_TYPE_VARIABLE_BOUND,
-    INVALID_TYPE_VARIABLE_CONSTRAINTS, INVALID_TYPE_VARIABLE_DEFAULT,
+    INVALID_TYPE_VARIABLE_CONSTRAINTS, INVALID_TYPE_VARIABLE_DEFAULT, MISMATCHED_SENTINEL_NAME,
     POSSIBLY_MISSING_IMPLICIT_CALL, POSSIBLY_MISSING_SUBMODULE, TypeCheckDiagnostics,
     UNRESOLVED_ATTRIBUTE, UNRESOLVED_GLOBAL, UNRESOLVED_REFERENCE, UNSOUND_ASSIGNMENT,
     UNSOUND_YIELD, UNSUPPORTED_OPERATOR, YieldKind, autofix_with_notimplementederror,
@@ -3121,7 +3121,12 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                 if positive.iter().any(|element_ty| {
                     self.validate_attribute_deletion(target, *element_ty, attribute, false)
                 }) {
-                    true
+                    !self.validate_final_attribute_deletion(
+                        target,
+                        object_ty,
+                        attribute,
+                        emit_diagnostics,
+                    )
                 } else {
                     if emit_diagnostics && let Some(element_ty) = positive.first() {
                         self.validate_attribute_deletion(target, *element_ty, attribute, true);
@@ -3147,6 +3152,26 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                 emit_diagnostics,
             ),
 
+            Type::TypeVar(typevar) => {
+                // Other possible receivers can expose the same name through a descriptor or
+                // dynamic type. Check each receiver using its own deletion contract.
+                match typevar.require_bound_or_constraints(db, env) {
+                    TypeVarBoundOrConstraints::UpperBound(bound) => {
+                        self.validate_attribute_deletion(target, bound, attribute, emit_diagnostics)
+                    }
+                    TypeVarBoundOrConstraints::Constraints(constraints) => {
+                        constraints.elements(db).iter().all(|element_ty| {
+                            self.validate_attribute_deletion(
+                                target,
+                                *element_ty,
+                                attribute,
+                                emit_diagnostics,
+                            )
+                        })
+                    }
+                }
+            }
+
             Type::NominalInstance(..)
             | Type::ProtocolInstance(_)
             | Type::LiteralValue(..)
@@ -3164,7 +3189,6 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             | Type::WrapperDescriptor(_)
             | Type::DataclassDecorator(_)
             | Type::DataclassTransformer(_)
-            | Type::TypeVar(..)
             | Type::AlwaysTruthy
             | Type::AlwaysFalsy
             | Type::TypeIs(_)
@@ -3809,23 +3833,65 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             repr_arg = Some(&keyword.value);
         }
 
-        if !matches!(name_arg, ast::Expr::StringLiteral(_)) {
+        let ast::Expr::StringLiteral(name_arg) = name_arg else {
+            return None;
+        };
+
+        if repr_arg.is_some_and(|repr_arg| {
+            !matches!(repr_arg, ast::Expr::StringLiteral(_)) && !repr_arg.is_none_literal_expr()
+        }) {
             return None;
         }
 
-        let Some(repr_arg) = repr_arg else {
-            return Some(Type::KnownInstance(KnownInstanceType::Sentinel(
-                SentinelInstance::new(self.db(), target_name, definition),
-            )));
-        };
+        let name = name_arg.value.to_str();
 
-        if !matches!(repr_arg, ast::Expr::StringLiteral(_)) && !repr_arg.is_none_literal_expr() {
-            return None;
+        if !self.sentinel_name_matches_target(name, target_name)
+            && let Some(builder) = self
+                .context
+                .report_lint(&MISMATCHED_SENTINEL_NAME, name_arg)
+        {
+            let mut diagnostic = builder.into_diagnostic(format_args!(
+                "The name passed to `{}` does not match the variable it is assigned to",
+                KnownClass::Sentinel.name(self.program_environment().python_version(self.db())),
+            ));
+            diagnostic.set_primary_annotation_message(format_args!(
+                "Expected \"{target_name}\", got \"{name}\""
+            ));
         }
 
         Some(Type::KnownInstance(KnownInstanceType::Sentinel(
             SentinelInstance::new(self.db(), target_name, definition),
         )))
+    }
+
+    /// Sentinel names can be unqualified or include their exact enclosing class path.
+    fn sentinel_name_matches_target(&self, name: &str, target_name: &Name) -> bool {
+        if name == target_name.as_str() {
+            return true;
+        }
+
+        let mut name_components = name.rsplit('.');
+
+        if name_components.next() != Some(target_name.as_str()) {
+            return false;
+        }
+
+        for (_, scope) in self
+            .index
+            .ancestor_scopes(self.scope.file_scope_id(self.db()))
+        {
+            match scope.node() {
+                NodeWithScopeKind::Class(class) => {
+                    if name_components.next() != Some(class.node(self.module()).name.as_str()) {
+                        return false;
+                    }
+                }
+                NodeWithScopeKind::Module => return name_components.next().is_none(),
+                _ => return false,
+            }
+        }
+
+        false
     }
 
     fn sentinel_definition_scope_is_supported(&self) -> bool {
@@ -5711,10 +5777,27 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
     ) -> Result<Bindings<'db>, CallDunderError<'db>> {
         let db = self.db();
         let env = self.program_environment();
-        match object
-            .member_lookup_with_policy(db, env, name, lookup_policy)
-            .place
-        {
+        let member = object.member_lookup_with_policy(db, env, name, lookup_policy);
+        self.infer_and_try_call_dunder_member(
+            member,
+            ast_arguments,
+            argument_types,
+            infer_argument_ty,
+            call_expression_tcx,
+        )
+    }
+
+    fn infer_and_try_call_dunder_member(
+        &mut self,
+        member: PlaceAndQualifiers<'db>,
+        ast_arguments: ArgumentsIter<'_>,
+        argument_types: &mut CallArguments<'_, 'db>,
+        infer_argument_ty: &mut dyn FnMut(&mut Self, ArgExpr<'db, '_>) -> Type<'db>,
+        call_expression_tcx: TypeContext<'db>,
+    ) -> Result<Bindings<'db>, CallDunderError<'db>> {
+        let db = self.db();
+        let env = self.program_environment();
+        match member.place {
             Place::Defined(DefinedPlace {
                 ty: dunder_callable,
                 definedness: boundness,
@@ -6797,13 +6880,15 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
         ty
     }
 
-    /// Specialize a bare generic class value based on type context.
-    ///
-    /// Currently supports only Callable type contexts.
-    ///
-    /// This lets `list` in a `Callable[[], list[str]]` context be treated as `list[str]`.
-    fn specialize_generic_class_from_context(&self, ty: Type<'db>, target: Type<'db>) -> Type<'db> {
+    fn specialize_generic_class_from_callable_context(
+        &self,
+        class: ClassLiteral<'db>,
+        target: Type<'db>,
+    ) -> Option<Type<'db>> {
+        let db = self.db();
         let env = self.program_environment();
+        let ty = Type::ClassLiteral(class);
+
         // TODO: The constraint-set assignability rules should already be
         // able to determine that `list` (coerced into a callable) is assignable
         // to `Callable[[], list[str]]` when `_T@list = str`. However, when
@@ -6813,10 +6898,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
         // the information we need to choose an appropriate specialization of
         // `list` given the type context, and we wouldn't have to duplicate all
         // of the logic below.
-        let Type::ClassLiteral(class) = ty else {
-            return ty;
-        };
-        let db = self.db();
+
         let exactly_one_callable = |union: UnionType<'db>| {
             union
                 .elements(db)
@@ -6825,13 +6907,12 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                 .exactly_one()
                 .ok()
         };
-        let Some(target_callable) = (match target.resolve_type_alias(db) {
+        let target_callable = (match target.resolve_type_alias(db) {
             Type::Callable(callable) => Some(callable),
             Type::Union(union) => exactly_one_callable(union),
             _ => None,
-        }) else {
-            return ty;
-        };
+        })?;
+
         // Callables made entirely of dynamic types provide no constraints for specializing the
         // class. The same is true for a parameterless context whose return type is an
         // unspecialized variable from an enclosing generic call.
@@ -6847,13 +6928,13 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                         Type::Dynamic(DynamicType::UnspecializedTypeVar)
                     ))
         }) {
-            return ty;
+            return Some(ty);
         }
         let Some(class_generic_context) = class.generic_context(db) else {
-            return ty;
+            return Some(ty);
         };
         let Some(source_callable) = ty.try_upcast_to_callable(db, env) else {
-            return ty;
+            return Some(ty);
         };
         // The callable relation existentially solves variables bound by each signature. Keep
         // method-local constructor variables scoped there, but expose class variables to this
@@ -6894,7 +6975,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                 inferable,
             );
         let Solutions::Constrained(solutions) = path_bounds.solve(db, env, &constraints) else {
-            return ty;
+            return Some(ty);
         };
 
         let mut type_context_mappings: FxHashMap<BoundTypeVarIdentity<'db>, UnionAccumulator<'db>> =
@@ -6916,7 +6997,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
         }
 
         if type_context_mappings.is_empty() {
-            return ty;
+            return Some(ty);
         }
 
         let type_context_mappings: FxHashMap<BoundTypeVarIdentity<'db>, Type<'db>> =
@@ -6933,10 +7014,63 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             )
         }));
         if specialized.is_assignable_to(db, env, Type::Callable(target_callable)) {
-            specialized
+            Some(specialized)
         } else {
-            ty
+            Some(ty)
         }
+    }
+
+    /// Specialize a bare generic class value based on type context.
+    ///
+    /// This allows `list` to be specialized to `list[str]` given the type context
+    /// `type[list[str]]` or `Callable[[], list[str]]`.
+    fn specialize_generic_class_from_context(&self, ty: Type<'db>, target: Type<'db>) -> Type<'db> {
+        let db = self.db();
+        let env = self.program_environment();
+
+        let Type::ClassLiteral(class) = ty else {
+            return ty;
+        };
+
+        if let Some(specialized) =
+            self.specialize_generic_class_from_callable_context(class, target)
+        {
+            return specialized;
+        }
+
+        let matching_class_type = |target: Type<'db>| {
+            let generic_alias = match target.resolve_type_alias(db) {
+                Type::SubclassOf(subclass)
+                    if let SubclassOfInner::Class(ClassType::Generic(alias)) =
+                        subclass.subclass_of() =>
+                {
+                    alias
+                }
+                Type::GenericAlias(alias) => alias,
+                _ => return None,
+            };
+
+            if class.as_static()? == generic_alias.origin(db) {
+                Some(generic_alias)
+            } else {
+                None
+            }
+        };
+
+        let class_type = match target.resolve_type_alias(db) {
+            Type::Union(union) => union
+                .elements(db)
+                .iter()
+                .filter_map(|element| matching_class_type(*element))
+                .exactly_one()
+                .ok(),
+            target => matching_class_type(target),
+        };
+
+        class_type
+            .map(Type::GenericAlias)
+            .filter(|class_type| !class_type.has_provisional_marker(db, env))
+            .unwrap_or(ty)
     }
 
     #[track_caller]

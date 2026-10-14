@@ -7891,6 +7891,15 @@ static_assert(is_subtype_of(Closed, Extra))
 static_assert(is_equivalent_to(AliasedExtra, Closed))
 ```
 
+This also applies to `get`: an undeclared key returns only `None` or the supplied default, whether
+`extra_items` is `Never` or an alias of `Never`:
+
+```py
+def _(extra: Extra, aliased: AliasedExtra) -> None:
+    reveal_type(extra.get("missing"))  # revealed: None
+    reveal_type(aliased.get("missing", False))  # revealed: Literal[False]
+```
+
 ### Empty closed TypedDict truthiness
 
 An empty `closed=True` TypedDict cannot contain any keys, so it is always empty and always falsy.
@@ -8510,29 +8519,125 @@ def _(
     read_only.clear()  # error: [unresolved-attribute]
 ```
 
-### `get` accounts for closed TypedDicts
+### `get` on closed TypedDicts
 
-An arbitrary string key can only refer to a declared item on a closed TypedDict:
+A closed `TypedDict` cannot contain keys beyond those in its definition. Here, `Person` cannot
+contain an `"email"` key, so `get` returns only `None` or the supplied default:
+
+```py
+from typing_extensions import TypedDict
+
+class Person(TypedDict, closed=True):
+    name: str
+    age: int
+
+def _(person: Person) -> None:
+    reveal_type(person.get("email"))  # revealed: None
+    reveal_type(person.get("email", False))  # revealed: Literal[False]
+```
+
+A key of type `str` could be `"name"`, `"age"`, or an absent key, so the result includes both field
+types and the default:
+
+```py
+def _(person: Person, key: str) -> None:
+    reveal_type(person.get(key))  # revealed: int | str | None
+    reveal_type(person.get(key, b"missing"))  # revealed: int | str | Literal[b"missing"]
+```
+
+If every key in a union of string literals is absent, only the default can be returned:
+
+```py
+from typing import Literal
+
+def _(person: Person, key: Literal["email", "phone"]) -> None:
+    reveal_type(person.get(key, False))  # revealed: Literal[False]
+```
+
+### `get` on closed TypedDicts defined with functional syntax
+
+The functional syntax has the same behavior: an arbitrary string may name a declared field, but an
+undeclared literal key always returns the default.
+
+```py
+from typing_extensions import TypedDict
+
+Person = TypedDict("Person", {"name": str}, closed=True)
+
+def _(person: Person, key: str) -> None:
+    reveal_type(person.get(key))  # revealed: str | None
+    reveal_type(person.get("email", False))  # revealed: Literal[False]
+```
+
+### `get` on an empty closed TypedDict
+
+An empty closed `TypedDict` cannot contain any key, so even a lookup with an arbitrary string
+returns `None`:
+
+```py
+from typing_extensions import TypedDict
+
+class Empty(TypedDict, closed=True): ...
+
+def _(empty: Empty, key: str) -> None:
+    reveal_type(empty.get(key))  # revealed: None
+```
+
+### `get` through a saved method reference
+
+Saving `get` in a variable preserves its return types for absent keys:
+
+```py
+from typing_extensions import TypedDict
+
+class Person(TypedDict, closed=True):
+    name: str
+
+def _(person: Person) -> None:
+    get = person.get
+    reveal_type(get("email"))  # revealed: None
+    reveal_type(get("email", False))  # revealed: Literal[False]
+```
+
+### `get` default types for absent keys
+
+When a key is absent, the annotation on the result gives the element type for an empty list passed
+as the default. This also works through a saved method reference:
 
 ```py
 from typing_extensions import TypedDict
 
 class Closed(TypedDict, closed=True):
     name: str
-    year: int
 
-FunctionalClosed = TypedDict(
-    "FunctionalClosed",
-    {"name": str, "year": int},
-    closed=True,
-)
+def _(closed: Closed) -> None:
+    values: list[int] = closed.get("missing", reveal_type([]))  # revealed: list[int]
+    get = closed.get
+    saved_values: list[int] = get("missing", reveal_type([]))  # revealed: list[int]
+```
 
-class EmptyClosed(TypedDict, closed=True): ...
+An annotation does not make an incompatible default valid:
 
-def _(closed: Closed, functional: FunctionalClosed, empty: EmptyClosed, key: str) -> None:
-    reveal_type(closed.get(key))  # revealed: str | int | None
-    reveal_type(functional.get(key))  # revealed: str | int | None
-    reveal_type(empty.get(key))  # revealed: None
+```py
+def _(closed: Closed) -> None:
+    wrong: int = closed.get("missing", "wrong")  # error: [invalid-assignment]
+```
+
+### `get` default types for non-required items
+
+For a declared non-required item, we infer the type of an empty list from the item's type, even when
+the result has no annotation:
+
+```py
+from typing_extensions import TypedDict
+
+class ClosedPartial(TypedDict, total=False, closed=True):
+    values: list[int]
+
+def _(partial: ClosedPartial) -> None:
+    reveal_type(partial.get("values", []))  # revealed: list[int]
+    get = partial.get
+    reveal_type(get("values", []))  # revealed: list[int]
 ```
 
 ### `pop` and `setdefault` support literal extra-item keys

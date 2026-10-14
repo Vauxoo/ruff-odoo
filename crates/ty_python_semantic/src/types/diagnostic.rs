@@ -115,6 +115,7 @@ pub(crate) fn register_lints(registry: &mut LintRegistryBuilder) {
     registry.register_lint(&INVALID_TYPE_ALIAS_TYPE);
     registry.register_lint(&INVALID_NEWTYPE);
     registry.register_lint(&MISMATCHED_TYPE_NAME);
+    registry.register_lint(&MISMATCHED_SENTINEL_NAME);
     registry.register_lint(&INVALID_METACLASS);
     registry.register_lint(&INVALID_OVERLOAD);
     registry.register_lint(&USELESS_OVERLOAD_BODY);
@@ -666,6 +667,15 @@ declare_lint! {
         summary: "detects functional typing definitions whose declared name does not match the assigned variable",
         status: LintStatus::stable("0.0.30"),
         default_level: Level::Warn,
+    }
+}
+
+declare_lint! {
+    #[doc = include_str!("../../resources/lint_docs/mismatched-sentinel-name.md")]
+    pub(crate) static MISMATCHED_SENTINEL_NAME = {
+        summary: "detects sentinel definitions whose declared name does not match the assigned variable",
+        status: LintStatus::stable("0.0.87"),
+        default_level: Level::Ignore,
     }
 }
 
@@ -1370,7 +1380,7 @@ declare_lint! {
     pub(crate) static INVALID_MUTABLE_OVERRIDE = {
         summary: "detects overrides that narrow writable attribute types",
         status: LintStatus::stable("0.0.81"),
-        default_level: Level::Ignore,
+        default_level: Level::Error,
     }
 }
 
@@ -3521,8 +3531,9 @@ impl<'db> IncompatibleBases<'db> {
     }
 
     /// Two disjoint bases are allowed to coexist in an MRO if one is a subclass of the other.
-    /// This method therefore removes any entry in `self` that is a subclass of one or more
-    /// other entries also contained in `self`.
+    /// This method therefore removes any entry in `self` that is a superclass of one or more
+    /// other entries also contained in `self`, keeping only the most-derived entries. If more
+    /// than one entry remains, no remaining entry is a subclass of another, so they conflict.
     pub(super) fn remove_redundant_entries(&mut self, db: &'db dyn Db) {
         self.0 = self
             .0
@@ -3535,10 +3546,10 @@ impl<'db> IncompatibleBases<'db> {
                         // CPython's layout check operates on runtime classes. Type arguments are
                         // irrelevant here: a generic disjoint base and any specialization of that
                         // base share the same layout.
-                        !disjoint_base
+                        !other_base
                             .class
                             .default_specialization(db)
-                            .is_subtype_of_class_literal(db, other_base.class)
+                            .is_subtype_of_class_literal(db, disjoint_base.class)
                     })
             })
             .map(|(base, info)| (*base, *info))
