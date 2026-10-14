@@ -40,7 +40,7 @@ use ruff_workspace::FormatterSettings;
 /// The models whose `code` field holds Python that Odoo executes. Up to 16.0, `base.automation`
 /// delegates to `ir.actions.server` (`action_server_id` with `delegate=True`), so an automated
 /// action carries its `state` and `code` fields directly.
-pub const CODE_MODELS: &[&str] = &["ir.cron", "ir.actions.server", "base.automation"];
+const CODE_MODELS: &[&str] = &["ir.cron", "ir.actions.server", "base.automation"];
 
 /// The names Odoo injects into the evaluation context of a server action or scheduled action,
 /// on top of Python's builtins, for each Odoo version that changed them.
@@ -203,7 +203,7 @@ const EVAL_CONTEXTS: &[(OdooVersion, &[&str])] = &[
 /// Returns the names Odoo injects into the evaluation context of a server action or scheduled
 /// action in `odoo_version`: the set of the closest version at or before it, the oldest set for
 /// a version older than all of them, and the newest set when no version is configured.
-pub fn eval_context_names(odoo_version: Option<OdooVersion>) -> &'static [&'static str] {
+pub(crate) fn eval_context_names(odoo_version: Option<OdooVersion>) -> &'static [&'static str] {
     let Some(odoo_version) = odoo_version else {
         return EVAL_CONTEXTS[EVAL_CONTEXTS.len() - 1].1;
     };
@@ -233,18 +233,18 @@ pub enum BodyEncoding {
 #[derive(Debug, Clone)]
 pub struct CodeField {
     /// The code Odoo compiles, followed by a newline, and dedented by [`CodeField::indent`].
-    pub code: String,
+    code: String,
     /// The indentation removed from every line of the code but the first; empty unless the code
     /// is a single compound statement indented under its `<field>` tag.
-    pub indent: String,
+    indent: String,
     /// The names the record adds to the evaluation context on top of [`eval_context_names`]: the
     /// `ai` dictionary and the arguments of an AI tool.
-    pub names: Vec<String>,
+    names: Vec<String>,
     /// The XML id the record's `model_id` refers to (`account.model_account_move`), which is
     /// the model `model`, `record` and `records` belong to.
-    pub model_xmlid: Option<String>,
+    model_xmlid: Option<String>,
     /// How the body is written in the XML document.
-    pub encoding: BodyEncoding,
+    encoding: BodyEncoding,
     /// Whether the code starts a line of its own after some indentation, whether or not that
     /// indentation could be removed from the lines that follow.
     starts_indented: bool,
@@ -257,7 +257,7 @@ pub struct CodeField {
 
 impl CodeField {
     /// Maps an offset in [`CodeField::code`] to the offset it came from in the XML document.
-    pub fn to_xml_offset(&self, offset: TextSize) -> TextSize {
+    fn to_xml_offset(&self, offset: TextSize) -> TextSize {
         self.origins
             .get(offset.to_usize())
             .map_or(self.range.end(), Ranged::start)
@@ -267,7 +267,7 @@ impl CodeField {
     ///
     /// The end is taken from the last byte inside the range rather than from the first one after
     /// it, so a range ending just before an entity or a `CDATA` boundary does not swallow it.
-    pub fn to_xml_range(&self, range: TextRange) -> TextRange {
+    fn to_xml_range(&self, range: TextRange) -> TextRange {
         let start = self.to_xml_offset(range.start());
         if range.is_empty() {
             return TextRange::empty(start);
@@ -297,7 +297,7 @@ impl Ranged for CodeField {
 ///
 /// Returns nothing for a document that is not well-formed XML. The fields come in document
 /// order, including those of a record nested in a field of another record.
-pub fn extract_code_fields(source: &str) -> Vec<CodeField> {
+pub(crate) fn extract_code_fields(source: &str) -> Vec<CodeField> {
     // The reader is given the document without its byte order mark, so that the positions it
     // reports, shifted by the mark's length, index `source` itself.
     let bom = if source.starts_with('\u{feff}') {
