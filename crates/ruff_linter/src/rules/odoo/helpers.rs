@@ -648,6 +648,35 @@ pub(crate) fn is_env_subscript(expr: &ast::ExprSubscript) -> bool {
     }
 }
 
+/// Returns `true` if `expr` is an `env["model.name"]` subscript, or a chain of method calls on
+/// one, as in `request.env["res.partner"].sudo()`.
+pub(crate) fn is_environment_subscript(expr: &Expr) -> bool {
+    match expr {
+        Expr::Subscript(subscript) => is_env_subscript(subscript),
+        Expr::Call(ast::ExprCall { func, .. }) => matches!(
+            func.as_ref(),
+            Expr::Attribute(ast::ExprAttribute { value, .. }) if is_environment_subscript(value)
+        ),
+        _ => false,
+    }
+}
+
+/// Returns `true` if `expr` certainly is a recordset in a code field: one Odoo injects
+/// (`records`), an `env[...]` subscript, or a chain of method calls on either, as in
+/// `records.sudo()` or `env["res.partner"].browse(ids)`.
+pub(crate) fn is_code_field_recordset(checker: &Checker, expr: &Expr) -> bool {
+    match expr {
+        Expr::Name(ast::ExprName { id, .. }) => is_injected_recordset(checker, id),
+        Expr::Subscript(subscript) => code_field(checker).is_some() && is_env_subscript(subscript),
+        Expr::Call(ast::ExprCall { func, .. }) => matches!(
+            func.as_ref(),
+            Expr::Attribute(ast::ExprAttribute { value, .. })
+                if is_code_field_recordset(checker, value)
+        ),
+        _ => false,
+    }
+}
+
 /// The model an `env["model.name"]` subscript names, if it is a string literal. See
 /// [`is_env_subscript`] for the shapes accepted.
 pub(crate) fn env_subscript_model(expr: &ast::ExprSubscript) -> Option<String> {

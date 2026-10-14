@@ -186,9 +186,11 @@ What is checked is exactly what Odoo runs, `safe_eval(code.strip(), ..., mode="e
     `env.cr.commit()` is `ODE8102`, `records.read_group(...)` is `ODW8502` on 19.0,
     `records.name_get()` is `ODE9503`, and the translation rules recommend `env._` (and stay
     silent before 18.0, where a field has no translation function). `env.cr` counts as a cursor
-    in Python files too, where it is the `env` of a `post_init_hook(env)`.
+    in Python files too, where it is the `env` of a `post_init_hook(env)`. `SLF001` lets
+    `model._cron_x()` through, as it lets `self._x()` through in a method.
 - `ODW8163` (`no-search-all`) goes further in a field than in a method: a `search` or
-    `search_read` without a `limit` on a model known to grow is reported whatever its domain,
+    `search_read` without a `limit` on a model known to grow is reported whatever its domain
+    (unless it pins `id` with `=` or `in`),
     since the field runs in one transaction and holds every row it matched and wrote until it
     ends. A cron posting every draft journal entry of the day that way kept deadlocking against
     Odoo's own auto-post cron. The model of `model`, `record` and `records` is compared through

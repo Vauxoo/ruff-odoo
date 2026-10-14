@@ -33,7 +33,7 @@ use crate::rules::odoo::helpers::{
 /// In the `code` field of a cron or a server action, written in an Odoo XML data file, the
 /// `model`, `record` and `records` that Odoo injects resolve to the model the record's
 /// `model_id` refers to, and `env["..."]` resolves as it does in Python. There the rule also
-/// reports a search with a non-empty domain: the code runs in a single transaction, so every
+/// reports a search with a non-empty domain, unless the domain pins `id` with `=` or `in`: the code runs in a single transaction, so every
 /// record a growing domain matches is loaded and then locked by whatever the code writes, for
 /// as long as the whole batch takes. A cron posting every draft journal entry of the day that
 /// way kept deadlocking against Odoo's own auto-post cron, which posts the same rows; the fix
@@ -201,8 +201,8 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
     // what carries the rule into a controller, where the shape is
     // `request.env["res.partner"].search([])` and there is no model class in sight.
     // Dropping that requirement would otherwise reach a test or a migration script, where
-    // loading every record of a model is the point rather than the defect. A code field lives
-    // in a `data` directory, but it is the code a cron runs, so the rule follows it there.
+    // loading every record of a model is the point rather than the defect. A code field is
+    // the code a cron or server action runs, so the rule follows it wherever its file lives.
     if scope.is_none() && is_structural_non_code_file(path) {
         return;
     }
@@ -218,7 +218,9 @@ pub(crate) fn no_search_all(checker: &Checker, call: &ast::ExprCall, path: &Path
         return;
     };
     let empty_domain = is_empty_domain(checker, body, domain, call.start());
-    if !empty_domain && !matches!(scope, Some(RecordsetScope::CodeField(_))) {
+    if !empty_domain
+        && (!matches!(scope, Some(RecordsetScope::CodeField(_))) || is_bounded_by_id(domain))
+    {
         return;
     }
 
@@ -431,6 +433,34 @@ fn is_empty_domain(
         }
         _ => false,
     }
+}
+
+/// Returns `true` if `domain` is a literal whose leaves are all joined by the implicit `&` and
+/// one of them pins `id` with `=` or `in`, as in `[("id", "=", record.id)]`: whatever else it
+/// says, it matches the records it names and no more.
+fn is_bounded_by_id(domain: &Expr) -> bool {
+    let (Expr::List(ast::ExprList { elts, .. }) | Expr::Tuple(ast::ExprTuple { elts, .. })) =
+        domain
+    else {
+        return false;
+    };
+    // An explicit operator (`"|"`, `"!"`, or even `"&"`) makes the tree too costly to read for
+    // what it would save; such a domain is judged as unbounded.
+    if elts.iter().any(|elt| matches!(elt, Expr::StringLiteral(_))) {
+        return false;
+    }
+    elts.iter().any(|leaf| {
+        let (Expr::Tuple(ast::ExprTuple { elts: parts, .. })
+        | Expr::List(ast::ExprList { elts: parts, .. })) = leaf
+        else {
+            return false;
+        };
+        matches!(
+            parts.as_slice(),
+            [Expr::StringLiteral(field), Expr::StringLiteral(operator), _]
+                if field.value.to_str() == "id" && matches!(operator.value.to_str(), "=" | "in")
+        )
+    })
 }
 
 /// Detects a `<name>.append(...)`/`.extend(...)`/`.insert(...)` call within `range`.

@@ -421,8 +421,8 @@ pub enum XmlFormatResult {
 /// are kept, and a compound statement indented under its tag stays indented. The line width is
 /// the one `check` measures with `E501`: the code's own, not counting that indentation. A body
 /// that does not parse, that mixes text with `CDATA` sections, that is indented under its tag but
-/// could not be dedented, or whose re-indented result would no longer parse to the same syntax
-/// tree, is left alone.
+/// could not be dedented or with tabs, or whose re-indented result would no longer parse to the
+/// same syntax tree, is left alone.
 pub fn format_code_fields(
     source: &str,
     path: Option<&Path>,
@@ -437,6 +437,11 @@ pub fn format_code_fields(
         // a first line that stays indented: valid, but a layout nobody writes.
         if field.starts_indented && field.indent.is_empty() && field.code.trim_end().contains('\n')
         {
+            continue;
+        }
+        // The formatter indents with spaces, and putting a tab back in front of every line would
+        // leave each one indented with both.
+        if field.indent.contains('\t') {
             continue;
         }
         // The decoded code always uses `\n`; the document's line endings are put back below,

@@ -9,7 +9,7 @@ use crate::codes::Category;
 use std::path::Path;
 
 use crate::rules::odoo::helpers::{
-    RecordsetScope, is_env_subscript, is_recordset_name, is_structural_non_code_file,
+    RecordsetScope, is_code_field_recordset, is_environment_subscript, is_structural_non_code_file,
     odoo_version_applies, recordset_scope,
 };
 use crate::rules::odoo::settings::OdooVersion;
@@ -194,33 +194,6 @@ const DEPRECATED_ORM_METHODS: &[DeprecatedMethod] = &[
     },
 ];
 
-/// Returns `true` if `expr` is an `env["model.name"]` subscript, or a chain of
-/// recordset-preserving calls on one, as in `request.env["res.partner"].sudo()`.
-fn is_environment_subscript(expr: &Expr) -> bool {
-    match expr {
-        Expr::Subscript(subscript) => is_env_subscript(subscript),
-        Expr::Call(ast::ExprCall { func, .. }) => matches!(
-            func.as_ref(),
-            Expr::Attribute(ast::ExprAttribute { value, .. }) if is_environment_subscript(value)
-        ),
-        _ => false,
-    }
-}
-
-/// Returns `true` if `expr` is a recordset Odoo injects into a code field (`records`), or a
-/// chain of calls on one, as in `records.sudo()`.
-fn is_injected_recordset_chain(checker: &Checker, expr: &Expr) -> bool {
-    match expr {
-        Expr::Name(ast::ExprName { id, .. }) => is_recordset_name(checker, id),
-        Expr::Call(ast::ExprCall { func, .. }) => matches!(
-            func.as_ref(),
-            Expr::Attribute(ast::ExprAttribute { value, .. })
-                if is_injected_recordset_chain(checker, value)
-        ),
-        _ => false,
-    }
-}
-
 /// ODW8502
 pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCall, path: &Path) {
     // A bare `read_group(...)` is a plain function, not an ORM call.
@@ -267,7 +240,7 @@ pub(crate) fn deprecated_odoo_method_call(checker: &Checker, call: &ast::ExprCal
     match recordset_scope(checker) {
         Some(RecordsetScope::Model(_)) if function_def.is_some() => {}
         Some(RecordsetScope::CodeField(_)) => {
-            if !is_environment_subscript(value) && !is_injected_recordset_chain(checker, value) {
+            if !is_code_field_recordset(checker, value) {
                 return;
             }
         }

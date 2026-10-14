@@ -35,7 +35,9 @@ use crate::warn_user_once;
 ///
 /// Only receivers that are certainly recordsets are checked: `self` and `super()` inside a
 /// model class, `env[...]` subscripts anywhere, and chains of recordset-returning ORM calls
-/// over either, so `self.env["res.partner"].sudo().search(...)` is covered. A local is not,
+/// over either, so `self.env["res.partner"].sudo().search(...)` is covered. In the `code` field
+/// of a cron or a server action, the `model`, `record` and `records` Odoo injects count as
+/// well. A local is not,
 /// because nothing distinguishes one holding a recordset from one holding a worksheet. A
 /// method the file defines itself is left alone too, since the call may well mean that
 /// override rather than Odoo's -- except through `env["other.model"]`, which reaches a model

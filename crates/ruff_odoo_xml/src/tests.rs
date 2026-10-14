@@ -963,6 +963,8 @@ records.write()
 records.name_get()
 payload.name_get()
 records._cr.rollback()
+records.sudo().name_get()
+env["res.partner"].browse(1).name_get()
 </field>
     </record>
 </odoo>
@@ -982,6 +984,8 @@ records._cr.rollback()
     11:1 ODE9502 `write` requires argument `vals` in Odoo 19.0
     12:1 ODE9503 `name_get` was removed from the Odoo ORM in 18.0
     14:1 ODW8165 Use "records.env.cr" instead of "records._cr" (deprecated since 19.0)
+    15:1 ODE9503 `name_get` was removed from the Odoo ORM in 18.0
+    16:1 ODE9503 `name_get` was removed from the Odoo ORM in 18.0
     "#);
 }
 
@@ -1020,6 +1024,9 @@ env["res.users"].search([])
 env["stock.move"].search([])
 domain = []
 model.search(domain)
+model.search([("id", "=", record.id)])
+model.search([("state", "=", "draft"), ("id", "in", records.ids)])
+model.search(["|", ("id", "=", record.id), ("state", "=", "draft")])
 </field>
     </record>
     <record id="underscored" model="ir.actions.server">
@@ -1047,7 +1054,8 @@ model.search([])
     6:1 ODW8163 Using `search_read(...)` without a `limit` in a cron or server action will load all matching records of "account.model_account_move" in one transaction, may impact performance.
     9:1 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "stock.move", may impact performance.
     11:1 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "account.model_account_move", may impact performance.
-    16:28 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "data_merge.model_data_merge_group", may impact performance.
+    14:1 ODW8163 Using `search(...)` without a `limit` in a cron or server action will load all matching records of "account.model_account_move" in one transaction, may impact performance.
+    19:28 ODW8163 Using an empty domain `search([])` without a `limit` will load all records of "data_merge.model_data_merge_group", may impact performance.
     "#);
 }
 
@@ -1091,4 +1099,30 @@ _("Nothing to post")
     "#);
     // Before 18.0 Odoo puts no translation function in the evaluation context at all.
     assert_snapshot!(lint_odoo(source, (17, 0), rules), @"");
+}
+
+#[test]
+fn private_member_access_allows_the_injected_recordsets() {
+    // `model._cron_x()` is how a field calls into its model, as `self._x()` is in a method.
+    let source = r#"<odoo>
+    <record id="cron" model="ir.cron">
+        <field name="code">
+model._cron_send_reminders()
+records._action_done()
+payload._private()
+</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint_odoo(source, (19, 0), [Rule::PrivateMemberAccess]), @"6:1 SLF001 Private member accessed: `_private`");
+}
+
+#[test]
+fn format_leaves_a_body_indented_with_tabs_alone() {
+    // The formatter indents with spaces; a tab put back in front of each line would mix both.
+    let source = "<odoo>\n    <record id=\"cron\" model=\"ir.cron\">\n        <field name=\"code\">\n\tif records:\n\t\trecords.write({'a':1})\n</field>\n    </record>\n</odoo>\n";
+    assert_eq!(
+        format_code_fields(source, None, &FormatterSettings::default()),
+        XmlFormatResult::Unchanged
+    );
 }
