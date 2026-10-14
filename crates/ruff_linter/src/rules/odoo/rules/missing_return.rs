@@ -7,6 +7,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::{Edit, Fix, FixAvailability};
 
 /// ## What it does
@@ -55,7 +56,7 @@ use crate::{Edit, Fix, FixAvailability};
 ///
 /// Names the methods exempt from returning, not the ones checked.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct MissingReturn {
     name: String,
     /// The variable the fix returns, for the shape that assigns the `super()` result to one.

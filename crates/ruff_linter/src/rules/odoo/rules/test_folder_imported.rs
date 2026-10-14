@@ -5,6 +5,7 @@ use ruff_python_ast::{self as ast, Stmt};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix;
 use crate::{Fix, FixAvailability, Violation};
 
@@ -32,7 +33,7 @@ use crate::{Fix, FixAvailability, Violation};
 /// import bound may still be referenced elsewhere in the file, and because dropping the
 /// import also drops any side effects of loading the `tests` package.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct TestFolderImported;
 
 impl Violation for TestFolderImported {

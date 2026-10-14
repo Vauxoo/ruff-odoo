@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// ## What it does
@@ -38,7 +39,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 /// When `odoo-version` is configured, the first two parts must match it exactly. Without it
 /// the series is not known, so any five numeric parts are accepted.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.13")]
+#[violation_metadata(preview_since = "0.16.2.13", category = Category::Style)]
 pub(crate) struct ManifestVersionFormat {
     version: String,
     expected: String,

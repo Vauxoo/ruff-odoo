@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::odoo_version_applies;
 use crate::rules::odoo::settings::OdooVersion;
 
@@ -44,7 +45,7 @@ use crate::rules::odoo::settings::OdooVersion;
 ///
 /// The default is the exceptions `odoo.exceptions` defines, whose messages reach the user.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Style)]
 pub(crate) struct TranslationRequired {
     /// The called function the literal was passed to, e.g. `message_post` or `UserError`.
     func: String,

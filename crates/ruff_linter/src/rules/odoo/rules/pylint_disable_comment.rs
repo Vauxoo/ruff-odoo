@@ -7,6 +7,7 @@ use ruff_text_size::{Ranged, TextLen, TextRange, TextSize};
 
 use crate::Locator;
 use crate::checkers::ast::LintContext;
+use crate::codes::Category;
 use crate::fix::edits::delete_comment;
 use crate::registry::Rule;
 use crate::{Edit, Fix, FixAvailability, Violation};
@@ -94,7 +95,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// Messages without a Ruff equivalent are kept in a `# pylint: disable` comment
 /// next to the inserted suppression.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.3")]
+#[violation_metadata(preview_since = "0.16.2.3", category = Category::Style)]
 pub(crate) struct PylintDisableComment {
     names: String,
 }

@@ -4,6 +4,7 @@ use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix::edits::fits;
 use crate::rules::odoo::helpers::{
     is_manifest_root_dict, manifest_item, odoo_version_applies, wrap_string_literal,
@@ -53,7 +54,7 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct ManifestSummaryMultiline;
 
 impl AlwaysFixableViolation for ManifestSummaryMultiline {

@@ -2,6 +2,24 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = []
+#
+# [tool.ty.rules]
+# truthiness-test-of-none-union = "warn"
+# blanket-ignore-comment = "warn"
+# missing-type-argument = "warn"
+# possibly-unresolved-reference = "warn"
+# unsound-return-statement = "warn"
+# unsound-yield = "warn"
+# unsupported-dynamic-base = "warn"
+# division-by-zero = "warn"
+# dynamic-function-decorator-return = "warn"
+# unsound-assignment = "warn"
+# redundant-condition-strict = "warn"
+# disjoint-cast = "warn"
+# missing-direct-dependency = "warn"
+#
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 
 from __future__ import annotations
@@ -67,7 +85,7 @@ def rustfmt(code: str) -> str:
 
 def to_snake_case(node: str) -> str:
     """Converts CamelCase to snake_case"""
-    return re.sub("([A-Z])", r"_\1", node).lower().lstrip("_")
+    return re.sub(r"([A-Z])", r"_\1", node).lower().lstrip("_")
 
 
 def write_rustdoc(out: list[str], doc: str) -> None:
@@ -172,14 +190,16 @@ class Node:
 
         fields = []
         for field_name in self.source_order:
-            field = None
             for field in self.fields:
                 if field.skip_source_order():
                     continue
                 if field.name == field_name:
-                    field = field
+                    fields.append(field)
                     break
-            fields.append(field)
+            else:
+                raise ValueError(
+                    f"{self.name}: no source-order field named {field_name!r}"
+                )
         return fields
 
 

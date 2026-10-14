@@ -7,6 +7,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// Mirrors pylint-odoo's `DOMAIN_RE`: one or more dot-separated labels (letters, digits,
@@ -38,7 +39,7 @@ static DOMAIN_RE: LazyLock<Regex> = LazyLock::new(|| {
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct WebsiteManifestKeyNotValidUri {
     website: String,
 }

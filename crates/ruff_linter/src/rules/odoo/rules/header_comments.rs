@@ -5,6 +5,7 @@ use ruff_text_size::{TextLen, TextRange};
 
 use crate::Locator;
 use crate::checkers::ast::LintContext;
+use crate::codes::Category;
 use crate::{AlwaysFixableViolation, Edit, Fix};
 
 /// ## What it does
@@ -26,7 +27,7 @@ use crate::{AlwaysFixableViolation, Edit, Fix};
 /// import os
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct HeaderComments;
 
 impl AlwaysFixableViolation for HeaderComments {

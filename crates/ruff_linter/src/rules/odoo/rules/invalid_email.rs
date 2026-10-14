@@ -4,6 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// ## What it does
@@ -20,7 +21,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Complexity)]
 pub(crate) struct InvalidEmail {
     email: String,
 }

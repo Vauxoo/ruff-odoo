@@ -7,6 +7,7 @@ use ruff_python_stdlib::identifiers::is_identifier;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::codes::Rule;
 use crate::rules::odoo::helpers::{class_defines_method, odoo_field_type};
 use crate::{Edit, Fix, FixAvailability, Violation};
@@ -29,7 +30,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// total = fields.Float(compute="_compute_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct MethodCompute;
 
 impl Violation for MethodCompute {
@@ -56,7 +57,7 @@ impl Violation for MethodCompute {
 /// total = fields.Float(search="_search_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct MethodSearch;
 
 impl Violation for MethodSearch {
@@ -83,7 +84,7 @@ impl Violation for MethodSearch {
 /// total = fields.Float(inverse="_inverse_total")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct MethodInverse;
 
 impl Violation for MethodInverse {
@@ -122,7 +123,7 @@ impl Violation for MethodInverse {
 ///
 /// Each entry is written `old:new`.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct RenamedFieldParameter {
     old: String,
     new: String,
@@ -168,7 +169,7 @@ impl Violation for RenamedFieldParameter {
 /// translated string would change behavior. No fix is offered when the call takes anything
 /// but a single positional argument.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct TranslationField;
 
 impl Violation for TranslationField {
@@ -225,7 +226,7 @@ impl Violation for TranslationField {
 ///
 /// [ODE8148]: https://vauxoo.github.io/ruff-odoo/rules/inheritable-method-lambda/
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct InheritableMethodString {
     name: String,
 }
@@ -296,7 +297,7 @@ impl Violation for InheritableMethodString {
 /// [odoo/odoo#185419]: https://github.com/odoo/odoo/pull/185419
 /// [odoo/enterprise#72931]: https://github.com/odoo/enterprise/pull/72931
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct InheritableMethodLambda {
     argument: String,
     name: String,

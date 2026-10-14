@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 use rustc_hash::FxHashSet;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{
     MANIFEST_DATA_KEYS, is_manifest_root_dict, manifest_item, remove_list_element,
 };
@@ -38,7 +39,7 @@ use crate::{AlwaysFixableViolation, Fix};
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Suspicious)]
 pub(crate) struct ManifestDataDuplicated {
     file: String,
     key: String,

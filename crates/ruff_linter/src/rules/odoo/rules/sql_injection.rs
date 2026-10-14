@@ -9,6 +9,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{CURSOR_EXPRS, dotted_name};
 
 /// ## What it does
@@ -39,7 +40,7 @@ use crate::rules::odoo::helpers::{CURSOR_EXPRS, dotted_name};
 ///
 /// Shared with `invalid-commit` (`ODE8102`): both ask whether an expression is a cursor.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Security)]
 pub(crate) struct SqlInjection;
 
 impl Violation for SqlInjection {

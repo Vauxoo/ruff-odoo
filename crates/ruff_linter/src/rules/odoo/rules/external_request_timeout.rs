@@ -3,6 +3,7 @@ use ruff_python_ast as ast;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix::edits::add_argument;
 use crate::{Fix, FixAvailability, Violation};
 
@@ -44,7 +45,7 @@ use crate::{Fix, FixAvailability, Violation};
 ///
 /// The methods are written as dotted paths, e.g. `requests.get`.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Correctness)]
 pub(crate) struct ExternalRequestTimeout {
     method: String,
     seconds: u32,

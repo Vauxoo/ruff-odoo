@@ -5,6 +5,7 @@ use ruff_text_size::{Ranged, TextRange};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{dotted_name, is_odoo_model_class, odoo_field_type};
 
 /// ## What it does
@@ -28,7 +29,7 @@ use crate::rules::odoo::helpers::{dotted_name, is_odoo_model_class, odoo_field_t
 ///         record.update({"total": 10})
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct NoWriteInCompute;
 
 impl Violation for NoWriteInCompute {

@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 
 /// ## What it does
 /// Checks for overrides of methods listed in the `lint.odoo.prohibited-override-methods`
@@ -30,7 +31,7 @@ use crate::checkers::ast::Checker;
 /// ## Options
 /// - `lint.odoo.prohibited-override-methods`
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.8")]
+#[violation_metadata(preview_since = "0.16.2.8", category = Category::Suspicious)]
 pub(crate) struct ProhibitedMethodOverride {
     name: String,
 }

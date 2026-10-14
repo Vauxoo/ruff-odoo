@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 
 /// ## What it does
 /// Checks that common Odoo ORM methods (`create`, `write`, `unlink`, `init`, ...) call
@@ -59,7 +60,7 @@ use crate::checkers::ast::Checker;
 /// [analytic-mixin]: https://github.com/odoo/odoo/blob/42caf937f8e5f90a118ac0e4838d82df61448446/addons/analytic/models/analytic_mixin.py#L32-L40
 /// [sale-order-line]: https://github.com/odoo/odoo/blob/a12f48792482f5ea3d51ca86b6e32d8985fe6afb/addons/sale/models/sale_order_line.py#L12-L14
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Suspicious)]
 pub(crate) struct MethodRequiredSuper {
     name: String,
 }

@@ -3,6 +3,7 @@ use ruff_python_ast::{self as ast, Expr};
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_item};
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -33,7 +34,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// value. No fix is offered for other values, or for a string containing a comma — that
 /// probably names several maintainers, and how to split them is a judgment call.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct ManifestMaintainersList;
 
 impl Violation for ManifestMaintainersList {

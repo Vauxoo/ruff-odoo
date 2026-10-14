@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use std::path::Path;
 
 use crate::rules::odoo::helpers::{
@@ -36,7 +37,7 @@ use crate::{Edit, Fix, FixAvailability};
 /// groups = self._read_group(domain, ["partner_id"], ["amount:sum"])
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.14")]
+#[violation_metadata(preview_since = "0.16.2.14", category = Category::Suspicious)]
 pub(crate) struct DeprecatedOdooMethodCall {
     name: String,
     since: OdooVersion,

@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::codes::Rule;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
@@ -28,7 +29,7 @@ use crate::rules::odoo::settings::OdooVersion;
 /// def _compute_display_name(self): ...
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct DeprecatedNameGet;
 
 impl Violation for DeprecatedNameGet {
@@ -70,7 +71,7 @@ impl Violation for DeprecatedNameGet {
 ///
 /// Setting it drops the version gating the built-in list carries.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct DeprecatedOdooModelMethod {
     name: String,
     replacement: Option<String>,

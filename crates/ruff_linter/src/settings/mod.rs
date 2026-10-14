@@ -942,3 +942,219 @@ impl Display for TargetVersion {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::RuleSelector;
+    use crate::codes::Category;
+    use crate::registry::RuleSet;
+    use crate::rule_selector::PreviewOptions;
+    use crate::settings::types::PreviewMode;
+
+    use super::DEFAULT_SELECTORS;
+
+    #[test]
+    fn preview_default_rules() {
+        let stable_defaults = DEFAULT_SELECTORS
+            .iter()
+            .flat_map(|selector| selector.rules(&PreviewOptions::default()))
+            .collect::<RuleSet>();
+
+        let preview_options = PreviewOptions {
+            mode: PreviewMode::Enabled,
+            require_explicit: false,
+        };
+        let preview_defaults = Category::default_categories()
+            .map(RuleSelector::Category)
+            .iter()
+            .flat_map(|selector| selector.rules(&preview_options))
+            .collect::<RuleSet>();
+
+        let added = preview_defaults.clone().subtract(&stable_defaults);
+        let removed = stable_defaults.subtract(&preview_defaults);
+
+        let snapshot = format!("Added in preview:\n{added}\n\nRemoved in preview:\n{removed}");
+
+        insta::assert_snapshot!(snapshot, @"
+        Added in preview:
+        [
+        	airflow-variable-name-task-id-mismatch (AIR001),
+        	airflow-dag-no-schedule-argument (AIR002),
+        	airflow-variable-get-outside-task (AIR003),
+        	airflow-task-branch-as-short-circuit (AIR004),
+        	airflow-xcom-pull-in-template-string (AIR201),
+        	airflow-task-implicit-multiple-outputs (AIR202),
+        	airflow3-dag-dynamic-value (AIR304),
+        	fast-api-redundant-response-model (FAST001),
+        	fast-api-non-annotated-dependency (FAST002),
+        	fast-api-unused-path-parameter (FAST003),
+        	blocking-http-call-httpx-in-async-function (ASYNC212),
+        	blocking-path-method-in-async-function (ASYNC240),
+        	blocking-input-in-async-function (ASYNC250),
+        	abstract-base-class-without-abstract-method (B024),
+        	empty-method-without-abstract-decorator (B027),
+        	del-attr-with-constant (B043),
+        	return-in-generator (B901),
+        	loop-iterator-mutation (B909),
+        	trailing-comma-on-bare-tuple (COM818),
+        	unnecessary-dict-comprehension-for-iterable (C420),
+        	django-model-without-dunder-str (DJ008),
+        	django-unordered-body-content-in-model (DJ012),
+        	django-non-leading-receiver-decorator (DJ013),
+        	pytest-patch-with-lambda (PT008),
+        	pytest-raises-with-multiple-statements (PT012),
+        	pytest-unnecessary-asyncio-mark-on-fixture (PT024),
+        	pytest-parameter-with-default-argument (PT028),
+        	reimplemented-builtin (SIM110),
+        	lazy-import-immediately-resolved (TID255),
+        	numpy-deprecated-type-alias (NPY001),
+        	numpy-legacy-random (NPY002),
+        	numpy-deprecated-function (NPY003),
+        	numpy2-deprecation (NPY201),
+        	manifest-required-author (ODC8101),
+        	manifest-required-key (ODC8102),
+        	manifest-deprecated-key (ODC8103),
+        	license-allowed (ODC8105),
+        	manifest-version-format (ODC8106),
+        	translation-required (ODC8107),
+        	method-compute (ODC8108),
+        	method-search (ODC8109),
+        	method-inverse (ODC8110),
+        	development-status-allowed (ODC8111),
+        	missing-readme (ODC8112),
+        	no-wizard-in-models (ODC8113),
+        	category-allowed (ODC8114),
+        	missing-odoo-file (ODC8115),
+        	manifest-superfluous-key (ODC8116),
+        	manifest-summary-multiline (ODC8120),
+        	header-comments (ODC8501),
+        	pylint-disable-comment (ODC8502),
+        	manifest-depends-unsorted (ODC9501),
+        	manifest-author-string (ODE8101),
+        	invalid-commit (ODE8102),
+        	manifest-maintainers-list (ODE8104),
+        	external-request-timeout (ODE8106),
+        	test-folder-imported (ODE8130),
+        	no-write-in-compute (ODE8135),
+        	no-raise-unlink (ODE8140),
+        	manifest-behind-migrations (ODE8145),
+        	deprecated-name-get (ODE8146),
+        	inheritable-method-string (ODE8147),
+        	inheritable-method-lambda (ODE8148),
+        	deprecated-inselect-operator (ODE8149),
+        	translation-injection (ODE8151),
+        	translation-unsupported-format (ODE8300),
+        	translation-format-truncated (ODE8301),
+        	translation-too-many-args (ODE8305),
+        	translation-too-few-args (ODE8306),
+        	deprecated-sql-constraints (ODE9501),
+        	resource-not-exist (ODF8101),
+        	odoo-exception-warning (ODR8101),
+        	consider-merging-classes-inherited (ODR8180),
+        	invalid-email (ODR8181),
+        	translation-field (ODW8103),
+        	attribute-deprecated (ODW8105),
+        	method-required-super (ODW8106),
+        	prohibited-method-override (ODW8107),
+        	missing-return (ODW8110),
+        	renamed-field-parameter (ODW8111),
+        	attribute-string-redundant (ODW8113),
+        	website-manifest-key-not-valid-uri (ODW8114),
+        	translation-contains-variable (ODW8115),
+        	translation-positional-used (ODW8120),
+        	context-overridden (ODW8121),
+        	manifest-data-duplicated (ODW8125),
+        	odoo-addons-relative-import (ODW8150),
+        	bad-builtin-groupby (ODW8155),
+        	deprecated-odoo-model-method (ODW8160),
+        	prefer-env-translation (ODW8161),
+        	manifest-external-assets (ODW8162),
+        	no-search-all (ODW8163),
+        	super-method-mismatch (ODW8164),
+        	prefer-env-attribute (ODW8165),
+        	use-vim-comment (ODW8202),
+        	translation-not-lazy (ODW8301),
+        	translation-format-interpolation (ODW8302),
+        	translation-fstring-interpolation (ODW8303),
+        	unused-logger (ODW8501),
+        	deprecated-odoo-method-call (ODW8502),
+        	m2m-relation-is-label (ODW9501),
+        	deprecated-osv-expression (ODW9502),
+        	duplicate-field-declaration (ODW9503),
+        	category-allowed-app (OAPP001),
+        	missing-odoo-file-app (OAPP002),
+        	manifest-required-key-app (OAPP003),
+        	pandas-use-of-dot-is-null (PD003),
+        	pandas-use-of-dot-not-null (PD004),
+        	pandas-use-of-dot-read-table (PD012),
+        	pandas-use-of-pd-merge (PD015),
+        	escape-sequence-in-docstring (D301),
+        	undefined-local-with-nested-import-star-usage (F406),
+        	missing-maxsplit-arg (PLC0207),
+        	unnecessary-dunder-call (PLC2801),
+        	duplicate-bases (PLE0241),
+        	dict-iter-missing-items (PLE1141),
+        	modified-iterating-set (PLE4703),
+        	no-classmethod-decorator (PLR0202),
+        	no-staticmethod-decorator (PLR0203),
+        	swap-with-temporary-variable (PLR1712),
+        	unnecessary-lambda (PLW0108),
+        	redefined-slots-in-subclass (PLW0244),
+        	replace-str-enum (UP042),
+        	while-one (UP048),
+        	deprecated-abc-decorator (UP051),
+        	context-manager-iterator (UP052),
+        	if-exp-instead-of-or-operator (FURB110),
+        	repeated-append (FURB113),
+        	delete-full-slice (FURB131),
+        	for-loop-set-mutations (FURB142),
+        	slice-copy (FURB145),
+        	unnecessary-enumerate (FURB148),
+        	math-constant (FURB152),
+        	hardcoded-string-charset (FURB156),
+        	single-item-membership-test (FURB171),
+        	meta-class-abc-meta (FURB180),
+        	subclass-builtin (FURB189),
+        	missing-f-string-syntax (RUF027),
+        	none-not-at-end-of-union (RUF036),
+        	unnecessary-empty-iterable-within-deque-call (RUF037),
+        	redundant-bool-literal (RUF038),
+        	pytest-raises-ambiguous-pattern (RUF043),
+        	implicit-class-var-in-dataclass (RUF045),
+        	needless-else (RUF047),
+        	unnecessary-if (RUF050),
+        	indented-form-feed (RUF054),
+        	unnecessary-regular-expression (RUF055),
+        	falsy-dict-get-fallback (RUF056),
+        	in-empty-collection (RUF060),
+        	legacy-form-pytest-raises (RUF061),
+        	non-octal-permissions (RUF064),
+        	logging-eager-conversion (RUF065),
+        	property-without-return (RUF066),
+        	float-equality-comparison (RUF069),
+        	os-path-commonprefix (RUF071),
+        	useless-finally (RUF072),
+        	f-string-percent-format (RUF073),
+        	incorrect-decorator-order (RUF074),
+        	fallible-context-manager (RUF075),
+        	method-receiver-default (RUF077),
+        	invalid-rule-code (RUF102),
+        	invalid-suppression-comment (RUF103),
+        	unmatched-suppression-comment (RUF104),
+        	rule-codes-in-suppression-comments (RUF106),
+        ]
+
+        Removed in preview:
+        [
+        	exec-builtin (S102),
+        	call-datetime-without-tzinfo (DTZ001),
+        	call-datetime-now-without-tzinfo (DTZ005),
+        	call-datetime-fromtimestamp (DTZ006),
+        	call-datetime-strptime-without-zone (DTZ007),
+        	call-date-today (DTZ011),
+        	call-date-fromtimestamp (DTZ012),
+        	datetime-min-max (DTZ901),
+        ]
+        ");
+    }
+}

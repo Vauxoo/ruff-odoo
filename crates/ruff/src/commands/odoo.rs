@@ -322,7 +322,9 @@ fn create_diagnostic(primary: InheritLocation, model: &str, locations: &str) -> 
     diagnostic.annotate(Annotation::primary(
         Span::from(source_file).with_range(primary.range),
     ));
-    diagnostic.set_secondary_code(SecondaryCode::new(rule.noqa_code().to_string()));
+    if let Some(code) = rule.noqa_code() {
+        diagnostic.set_secondary_code(SecondaryCode::new(code.to_string()));
+    }
     diagnostic.set_documentation_url(rule.url());
     diagnostic
 }

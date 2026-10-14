@@ -5,6 +5,7 @@ use ruff_python_ast::{self as ast, Stmt};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::is_manifest_file;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -34,7 +35,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// `import odoo.addons.<module>` and `from odoo.addons import <module>` — bind the
 /// absolute name and have no relative equivalent, so they get no fix.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct OdooAddonsRelativeImport {
     module: String,
 }

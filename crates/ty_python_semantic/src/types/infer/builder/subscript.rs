@@ -16,6 +16,7 @@ use crate::types::diagnostic::{
     TypedDictDeleteErrorKind, report_cannot_delete_typed_dict_key,
     report_invalid_arguments_to_annotated, report_not_subscriptable,
 };
+use crate::types::dict::dict_literal_key_value_types;
 use crate::types::generics::{GenericContext, bind_typevar};
 use crate::types::infer::builder::annotation_expression::PEP613Policy;
 use crate::types::infer::builder::{ArgExpr, ArgumentsIter, MultiInferenceGuard};
@@ -26,13 +27,13 @@ use crate::types::tuple::{Tuple, TupleSpecBuilder, TupleType, VariableSegment};
 use crate::types::typed_dict::{
     TypedDictAssignmentKind, TypedDictExtraItems, TypedDictKeyAssignment,
 };
-use crate::types::typevar::TypeVarSet;
+use crate::types::typevar::{BindingContext, TypeVarSet};
 use crate::types::{
     BoundTypeVarInstance, CallArguments, CallDunderError, CallableBinding, CycleDetector,
-    DynamicType, InternedType, KnownClass, KnownInstanceType, LintDiagnosticGuard,
+    DisplaySettings, DynamicType, InternedType, KnownClass, KnownInstanceType, LintDiagnosticGuard,
     MemberLookupPolicy, Parameter, Parameters, SpecialFormType, StaticClassLiteral, Type,
-    TypeAliasType, TypeAndQualifiers, TypeContext, TypeVarBoundOrConstraints, UnionType,
-    UnionTypeInstance, any_over_type, todo_type,
+    TypeAliasType, TypeAndQualifiers, TypeContext, TypeMapping, TypeVarBoundOrConstraints,
+    UnionType, UnionTypeInstance, any_over_type, todo_type,
 };
 use crate::{Db, FxOrderSet, ProgramEnvironment};
 use ty_python_core::definition::Definition;
@@ -103,8 +104,8 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                         .collect_vec();
                     (!keys.is_empty()).then(|| UnionType::from_elements(db, env, keys))
                 }
-                Type::TypeAlias(alias) => {
-                    visitor.visit(db, ty, || imp(db, env, alias.value_type(db), visitor))
+                Type::TypeAlias(_) | Type::Recursive(_) => {
+                    visitor.visit(db, ty, || imp(db, env, ty.resolve_type_alias(db), visitor))
                 }
                 _ => None,
             }
@@ -183,7 +184,16 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             return Ok(self.infer_explicit_type_alias_specialization(subscript, value_ty, false));
         }
 
-        self.infer_subscript_load_impl(value_ty, subscript)
+        let result = self.infer_subscript_load_impl(value_ty, subscript)?;
+        if let ast::Expr::Dict(dict) = subscript.value.as_ref()
+            && let Some((_, values)) =
+                dict_literal_key_value_types(self.db(), self.program_environment(), dict, |expr| {
+                    self.expression_type(expr)
+                })
+        {
+            return Ok(values);
+        }
+        Ok(result)
     }
 
     fn infer_subscript_load_impl(
@@ -233,10 +243,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             }
         }
 
-        let tuple_generic_alias = |env: &ProgramEnvironment<'db>, tuple: Option<TupleType<'db>>| {
-            let tuple = tuple.unwrap_or_else(|| TupleType::homogeneous(db, env, Type::unknown()));
-            Type::from(tuple.to_class_type(db))
-        };
+        let tuple_generic_alias = |tuple: TupleType<'db>| Type::from(tuple.to_class_type(db));
 
         match value_ty {
             Type::ClassLiteral(class) => {
@@ -248,7 +255,6 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                 // special cases, too.
                 if class.is_tuple(db) {
                     return Ok(tuple_generic_alias(
-                        env,
                         self.infer_tuple_type_expression(subscript),
                     ));
                 } else if class.is_known(db, KnownClass::Type) {
@@ -282,7 +288,6 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             Type::SpecialForm(special_form) => match special_form {
                 SpecialFormType::Tuple => {
                     return Ok(tuple_generic_alias(
-                        env,
                         self.infer_tuple_type_expression(subscript),
                     ));
                 }
@@ -1025,11 +1030,27 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                     // against bounds/constraints, but recording the expression for deferred
                     // checking at end of scope. This would avoid a lot of cycles caused by eagerly
                     // doing assignment checks here.
-                    match typevar.typevar(db).bound_or_constraints(db, env) {
+                    let bound_or_constraints = typevar.typevar(db).bound_or_constraints(db, env);
+                    let type_to_check = if bound_or_constraints.is_some() {
+                        // Defaults such as `Box[T]` may be inferred before `T` has a binding context.
+                        // Bind only the copy used for validation, so the original default can later
+                        // be bound to each generic that uses it.
+                        provided_type.apply_type_mapping(
+                            db,
+                            env,
+                            &TypeMapping::BindLegacyTypevars(BindingContext::Synthetic(
+                                env.program(db),
+                            )),
+                            TypeContext::default(),
+                        )
+                    } else {
+                        provided_type
+                    };
+                    match bound_or_constraints {
                         Some(TypeVarBoundOrConstraints::UpperBound(bound)) => {
-                            if provided_type
+                            if type_to_check
                                 .when_assignable_to(db, env, bound, &constraints, TypeVarSet::None)
-                                .is_never_satisfied(db, env)
+                                .is_never_satisfied(db, env, TypeVarSet::None)
                             {
                                 if let Some(builder) = self
                                     .context
@@ -1038,12 +1059,12 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                                     let mut diagnostic = builder.into_diagnostic(format_args!(
                                         "Type `{}` is not assignable to upper bound `{}` \
                                             of type variable `{}`",
-                                        provided_type.display(db, env),
+                                        type_to_check.display(db, env),
                                         bound.display(db, env),
                                         typevar.identity(db).display(db),
                                     ));
                                     add_typevar_definition(db, &mut diagnostic, typevar);
-                                    provided_type
+                                    type_to_check
                                         .assignability_error_context(db, env, bound)
                                         .attach_to(db, env, &mut diagnostic);
                                 }
@@ -1058,7 +1079,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                             // to _at least one_ of the individual constraints, not to the union of
                             // all of them. `int | str` is not a valid specialization of a typevar
                             // constrained to `(int, str)`.
-                            if provided_type
+                            if type_to_check
                                 .when_assignable_to(
                                     db,
                                     env,
@@ -1066,7 +1087,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                                     &constraints,
                                     TypeVarSet::None,
                                 )
-                                .is_never_satisfied(db, env)
+                                .is_never_satisfied(db, env, TypeVarSet::None)
                             {
                                 if let Some(builder) = self
                                     .context
@@ -1075,7 +1096,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                                     let mut diagnostic = builder.into_diagnostic(format_args!(
                                         "Type `{}` does not satisfy constraints `{}` \
                                             of type variable `{}`",
-                                        provided_type.display(db, env),
+                                        type_to_check.display(db, env),
                                         typevar_constraints
                                             .elements(db)
                                             .iter()
@@ -1366,21 +1387,25 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                         //
                         // OnlyParamSpec[int]  # P: (int, /)
                         // ```
-                        let parameters =
-                            if param_type.is_todo() {
-                                Parameters::todo()
-                            } else if param_type.is_dynamic() && param_type != Type::any() {
-                                // If we ended up with an `Unknown` type here, it almost certainly means
-                                // that we already emitted an error elsewhere. Fallback to the more lenient
-                                // type.
-                                Parameters::unknown()
-                            } else {
-                                Parameters::from_annotation(
-                                    db,
-                                    [Parameter::positional_only(None)
-                                        .with_annotated_type(param_type)],
-                                )
-                            };
+                        let parameters = if param_type.is_todo() {
+                            Parameters::todo()
+                        } else if param_type.is_non_divergent_dynamic() && param_type != Type::any()
+                        {
+                            // If we ended up with an `Unknown` type here, it almost certainly means
+                            // that we already emitted an error elsewhere. Fallback to the more lenient
+                            // type.
+                            Parameters::unknown()
+                        } else {
+                            // Preserve cycle placeholders so recursive specializations can
+                            // be normalized instead of growing another parameter type.
+                            Parameters::from_annotation(
+                                db,
+                                [
+                                    Parameter::positional_only(None)
+                                        .with_annotated_type(param_type),
+                                ],
+                            )
+                        };
                         return Ok(Type::paramspec_value_callable(db, parameters));
                     }
 
@@ -1668,7 +1693,9 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                     for call_specialization in identity_bindings
                         .iter_flat()
                         .flat_map(CallableBinding::matching_overloads)
-                        .filter_map(|(_, identity_overload)| identity_overload.specialization(db))
+                        .filter_map(|(_, identity_overload)| {
+                            identity_overload.merged_specialization(db)
+                        })
                     {
                         // Record the constraints on the receiver's generic context formed by
                         // the arguments to this dunder call.
@@ -1715,7 +1742,8 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
             }
         };
 
-        match object_ty {
+        // Aliases must use the same union and TypedDict checks as their underlying types.
+        match object_ty.resolve_type_alias(db) {
             Type::Union(union) => {
                 let mut infer_slice_ty = MultiInferenceGuard::new(infer_slice_ty);
                 let mut infer_rhs_value = MultiInferenceGuard::new(infer_rhs_value);
@@ -1814,7 +1842,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                         && let Some(expected_ty) = typed_dict.arbitrary_key_mutation_type(db, env)
                     {
                         let rhs_value_ty =
-                            infer_rhs_value(self, TypeContext::new(Some(expected_ty)));
+                            infer_rhs_value(self, TypeContext::declared(Some(expected_ty)));
                         if rhs_value_ty.is_assignable_to(db, env, expected_ty) {
                             return true;
                         }
@@ -1884,7 +1912,7 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                     let item = typed_dict.item(db, key);
                     let value_ty = infer_rhs_value.infer_silent(
                         self,
-                        TypeContext::new(item.as_ref().map(|item| item.declared_ty)),
+                        TypeContext::declared(item.as_ref().map(|item| item.declared_ty)),
                     );
 
                     if item.is_some() {
@@ -2004,14 +2032,22 @@ impl<'db, 'ast> TypeInferenceBuilder<'db, 'ast> {
                                             target.range.cover(rhs_value_node.range()),
                                         )
                                     {
-                                        let assigned_d = rhs_value_ty.display(db, env);
-                                        let object_d = object_ty.display(db, env);
+                                        let settings =
+                                            DisplaySettings::from_possibly_ambiguous_types(
+                                                db,
+                                                env,
+                                                [rhs_value_ty, object_ty, slice_ty],
+                                            );
+                                        let assigned_d =
+                                            rhs_value_ty.display_with(db, env, settings.clone());
+                                        let object_d =
+                                            object_ty.display_with(db, env, settings.clone());
 
                                         let mut diagnostic = builder.into_diagnostic(format_args!(
                                             "Invalid subscript assignment with key of type `{}` \
                                             and value of type `{assigned_d}` \
                                             on object of type `{object_d}`",
-                                            slice_ty.display(db, env),
+                                            slice_ty.display_with(db, env, settings),
                                         ));
 
                                         // Special diagnostic for dictionaries

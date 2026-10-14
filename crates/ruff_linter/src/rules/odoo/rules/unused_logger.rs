@@ -4,6 +4,7 @@ use ruff_python_ast::{self as ast, Expr, Stmt, Suite};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix::edits::delete_stmt;
 use crate::{AlwaysFixableViolation, Fix};
 
@@ -25,7 +26,7 @@ use crate::{AlwaysFixableViolation, Fix};
 /// import logging
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Suspicious)]
 pub(crate) struct UnusedLogger;
 
 impl AlwaysFixableViolation for UnusedLogger {

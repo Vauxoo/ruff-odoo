@@ -3,6 +3,7 @@ use ruff_python_ast::{self as ast, Expr};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, remove_dict_item};
 use crate::rules::odoo::settings::ConfiguredList;
 use crate::{Fix, FixAvailability, Violation};
@@ -32,7 +33,7 @@ use crate::{Fix, FixAvailability, Violation};
 ///
 /// Names the keys Odoo defaults to `True`, so that stating them is what counts as superfluous.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct ManifestSuperfluousKey {
     key: String,
 }

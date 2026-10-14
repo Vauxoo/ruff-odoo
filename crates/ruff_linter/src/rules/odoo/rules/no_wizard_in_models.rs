@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 
 /// ## What it does
 /// Checks for `TransientModel` (wizard) classes defined inside the `models/` directory of
@@ -31,7 +32,7 @@ use crate::checkers::ast::Checker;
 ///     _name = "sale.import"
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Style)]
 pub(crate) struct NoWizardInModels;
 
 impl Violation for NoWizardInModels {

@@ -47,7 +47,17 @@ cross-module inference (see Scope discipline above).
 ## Per-rule checklist
 
 1. **Rule file** — `crates/ruff_linter/src/rules/odoo/rules/<rule_name>.rs`:
-   - `#[derive(ViolationMetadata)] pub(crate) struct RuleName { ... }`
+   - `#[derive(ViolationMetadata)] pub(crate) struct RuleName { ... }`, annotated with
+     `#[violation_metadata(preview_since = "<next fork version>", category = Category::X)]`.
+     The category is required (the build fails without it) and follows the letter of the
+     code: `E`/`F` → `Correctness`, `W` → `Suspicious`, `C` → `Style`, `R` → `Complexity`,
+     `OAPP` → `Style`; a security check takes `Security` whatever its letter, and a rule that
+     does nothing until a setting is configured (`invalid-odoo-method-call`,
+     `removed-odoo-method-call` need `lint.odoo.odoo-version`) takes `Restriction`. With
+     `preview = true` and no explicit `select`, Ruff enables the `correctness`, `suspicious`,
+     `complexity`, `performance` and `style` categories by default, so the category also
+     decides whether the rule is on out of the box; `settings::tests::preview_default_rules`
+     lists every rule that is, and must be updated with the new one.
    - `impl Violation for RuleName` (or `AlwaysFixableViolation` if the fix is unconditional) with
      `message()`, and `fix_title()` if fixable. Set `const FIX_AVAILABILITY` to `Sometimes` when
      the fix isn't always offered (e.g. only for standalone-line comments, not inline ones).

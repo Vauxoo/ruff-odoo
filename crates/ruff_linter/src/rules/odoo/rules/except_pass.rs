@@ -4,6 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 
 /// ## Deprecation
 /// This rule is deprecated in favor of [`try-except-pass`][S110], which reports the exact
@@ -38,7 +39,7 @@ use crate::checkers::ast::Checker;
 ///     _logger.exception("do_something failed")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(deprecated_since = "0.16.3.22")]
+#[violation_metadata(deprecated_since = "0.16.3.22", category = Category::Suspicious)]
 pub(crate) struct ExceptPass;
 
 impl Violation for ExceptPass {

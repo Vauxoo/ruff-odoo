@@ -106,6 +106,28 @@ class DataArrayCoordinates[T_DataArray: DataArray](Coordinates):
     def __getitem__(self, key: object) -> T_DataArray: ...
 ```
 
+## Specialized receiver types
+
+An overriding method must accept every receiver accepted by the inherited method. A method that is
+only available on one specialization of the subclass is incompatible with an inherited method that
+is available on every specialization.
+
+```pyi
+from typing import Any, Generic, TypeVar
+
+T = TypeVar("T")
+S = TypeVar("S")
+
+class Element(Generic[T]): ...
+
+class Base(Generic[T]):
+    def method(self) -> "Derived[Any]": ...
+
+class Derived(Base[T], Generic[T]):
+    # error: [invalid-method-override]
+    def method(self: "Derived[Element[S]]") -> "Derived[S]": ...
+```
+
 ## Method parameters
 
 A subclass method may provide a different parameter list to the superclass method, but all
@@ -735,7 +757,8 @@ class ClassDefaultSubclass(ClassDefaultBase):
 ### Method definitions
 
 Method definitions create descriptors in the class body. They are not instance variable
-declarations, so the class-variable vs. instance-variable override check does not apply to them:
+declarations, so the class-variable vs. instance-variable override check does not apply to them.
+They can still restrict the values a class variable accepts or expose an incompatible read type:
 
 ```py
 from collections.abc import Callable
@@ -748,18 +771,18 @@ class ClassVarBase:
     non_callable: ClassVar[int]
 
 class MethodSubclass(ClassVarBase):
-    def plain(self, x: int) -> int:
+    def plain(self, x: int) -> int:  # error: [invalid-mutable-override]
         return x
 
     @staticmethod
-    def static(x: int) -> int:
+    def static(x: int) -> int:  # error: [invalid-mutable-override]
         return x
 
     @classmethod
-    def class_(cls, x: int) -> int:
+    def class_(cls, x: int) -> int:  # error: [invalid-mutable-override]
         return x
 
-    def non_callable(self) -> int:
+    def non_callable(self) -> int:  # error: [invalid-attribute-override]
         return 1
 
 class PropertyBase:
@@ -767,7 +790,7 @@ class PropertyBase:
 
 class PropertySubclass(PropertyBase):
     @property
-    def attr(  # error: [invalid-attribute-override] "instance variable cannot override class variable `PropertyBase.attr`"
+    def attr(  # error: [invalid-property-type-override]
         self,
     ) -> int:
         return 1
@@ -979,7 +1002,7 @@ class ReturnsInt:
 class Compatible(SatisfiesBoth, ReturnsStr, ReturnsInt): ...
 ```
 
-### A compatible subclass override satisfies both contracts
+### Subclass overrides must satisfy both contracts
 
 A subclass can provide an implementation that satisfies otherwise-incompatible base definitions.
 
@@ -1003,6 +1026,17 @@ class AcceptsInt:
 
 class CompatibleParameter(AcceptsStr, AcceptsInt):
     def accepts(self, value: str | int) -> None: ...
+```
+
+Matching the first base's signature does not satisfy an incompatible contract from an unrelated
+base. The conflict is introduced by the subclass, so it is reported on the override.
+
+```pyi
+class IncompatibleReturn(ReturnsStr, ReturnsInt):
+    def method(self) -> str: ...  # error: [invalid-method-override]
+
+class IncompatibleParameter(AcceptsStr, AcceptsInt):
+    def accepts(self, value: str) -> None: ...  # error: [invalid-method-override]
 ```
 
 ### An intermediate `Any` does not hide a conflict
@@ -1540,6 +1574,121 @@ class C(list[int]):
     def __getitem__(self, key): ...
 ```
 
+An invalid override of a method inherited implicitly from `object` is also reported only on the
+parent. Preserving that signature does not produce another diagnostic on the child.
+
+`object.pyi`:
+
+```pyi
+class InvalidStr:
+    def __str__(self) -> int: ...  # error: [invalid-method-override]
+
+class PreservesInvalidStr(InvalidStr):
+    def __str__(self) -> int: ...
+```
+
+## Conflicts inherited through an intermediate base
+
+A parent can inherit incompatible method signatures without defining its own override. A child that
+preserves the selected signature does not repeat that conflict. An override that changes the
+selected signature still receives an error.
+
+```pyi
+class Left:
+    def method(self, left): ...
+
+class Right:
+    def method(self, right): ...
+
+class Parent(Left, Right): ...  # error: [invalid-method-override]
+
+class Child(Parent):
+    def method(self, left): ...
+
+class ChangesSignature(Parent):
+    # error: [invalid-method-override] "Definition is incompatible with `Left.method`"
+    def method(self, right): ...
+```
+
+A base that inherits the selected method without the conflicting contract does not make the conflict
+new. The conflict remains reported only on `Parent`, regardless of the child's base order.
+
+```pyi
+class Independent(Left): ...
+
+class IndependentFirst(Independent, Parent):
+    def method(self, left): ...
+
+class ParentFirst(Parent, Independent):
+    def method(self, left): ...
+```
+
+The existing conflict does not hide an incompatible contract introduced by another base of the
+child.
+
+```pyi
+class RequiresExtra:
+    def method(self, left, extra): ...
+
+class AddsContract(Parent, RequiresExtra):
+    # error: [invalid-method-override] "Definition is incompatible with `RequiresExtra.method`"
+    def method(self, left): ...
+```
+
+The same suppression applies when one of the inherited contracts is a static method with an optional
+argument.
+
+```pyi
+class Static:
+    @staticmethod
+    def method(left=None): ...
+
+class StaticParent(Left, Static): ...  # error: [invalid-method-override]
+
+class StaticChild(StaticParent):
+    def method(self, left): ...
+```
+
+## An earlier base can be bypassed when resolving an inherited method
+
+The first direct base need not supply the selected method. Here, `Child` uses `Override.method`
+ahead of `Base.method`, even though `Inherited` on its own uses `Base.method`. The existing
+violation on `Override` does not need another diagnostic on `Child`.
+
+```pyi
+class Base:
+    def method(self, value: int): ...
+
+class Inherited(Base): ...
+
+class Override(Base):
+    def method(self, value: str): ...  # error: [invalid-method-override]
+
+class Child(Inherited, Override):
+    def method(self, value: str): ...
+```
+
+## Inherited conflicts bind `Self` to the parent
+
+An inherited method's `Self` annotation refers to the parent whose hierarchy is being checked.
+`Parent.method` only accepts `Parent` instances, conflicting with `AcceptsBase.method`, which
+accepts any `Base` instance. Preserving that signature on `Child` does not repeat the conflict.
+
+```pyi
+from typing_extensions import Self
+
+class Base:
+    def method(self, other: Self): ...
+
+class AcceptsBase:
+    def method(self, other: Base): ...
+
+class Parent(Base, AcceptsBase): ...  # error: [invalid-method-override]
+
+class Child(Parent):
+    def method(self, other: Parent): ...
+```
+
 ## Non-generic methods on generic classes work as expected
 
 ```toml
@@ -1673,6 +1822,120 @@ class B4(A4):
     # but this is not necessarily true for `B4.method`: if passed a `bool`,
     # it could return a non-`bool` `int`!
     def method(self, x: int) -> int: ...
+```
+
+## Overrides with `Self` return types
+
+An inherited `Self` return type refers to the subclass on which the method is called. An override
+can preserve that return type regardless of whether either method explicitly annotates `self`:
+
+```pyi
+from typing_extensions import Self
+
+class Base:
+    def implicit(self) -> Self: ...
+    def explicit(self: Self) -> Self: ...
+
+class PreservesSelf(Base):
+    def implicit(self) -> Self: ...
+    def explicit(self: Self) -> Self: ...
+
+class ChangesReceiverAnnotation(Base):
+    def implicit(self: Self) -> Self: ...
+    def explicit(self) -> Self: ...
+```
+
+Returning the superclass is incompatible: it does not satisfy the inherited promise to return an
+instance of the subclass. Adding or omitting `self: Self` does not change this:
+
+```pyi
+class ReturnsBase(Base):
+    def implicit(self) -> Base: ...  # snapshot: invalid-method-override
+    def explicit(self: Self) -> Base: ...  # error: [invalid-method-override]
+
+class ReturnsBaseWithChangedAnnotation(Base):
+    def implicit(self: Self) -> Base: ...  # error: [invalid-method-override]
+    def explicit(self) -> Base: ...  # error: [invalid-method-override]
+```
+
+```snapshot
+error[invalid-method-override]: Invalid override of method `implicit`
+  --> src/mdtest_snippet.pyi:15:9
+   |
+15 |     def implicit(self) -> Base: ...  # snapshot: invalid-method-override
+   |         ^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Base.implicit`
+   |
+  ::: src/mdtest_snippet.pyi:4:9
+   |
+ 4 |     def implicit(self) -> Self: ...
+   |         ---------------------- `Base.implicit` defined here
+info: incompatible return types: `Base` is not assignable to `ReturnsBase`
+info: This violates the Liskov Substitution Principle
+```
+
+Repeating an already invalid override does not produce another diagnostic on a subclass:
+
+```pyi
+class RepeatsInvalidOverride(ReturnsBase):
+    def implicit(self) -> Base: ...
+    def explicit(self: Self) -> Base: ...
+```
+
+## Overrides with `Self` parameters
+
+Repeating `other: Self` in an override narrows the parameter's bound from the base class to the
+subclass. A call through a base-class reference can pass a base-class instance that the override
+does not accept. We currently miss this violation for both implicit and explicit receiver
+annotations. This is a known limitation tracked in
+[#2255](https://github.com/astral-sh/ty/issues/2255), related to the broader
+[generic override limitation](https://github.com/astral-sh/ty/issues/4133):
+
+```pyi
+from typing_extensions import Self
+
+class Base:
+    def implicit(self, other: Self) -> None: ...
+    def explicit(self: Self, other: Self) -> None: ...
+
+class PreservesSelf(Base):
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def implicit(self, other: Self) -> None: ...
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def explicit(self: Self, other: Self) -> None: ...
+
+class ChangesReceiverAnnotation(Base):
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def implicit(self: Self, other: Self) -> None: ...
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def explicit(self, other: Self) -> None: ...
+```
+
+An override cannot replace the `Self` parameter with an unrelated type:
+
+```pyi
+class Incompatible(Base):
+    def implicit(self, other: int) -> None: ...  # error: [invalid-method-override]
+    def explicit(self: Self, other: int) -> None: ...  # error: [invalid-method-override]
+```
+
+For generic superclasses, we use the inherited specialization of the class's type parameters, but
+still miss the narrowing of `other: Self`:
+
+```toml
+[environment]
+python-version = "3.12"
+```
+
+```pyi
+class GenericBase[T]:
+    def method(self, other: Self, value: T) -> Self: ...
+
+class Specialized(GenericBase[int]):
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def method(self, other: Self, value: int) -> Self: ...
+
+class IncompatibleSpecialization(GenericBase[int]):
+    def method(self, other: Self, value: str) -> Self: ...  # error: [invalid-method-override]
 ```
 
 ## Protocol annotations on mixin receivers
@@ -2011,9 +2274,9 @@ error[invalid-method-override]: Invalid override of method `__eq__`
   3 |     def __eq__(self, other: "Bad") -> bool:  # snapshot: invalid-method-override
     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `object.__eq__`
     |
-   ::: stdlib/builtins.pyi:137:9
+   ::: stdlib/builtins.pyi:136:9
     |
-137 |     def __eq__(self, value: object, /) -> bool: ...
+136 |     def __eq__(self, value: object, /) -> bool: ...
     |         -------------------------------------- `object.__eq__` defined here
 info: parameter `value` has an incompatible type: `object` is not assignable to `Bad`
 info: This violates the Liskov Substitution Principle
@@ -2177,115 +2440,57 @@ info: incompatible return types: `object` is not assignable to `int`
 info: This violates the Liskov Substitution Principle
 ```
 
-Overwriting an instance method with a staticmethod, or vice versa, is an error:
+We explicitly allow overwriting between instance methods, staticmethods and classmethods, as long as
+the "bound" signatures (when accessed on an instance) are compatible. See
+<https://github.com/astral-sh/ty/issues/4341> for why this is not sound in all cases. In the future,
+we might want to consider adding a new (strict) rule to disallow overwriting of instance methods
+with classmethod/staticmethods, and vice-versa, in particular.
 
 ```pyi
-class BadChild1A(Parent):
+class GoodChild3A(Parent):
+    @staticmethod
+    def instance_method(x: int) -> int: ...
+
+class GoodChild3B(Parent):
+    @classmethod
+    def instance_method(cls, x: int) -> int: ...
+
+class GoodChild3C(Parent):
+    def class_method(self, x: int) -> int: ...
+
+class GoodChild3D(Parent):
+    @staticmethod
+    def class_method(x: int) -> int: ...
+
+class GoodChild3E(Parent):
+    def static_method(self, x: int) -> int: ...
+
+class GoodChild3F(Parent):
+    @classmethod
+    def static_method(cls, x: int) -> int: ...
+```
+
+However, if the signature does not match, we emit a useful error message:
+
+```pyi
+class BadSignature1(Parent):
     @staticmethod
     def instance_method(self, x: int) -> int: ...  # snapshot: invalid-method-override
 ```
 
 ```snapshot
 error[invalid-method-override]: Invalid override of method `instance_method`
-  --> src/mdtest_snippet.pyi:27:9
+  --> src/mdtest_snippet.pyi:48:9
    |
-27 |     def instance_method(self, x: int) -> int: ...  # snapshot: invalid-method-override
+48 |     def instance_method(self, x: int) -> int: ...  # snapshot: invalid-method-override
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Parent.instance_method`
    |
   ::: src/mdtest_snippet.pyi:2:9
    |
  2 |     def instance_method(self, x: int) -> int: ...
    |         ------------------------------------ `Parent.instance_method` defined here
-info: `BadChild1A.instance_method` is a staticmethod but `Parent.instance_method` is an instance method
-info: This violates the Liskov Substitution Principle
-```
-
-```pyi
-class BadChild1B(Parent):
-    def static_method(x: int) -> int: ...  # snapshot: invalid-method-override
-```
-
-```snapshot
-error[invalid-method-override]: Invalid override of method `static_method`
-  --> src/mdtest_snippet.pyi:29:9
-   |
-29 |     def static_method(x: int) -> int: ...  # snapshot: invalid-method-override
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Parent.static_method`
-   |
-  ::: src/mdtest_snippet.pyi:6:9
-   |
- 6 |     def static_method(x: int) -> int: ...
-   |         ---------------------------- `Parent.static_method` defined here
-info: `BadChild1B.static_method` is an instance method but `Parent.static_method` is a staticmethod
-info: This violates the Liskov Substitution Principle
-```
-
-Overwriting a classmethod with an instance method is also an error: Although the method has the same
-signature as `Parent.class_method` when accessed on instances, it does not have the same signature
-as `Parent.class_method` when accessed on the class object itself:
-
-```pyi
-class BadChild2A(Parent):
-    # TODO: we should emit `invalid-method-override` here.
-    def class_method(cls, x: int) -> int: ...
-```
-
-Conversely, overwriting an instance method with a classmethod is also an error: Although the method
-has the same signature as `Parent.class_method` when accessed on instances, it does not have the
-same signature as `Parent.class_method` when accessed on the class object itself.
-
-Note that whereas `BadChild2A.class_method` is reported as a Liskov violation by mypy, pyright and
-pyrefly, pyright is the only one of those three to report a Liskov violation on this method as of
-2025-11-23.
-
-```pyi
-class BadChild2B(Parent):
-    # TODO: we should emit `invalid-method-override` here.
-    @classmethod
-    def instance_method(self, x: int) -> int: ...
-```
-
-Overwriting a classmethod with a staticmethod, or vice versa, is also an error:
-
-```pyi
-class BadChild3A(Parent):
-    @staticmethod
-    def class_method(cls, x: int) -> int: ...  # snapshot: invalid-method-override
-```
-
-```snapshot
-error[invalid-method-override]: Invalid override of method `class_method`
-  --> src/mdtest_snippet.pyi:39:9
-   |
-39 |     def class_method(cls, x: int) -> int: ...  # snapshot: invalid-method-override
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Parent.class_method`
-   |
-  ::: src/mdtest_snippet.pyi:4:9
-   |
- 4 |     def class_method(cls, x: int) -> int: ...
-   |         -------------------------------- `Parent.class_method` defined here
-info: `BadChild3A.class_method` is a staticmethod but `Parent.class_method` is a classmethod
-info: This violates the Liskov Substitution Principle
-```
-
-```pyi
-class BadChild3B(Parent):
-    @classmethod
-    def static_method(x: int) -> int: ...  # snapshot: invalid-method-override
-```
-
-```snapshot
-error[invalid-method-override]: Invalid override of method `static_method`
-  --> src/mdtest_snippet.pyi:42:9
-   |
-42 |     def static_method(x: int) -> int: ...  # snapshot: invalid-method-override
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Definition is incompatible with `Parent.static_method`
-   |
-  ::: src/mdtest_snippet.pyi:6:9
-   |
- 6 |     def static_method(x: int) -> int: ...
-   |         ---------------------------- `Parent.static_method` defined here
-info: `BadChild3B.static_method` is a classmethod but `Parent.static_method` is a staticmethod
+info: `BadSignature1.instance_method` is a staticmethod but `Parent.instance_method` is an instance method
+info: the parameter named `self` does not match `x` (and can be used as a keyword parameter)
 info: This violates the Liskov Substitution Principle
 ```
 
@@ -2363,6 +2568,41 @@ class InvalidSwapEvent(Event):
     def deserialize(cls: type[InvalidSwapEvent], data: dict[str, int]) -> InvalidSwapEvent: ...
 ```
 
+## Classmethod overrides with `Self`
+
+In a class method, `Self` refers to an instance, while `cls` is a class object. A caller with a
+`type[Base]` reference can pass a `Base` instance as `other`, so narrowing that parameter to the
+subclass's `Self` is invalid. We currently miss this violation with or without an explicit
+`cls: type[Self]` annotation:
+
+```pyi
+from typing_extensions import Self
+
+class Base:
+    @classmethod
+    def compare(cls, other: Self) -> None: ...
+    @classmethod
+    def copy(cls) -> Self: ...
+
+class ImplicitReceiver(Base):
+    @classmethod
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def compare(cls, other: Self) -> None: ...
+
+class ExplicitReceiver(Base):
+    @classmethod
+    # TODO: Emit `invalid-method-override` for narrowing `other`.
+    def compare(cls: type[Self], other: Self) -> None: ...
+```
+
+An override that returns the superclass does not satisfy the inherited `Self` return type:
+
+```pyi
+class ReturnsBase(Base):
+    @classmethod
+    def copy(cls) -> Base: ...  # error: [invalid-method-override]
+```
+
 ## Overloaded methods with positional-only parameters with defaults
 
 When a base class has an overloaded method where one overload accepts only keyword arguments
@@ -2398,6 +2638,7 @@ have bigger problems:
 from __future__ import annotations
 
 class MaybeEqWhile:
+    # error: [redundant-condition] "always truthy"
     while ...:
         def __eq__(self, other: MaybeEqWhile) -> bool:
             return True
@@ -2461,4 +2702,640 @@ class ConcreteStatus(Generic[T], TaskStatus[T]):
     @overload
     def started(self: "ConcreteStatus[T]", value: T) -> None: ...
     def started(self, value: T | None = None) -> None: ...
+```
+
+## Explicit staticmethod wrappers
+
+Assigning `staticmethod(function)` exposes the function's signature. An override can wrap a
+different function with a compatible signature, just as an `@staticmethod` definition can.
+
+```py
+def first(value: int) -> int:
+    return value
+
+def second(value: int) -> int:
+    return value + 1
+
+def incompatible(value: str) -> str:
+    return value
+
+class Base:
+    method = staticmethod(first)
+
+class Compatible(Base):
+    method = staticmethod(second)
+
+class Incompatible(Base):
+    method = staticmethod(incompatible)  # error: [invalid-attribute-override]
+
+Base.method = staticmethod(second)
+reveal_type(Compatible().method(1))  # revealed: int
+```
+
+## Attribute value types
+
+An overriding attribute must expose a value compatible with the superclass annotation. Mutable
+narrowing is allowed by default, but incompatible readable types are rejected.
+
+```toml
+[rules]
+invalid-mutable-override = "ignore"
+```
+
+```py
+class AttributeBase:
+    value: int
+
+class IncompatibleAttribute(AttributeBase):
+    value: str  # snapshot: invalid-attribute-override
+
+class InitializedAttribute(AttributeBase):
+    value = 1
+
+class NarrowedAttribute(AttributeBase):
+    value: bool  # Mutable narrowing is allowed by default.
+```
+
+```snapshot
+error[invalid-attribute-override]: Invalid override of attribute `value`
+ --> src/mdtest_snippet.py:5:5
+  |
+2 |     value: int
+  |     ----- `AttributeBase.value` declared here
+3 |
+4 | class IncompatibleAttribute(AttributeBase):
+5 |     value: str  # snapshot: invalid-attribute-override
+  |     ^^^^^ Type `str` is not assignable to inherited type `int`
+```
+
+## Annotated attributes with class defaults
+
+A class-body default does not erase an annotation's contract. Both the default and a later instance
+assignment must respect the declared type. Unannotated defaults still inherit their annotation.
+
+```py
+class Initialized:
+    value: int = 1
+
+class Uninitialized(Initialized):
+    value: str  # error: [invalid-attribute-override]
+
+class Declared:
+    value: int
+
+class WithDefault(Declared):
+    value: str = ""  # error: [invalid-attribute-override]
+
+class Compatible(Declared):
+    value: int = 2  # no diagnostic
+
+class InheritsAnnotation(Declared):
+    value = 1  # no diagnostic
+```
+
+## Inherited annotations and instance assignments
+
+An instance assignment does not narrow an inherited annotation. Overrides in later subclasses use
+the declared type, just like ordinary attribute reads and writes, whether or not the base provides a
+class default.
+
+```toml
+[rules]
+invalid-mutable-override = "error"
+```
+
+```py
+class Base:
+    value: str | None
+    defaulted: str | None = None
+
+class Middle(Base):
+    value = "middle"
+    defaulted = "middle"
+
+    def reset(self):
+        self.value = "middle"
+        self.defaulted = "middle"
+
+class Child(Middle):
+    value = "child"  # no diagnostic
+    defaulted = "child"  # no diagnostic
+
+def clear(obj: Middle):
+    reveal_type(obj.value)  # revealed: str | None
+    reveal_type(obj.defaulted)  # revealed: str | None
+    obj.value = None  # no diagnostic
+    obj.defaulted = None  # no diagnostic
+
+class Incompatible(Middle):
+    value: int = 1  # error: [invalid-attribute-override]
+
+class Narrower(Middle):
+    value: str = "narrower"  # error: [invalid-mutable-override]
+```
+
+## Inherited attribute conflicts
+
+An override is checked against each applicable ancestor, but a subclass does not introduce a
+conflict its parent already had. A conflict with an unrelated base still needs to be checked.
+
+```py
+class Base:
+    value: int
+
+class Parent(Base):
+    value: str  # error: [invalid-attribute-override]
+
+class Child(Parent):
+    value: str  # no diagnostic
+
+class Unrelated:
+    value: bytes
+
+class Multiple(Parent, Unrelated):
+    value: str  # error: [invalid-attribute-override]
+```
+
+Read-only properties follow the same rule, including when the child repeats a covariant narrowing
+that is still incompatible with the grandparent.
+
+```py
+class PropertyBase:
+    @property
+    def value(self) -> str:
+        return ""
+
+class PropertyParent(PropertyBase):
+    @property
+    def value(self) -> int:  # error: [invalid-property-type-override]
+        return 1
+
+class PropertyChild(PropertyParent):
+    @property
+    def value(self) -> bool:  # no diagnostic
+        return True
+```
+
+## Mutable attribute narrowing
+
+When enabled, `invalid-mutable-override` also rejects narrowing that prevents writes allowed by the
+superclass. An `Any` annotation remains gradually compatible in either direction.
+
+```toml
+[rules]
+invalid-mutable-override = "error"
+```
+
+```py
+from typing import Any, ClassVar
+
+class Base:
+    value: int
+    shared: ClassVar[int]
+
+class Narrow(Base):
+    value: bool  # error: [invalid-mutable-override]
+    shared: ClassVar[bool]  # error: [invalid-mutable-override]
+
+class Gradual(Base):
+    value: Any
+    shared: ClassVar[Any]
+
+class Same(Base):
+    value: int
+    shared: ClassVar[int]
+```
+
+## Property value types
+
+Read-only properties may narrow their result types. They cannot return an unrelated type, even when
+the declarations are in a stub file.
+
+```pyi
+class Base:
+    @property
+    def value(self) -> int: ...
+
+class Narrow(Base):
+    @property
+    def value(self) -> bool: ...
+
+class Incompatible(Base):
+    @property
+    def value(self) -> str: ...  # snapshot: invalid-property-type-override
+```
+
+```snapshot
+error[invalid-property-type-override]: Invalid override of attribute `value`
+  --> src/mdtest_snippet.pyi:11:9
+   |
+11 |     def value(self) -> str: ...  # snapshot: invalid-property-type-override
+   |         ^^^^^ Read type `str` is not assignable to inherited read type `int`
+   |
+  ::: src/mdtest_snippet.pyi:3:9
+   |
+ 3 |     def value(self) -> int: ...
+   |         ----- `Base.value` declared here
+```
+
+## Methods and attributes with the same name
+
+The value exposed by a method is a bound callable, not its return type. It must still preserve the
+contract of an inherited attribute or property. The same check applies when an attribute replaces a
+method.
+
+```py
+from typing import Callable
+
+class PropertyBase:
+    @property
+    def value(self) -> int:
+        return 1
+
+class MethodOverProperty(PropertyBase):
+    def value(self) -> int:  # error: [invalid-property-type-override]
+        return 1
+
+class AttributeBase:
+    value: int
+
+class MethodOverAttribute(AttributeBase):
+    def value(self) -> int:  # error: [invalid-attribute-override]
+        return 1
+
+class MethodBase:
+    def value(self) -> int:
+        return 1
+
+class AttributeOverMethod(MethodBase):
+    value: int  # error: [invalid-attribute-override]
+
+class PropertyOverMethod(MethodBase):
+    @property
+    def value(self) -> int:  # error: [invalid-property-type-override]
+        return 1
+
+class CallableAttributeOverMethod(MethodBase):
+    value: Callable[[], int]  # no diagnostic
+
+class CallablePropertyBase:
+    @property
+    def value(self) -> Callable[[], int]:
+        return lambda: 1
+
+class CompatibleMethod(CallablePropertyBase):
+    def value(self) -> int:  # no diagnostic
+        return 1
+```
+
+## Class variables replacing properties
+
+A property makes no `ClassVar` declaration. Changing the kind of storage is permitted, but the
+subclass must expose a compatible value when read through a superclass reference.
+
+```py
+from typing import ClassVar
+
+class Base:
+    @property
+    def value(self) -> int:
+        return 1
+
+class Incompatible(Base):
+    value: ClassVar[str]  # error: [invalid-property-type-override]
+
+class Compatible(Base):
+    value: ClassVar[int]  # no diagnostic
+
+class ClassBase:
+    value: ClassVar[int]
+
+class IncompatibleProperty(ClassBase):
+    @property
+    def value(self) -> str:  # error: [invalid-property-type-override]
+        return ""
+```
+
+## Conditional property definitions
+
+The property override rule applies when an inherited property can have different definitions. Reads
+must remain assignable to the union of the possible result types.
+
+```py
+from random import random
+
+class Base:
+    if random() > 0.5:
+        @property
+        def value(self) -> int:
+            return 1
+
+    else:
+        @property
+        def value(self) -> str:
+            return ""
+
+class Child(Base):
+    value: bytes  # error: [invalid-property-type-override]
+
+class Compatible(Base):
+    value: int  # no diagnostic
+```
+
+## Property setters
+
+An override can widen a setter's accepted type, but it cannot narrow that type or remove the setter.
+The getter and setter are checked independently.
+
+```py
+class Base:
+    @property
+    def value(self) -> int:
+        return 0
+
+    @value.setter
+    def value(self, value: int) -> None: ...
+
+class Wider(Base):
+    @property
+    def value(self) -> bool:
+        return True
+
+    @value.setter
+    def value(self, value: object) -> None: ...
+
+class Narrower(Base):
+    @property
+    def value(self) -> int:
+        return 0
+
+    @value.setter
+    def value(self, value: bool) -> None: ...  # error: [invalid-property-type-override]
+
+class ReadOnly(Base):
+    @property
+    def value(self) -> int:  # error: [invalid-property-type-override]
+        return 0
+```
+
+## Removing attribute writes
+
+Replacing a mutable attribute with a read-only property or a final attribute removes an operation
+promised by the superclass. A property with a compatible setter preserves it.
+
+```py
+from typing import Final
+
+class Base:
+    value: int
+
+class ReadOnly(Base):
+    @property
+    def value(self) -> int:  # error: [invalid-property-type-override]
+        return 0
+
+class FinalOverride(Base):
+    value: Final[int] = 0  # error: [invalid-attribute-override]
+
+class Writable(Base):
+    @property
+    def value(self) -> int:
+        return 0
+
+    @value.setter
+    def value(self, value: int) -> None: ...
+```
+
+## Frozen fields overriding neutral dataclass-transform bases
+
+A base decorated with `dataclass_transform`, or explicitly using its metaclass, permits frozen
+subclasses. Those subclasses can make inherited fields read-only, but must preserve their read
+types. An ordinary base does not grant this exception.
+
+```py
+from dataclasses import dataclass
+from typing_extensions import dataclass_transform
+
+@dataclass_transform(frozen_default=True)
+class ModelMeta(type): ...
+
+class Neutral(metaclass=ModelMeta):
+    value: int
+
+class Frozen(Neutral):
+    value: int
+
+class Incompatible(Neutral):
+    value: str  # error: [invalid-attribute-override]
+
+@dataclass_transform(frozen_default=True)
+class NeutralBase:
+    value: int
+
+class FrozenChild(NeutralBase):
+    value: int
+
+class Ordinary:
+    value: int
+
+@dataclass(frozen=True)
+class Invalid(Ordinary):
+    value: int  # error: [invalid-attribute-override]
+
+def check(base: Neutral, child: Frozen) -> None:
+    base.value = 1
+    child.value = 1  # error: [invalid-assignment]
+```
+
+## Descriptors preserving instance access
+
+A descriptor may replace an ordinary attribute when its instance reads and writes preserve the
+inherited types. Class access can expose the descriptor itself; we allow that difference for
+attributes that are not explicitly declared as `ClassVar`. The subclass explicitly annotates the
+descriptor to introduce its own contract; an unannotated default would retain the inherited value
+annotation.
+
+```py
+class Descriptor:
+    def __get__(self, instance: object, owner: type | None = None) -> str:
+        return ""
+
+    def __set__(self, instance: object, value: str) -> None: ...
+
+class Base:
+    value: str
+
+class Child(Base):
+    value: Descriptor = Descriptor()
+```
+
+## Slot and descriptor read contracts
+
+A slot exposes its stored value through an instance. Its class-level descriptor is not the
+attribute's value type, including when another base supplies a declaration or property.
+
+```py
+class Slots:
+    __slots__ = ("value",)
+
+class Declared:
+    value: int
+
+class Combined(Declared, Slots): ...
+
+class Readable:
+    @property
+    def value(self) -> int:
+        return 0
+
+class SlotProperty(Slots, Readable): ...
+
+class ReceiverDeclaration(Slots):
+    def __init__(self, value: int) -> None:
+        self.value: int = value
+
+def check(slot: Slots, child: ReceiverDeclaration) -> None:
+    slot.value = 1
+    reveal_type(child.value)  # revealed: int
+```
+
+An annotation whose type implements `__get__` can also describe an instance-stored descriptor
+object. Ordinary reads include that object alongside its getter result. Replacing this storage with
+a slot preserves those possible reads.
+
+```py
+from dataclasses import dataclass
+
+class Descriptor:
+    def __get__(self, instance: object, owner: type | None = None) -> int:
+        return 0
+
+class Base:
+    value: Descriptor
+
+class Slotted(Base):
+    __slots__ = ("value",)
+    value: Descriptor
+
+@dataclass(slots=True)
+class Generated(Base):
+    value: Descriptor = Descriptor()
+
+class Incompatible(Base):
+    __slots__ = ("value",)
+    value: str  # error: [invalid-attribute-override]
+
+def read(base: Base, slot: Slotted, generated: Generated) -> None:
+    reveal_type(base.value)  # revealed: int | Descriptor
+    reveal_type(slot.value)  # revealed: Descriptor
+    reveal_type(generated.value)  # revealed: Descriptor
+```
+
+## Declarations without instance storage
+
+An annotation constrains subclass attributes even when slots do not provide storage for it.
+Attribute and property overrides must still preserve the declared read type.
+
+```py
+class Base:
+    __slots__ = ()
+    value: int
+
+class AttributeChild(Base):
+    __slots__ = ()
+    value: str  # error: [invalid-attribute-override]
+
+class PropertyChild(Base):
+    @property
+    def value(self) -> str:  # error: [invalid-property-type-override]
+        return ""
+```
+
+## Descriptor setters cannot narrow accepted writes
+
+An explicit descriptor annotation establishes its own write type. Its setter must accept every value
+that the inherited attribute accepts. The same restriction applies when assigning the subclass to a
+protocol with that writable attribute.
+
+```toml
+[rules]
+invalid-mutable-override = "error"
+```
+
+```py
+from typing import Protocol
+
+class Descriptor:
+    def __get__(self, instance: object, owner: type | None = None) -> int:
+        return 0
+
+    def __set__(self, instance: object, value: bool) -> None: ...
+
+class Base:
+    value: int
+
+class Child(Base):
+    value: Descriptor = Descriptor()  # error: [invalid-mutable-override]
+
+class HasValue(Protocol):
+    value: int
+
+def check(child: Child) -> None:
+    child.value = True
+    child.value = 1  # error: [invalid-assignment]
+    value: HasValue = child  # error: [invalid-assignment]
+```
+
+## Descriptor decorators
+
+A decorator can turn a function into an attribute descriptor. Its getter result must preserve the
+inherited read type, just as for a descriptor assigned directly in the class body. A
+`cached_property` can also be shadowed by an instance assignment of the same type.
+
+```py
+from functools import cached_property
+from typing import Protocol
+
+class Base:
+    value: int
+
+class Compatible(Base):
+    @cached_property
+    def value(self) -> int:
+        return 0
+
+class Incompatible(Base):
+    @cached_property
+    def value(self) -> str:  # error: [invalid-attribute-override]
+        return ""
+
+class HasValue(Protocol):
+    value: int
+
+def check(good: Compatible, bad: Incompatible) -> None:
+    good.value = 1
+    value: HasValue = good
+    value = bad  # error: [invalid-assignment]
+```
+
+## Independent attribute override rules
+
+Property checking still applies when the method and ordinary attribute rules are disabled.
+
+```toml
+[rules]
+invalid-method-override = "ignore"
+invalid-attribute-override = "ignore"
+invalid-mutable-override = "ignore"
+invalid-property-type-override = "error"
+```
+
+```pyi
+class Base:
+    @property
+    def value(self) -> int: ...
+
+class Child(Base):
+    @property
+    def value(self) -> str: ...  # error: [invalid-property-type-override]
 ```

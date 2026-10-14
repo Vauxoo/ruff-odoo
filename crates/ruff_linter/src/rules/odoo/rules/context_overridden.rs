@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 
 /// ## What it does
 /// Checks for `with_context(some_dict)` calls with a single positional argument.
@@ -24,7 +25,7 @@ use crate::checkers::ast::Checker;
 /// self.with_context(**ctx)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct ContextOverridden {
     arg: String,
 }

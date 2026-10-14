@@ -130,8 +130,10 @@ fn with_front_matter(doc: &str, rule: Rule) -> String {
     let _ = writeln!(&mut output, "---");
     let _ = writeln!(&mut output, "description: |-");
     let _ = writeln!(&mut output, "  {description}");
-    let _ = writeln!(&mut output, "tags:");
-    let _ = writeln!(&mut output, "- {}", rule.noqa_code());
+    if let Some(code) = rule.noqa_code() {
+        let _ = writeln!(&mut output, "tags:");
+        let _ = writeln!(&mut output, "- {code}");
+    }
     let _ = writeln!(&mut output, "---");
     output.push('\n');
     output.push_str(doc);

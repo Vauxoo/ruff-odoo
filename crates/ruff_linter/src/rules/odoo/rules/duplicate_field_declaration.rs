@@ -7,6 +7,7 @@ use ruff_text_size::{Ranged, TextRange};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 
 /// ## What it does
@@ -64,7 +65,7 @@ use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 /// anybody chose, and applying the edit automatically would settle that question without
 /// anybody looking at it.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.33")]
+#[violation_metadata(preview_since = "0.16.3.33", category = Category::Suspicious)]
 pub(crate) struct DuplicateFieldDeclaration {
     name: String,
     row: SourceRow,

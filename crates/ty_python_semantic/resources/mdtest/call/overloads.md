@@ -185,6 +185,26 @@ def _(ab: A | B, ac: A | C, bc: B | C):
     reveal_type(f(*(ac,)))  # revealed: A | C
 ```
 
+### Expanding immediate list and dictionary arguments
+
+Unpacking an immediate list or dictionary preserves each element's union type for overload
+expansion.
+
+```py
+from typing import overload
+
+@overload
+def choose(x: int) -> int: ...
+@overload
+def choose(x: str) -> str: ...
+def choose(x: int | str) -> int | str:
+    return x
+
+def _(value: int | str) -> None:
+    reveal_type(choose(*[value]))  # revealed: int | str
+    reveal_type(choose(**{"x": value}))  # revealed: int | str
+```
+
 ### Expanding first argument
 
 If the set of argument lists created by expanding the first argument evaluates successfully, the
@@ -262,6 +282,109 @@ def _(a: A, bc: B | C, cd: C | D):
     reveal_type(f(a, cd))  # revealed: Unknown
     # error: [no-matching-overload] "No overload of function `f` matches arguments"
     reveal_type(f(*(a, cd)))  # revealed: Unknown
+```
+
+### Expanding a keyword argument after unpacking into a variadic parameter
+
+Valid unpacked positional arguments must not prevent expansion of an unrelated union-typed keyword
+argument. The positional arguments may come from an empty tuple, a fixed-length tuple, a
+variable-length tuple, or a list.
+
+`overloaded.pyi`:
+
+```pyi
+from typing import overload
+
+@overload
+def f(*values: str, kind: int) -> int: ...
+@overload
+def f(*values: str, kind: None) -> str: ...
+```
+
+Expanding `kind` matches one overload when its value is an `int` and the other when its value is
+`None`, independently of how the positional arguments are provided. An incompatible positional
+argument must still fail to match either overload.
+
+```py
+from overloaded import f
+
+def _(one: tuple[str], many: tuple[str, ...], items: list[str], kind: int | None) -> None:
+    reveal_type(f("a", kind=kind))  # revealed: int | str
+    reveal_type(f(*(), kind=kind))  # revealed: int | str
+    reveal_type(f(*one, kind=kind))  # revealed: int | str
+    reveal_type(f(*many, kind=kind))  # revealed: int | str
+    reveal_type(f(*items, kind=kind))  # revealed: int | str
+
+def _(invalid: tuple[int], kind: int | None) -> None:
+    # error: [no-matching-overload]
+    reveal_type(f(*invalid, kind=kind))  # revealed: Unknown
+```
+
+### Expanding a keyword argument with an unpacked variadic annotation
+
+An unpacked variadic annotation can specify a different expected type for each positional argument.
+Unpacked arguments must be checked against their corresponding element types while an unrelated
+union-typed keyword argument is expanded.
+
+```toml
+[environment]
+python-version = "3.13"
+```
+
+`overloaded.pyi`:
+
+```pyi
+from typing import overload
+
+@overload
+def f(*values: *tuple[str, int], kind: int) -> int: ...
+@overload
+def f(*values: *tuple[str, int], kind: None) -> str: ...
+@overload
+def suffix[T: str, *Parts](*values: *tuple[*Parts, T], kind: int) -> int: ...
+@overload
+def suffix[T: str, *Parts](*values: *tuple[*Parts, T], kind: None) -> str: ...
+```
+
+Both directly supplied arguments and an unpacked tuple satisfy the heterogeneous annotation. A
+generic variadic prefix also permits expansion when the fixed suffix has a compatible type.
+
+```py
+from overloaded import f, suffix
+
+def _(values: tuple[str, int], kind: int | None) -> None:
+    reveal_type(f("a", 1, kind=kind))  # revealed: int | str
+    reveal_type(f(*values, kind=kind))  # revealed: int | str
+
+def _(pair: tuple[int, str], kind: int | None) -> None:
+    reveal_type(suffix(*pair, kind=kind))  # revealed: int | str
+```
+
+### Expanding a keyword argument after unpacking into positional parameters
+
+Expanding a union-typed keyword argument must also work when a fixed-length tuple supplies ordinary
+positional parameters with different types instead of a variadic parameter.
+
+`overloaded.pyi`:
+
+```pyi
+from typing import overload
+
+@overload
+def f(value: str, count: int, *, kind: int) -> int: ...
+@overload
+def f(value: str, count: int, *, kind: None) -> str: ...
+```
+
+Both the direct positional arguments and the unpacked tuple select the same overloads after `kind`
+is expanded.
+
+```py
+from overloaded import f
+
+def _(values: tuple[str, int], kind: int | None) -> None:
+    reveal_type(f("a", 1, kind=kind))  # revealed: int | str
+    reveal_type(f(*values, kind=kind))  # revealed: int | str
 ```
 
 ### Generics (legacy)
@@ -383,6 +506,39 @@ from overloaded import A, B, f
 def _(x: tuple[A | B, int], y: tuple[int, bool]):
     reveal_type(f(x, y))  # revealed: A | B | C | D
     reveal_type(f(*(x, y)))  # revealed: A | B | C | D
+```
+
+### Expanding tuple subclasses
+
+Expanding a tuple subclass preserves its class identity while specializing its element types.
+Overloads accepting either the subclass or its tuple base remain applicable after expansion.
+
+`overloaded.pyi`:
+
+```pyi
+from typing import Literal, NamedTuple, overload
+
+class Point(NamedTuple):
+    x: bool
+
+@overload
+def by_class(value: Point, flag: Literal[True]) -> int: ...
+@overload
+def by_class(value: Point, flag: Literal[False]) -> str: ...
+@overload
+def by_element(value: tuple[Literal[True]]) -> int: ...
+@overload
+def by_element(value: tuple[Literal[False]]) -> str: ...
+```
+
+```py
+from overloaded import Point, by_class, by_element
+
+def _(value: Point, flag: bool):
+    reveal_type(by_class(value, flag))  # revealed: int | str
+    reveal_type(by_class(*(value, flag)))  # revealed: int | str
+    reveal_type(by_element(value))  # revealed: int | str
+    reveal_type(by_element(*(value,)))  # revealed: int | str
 ```
 
 ### Expanding `type`
@@ -671,6 +827,49 @@ def _(x: Alias) -> None:
     reveal_type(f(*(x,)))  # revealed: A | B
 ```
 
+### Expanding recursive aliases
+
+A recursive alias whose outermost type is a union can match several overloads. Its recursive members
+retain their types while each union alternative is checked.
+
+```py
+from typing import TypeVar, overload
+
+T = TypeVar("T")
+Tree = T | tuple["Tree[T]"]
+
+@overload
+def choose(value: int) -> str: ...
+@overload
+def choose(value: tuple[object]) -> bytes: ...
+def choose(value):
+    raise NotImplementedError
+
+def inspect(value: Tree[int]):
+    reveal_type(choose(value))  # revealed: str | bytes
+```
+
+### Expanding recursive tuple elements
+
+The boolean element of a recursive tuple expands to its two literal alternatives. Expanding the
+recursive element stops at the reference to the same tuple type.
+
+```py
+from typing import Literal, overload
+
+Recursive = tuple["Recursive", bool]
+
+@overload
+def choose(value: tuple[object, Literal[True]]) -> str: ...
+@overload
+def choose(value: tuple[object, Literal[False]]) -> bytes: ...
+def choose(value):
+    raise NotImplementedError
+
+def inspect(value: Recursive):
+    reveal_type(choose(value))  # revealed: str | bytes
+```
+
 ### No matching overloads
 
 > If argument expansion has been applied to all arguments and one or more of the expanded argument
@@ -755,7 +954,7 @@ class Foo:
 from overloaded import A, B, C, Foo, f
 from typing_extensions import Any, reveal_type
 
-def _(ab: A | B, a: int | Any):
+def _(ab: A | B, a: int | Any, invalid: tuple[C]):
     reveal_type(f(a1=a, a2=a, a3=a))  # revealed: C
     reveal_type(f(A(), a1=a, a2=a, a3=a))  # revealed: A
     reveal_type(f(B(), a1=a, a2=a, a3=a))  # revealed: B
@@ -800,6 +999,25 @@ def _(ab: A | B, a: int | Any):
             a28=a,
             a29=a,
             a30=a,
+        )
+    )
+
+    # An incompatible element in a definitely nonempty splat must also prevent expansion of the
+    # nine union-typed keyword arguments.
+    reveal_type(
+        # error: [no-matching-overload]
+        # revealed: Unknown
+        f(
+            *invalid,
+            a1=a,
+            a2=a,
+            a3=a,
+            a4=a,
+            a5=a,
+            a6=a,
+            a7=a,
+            a8=a,
+            a9=a,
         )
     )
 
@@ -1244,6 +1462,7 @@ from overloaded import f
 def _(x1: int, x2: int, args1: list[int], args2: tuple[int, *tuple[int, ...]]):
     reveal_type(f(x1, x2))  # revealed: tuple[int, int]
     reveal_type(f(*(x1, x2)))  # revealed: tuple[int, int]
+    reveal_type(f(*[x1, x2]))  # revealed: tuple[int, int]
 
     # Step 4 should filter out all but the last overload.
     reveal_type(f(x1, *args1))  # revealed: tuple[int, ...]
@@ -1272,8 +1491,10 @@ def _(x1: int, x2: int, kwargs: dict[str, int]):
     reveal_type(f(x1=x1))  # revealed: int
     reveal_type(f(x1=x1, x2=x2))  # revealed: tuple[int, int]
 
-    # Step 4 should filter out all but the last overload.
-    reveal_type(f(**{"x1": x1, "x2": x2}))  # revealed: int
+    # The literal dictionary has exactly the two keys required by the second overload.
+    reveal_type(f(**{"x1": x1, "x2": x2}))  # revealed: tuple[int, int]
+
+    # Step 4 should filter out all but the last overload for unknown dictionary contents.
     reveal_type(f(**kwargs))  # revealed: int
 ```
 
@@ -1758,6 +1979,29 @@ def _(arg: list[Any]):
     reveal_type(f4(*arg))  # revealed: Unknown
 ```
 
+### Variable-length arguments matched to different arities
+
+A variable-length argument can match different numbers of parameters in each overload. Here, the
+later keyword argument does not cause an otherwise viable overload to be discarded.
+
+`overloaded.pyi`:
+
+```pyi
+from typing import overload
+
+@overload
+def f(x: int, y: int, /, *, flag: str) -> int: ...
+@overload
+def f(x: int, /, *, flag: str) -> str: ...
+```
+
+```py
+from overloaded import f
+
+def _(args: tuple[int, ...]):
+    reveal_type(f(*args, flag=""))  # revealed: Unknown
+```
+
 ### Variadic argument with generics
 
 `overloaded.pyi`:
@@ -2015,6 +2259,10 @@ from overloaded import A, B, C, f
 def _(arg: tuple[A | B, Any]):
     reveal_type(f(arg))  # revealed: A | Unknown
     reveal_type(f(*(arg,)))  # revealed: A | Unknown
+
+# Ambiguity from the first expansion must not affect the second expansion's return type.
+def _(arg: tuple[B | A, Any]):
+    reveal_type(f(arg))  # revealed: Unknown | A
 ```
 
 #### Both argument lists ambiguous

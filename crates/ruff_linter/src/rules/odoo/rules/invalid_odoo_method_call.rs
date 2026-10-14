@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{
     class_declares_model, class_defines_method, is_odoo_model_class,
 };
@@ -62,8 +63,10 @@ use crate::warn_user_once;
 /// ```python
 /// groups = self._read_group(domain, ["partner_id"], ["amount:sum"])
 /// ```
+// Not in a default category: without `lint.odoo.odoo-version` the rule only warns that it is
+// skipping itself, which `--preview` would otherwise print on every project, Odoo or not.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.34")]
+#[violation_metadata(preview_since = "0.16.3.34", category = Category::Restriction)]
 pub(crate) struct InvalidOdooMethodCall {
     name: String,
     version: OdooVersion,

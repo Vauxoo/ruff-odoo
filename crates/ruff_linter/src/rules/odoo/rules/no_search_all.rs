@@ -7,6 +7,7 @@ use ruff_text_size::{Ranged, TextRange, TextSize};
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use std::path::Path;
 
 use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_file};
@@ -42,7 +43,7 @@ use crate::rules::odoo::helpers::{is_odoo_model_class, is_structural_non_code_fi
 /// The default is the models that grow without bound in a running Odoo database. Entries are
 /// matched as globs, so `account.move*` covers `account.move` and `account.move.line`.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct NoSearchAll {
     method: String,
     model: String,

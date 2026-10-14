@@ -5,6 +5,7 @@ use ruff_python_semantic::{ScopeKind, SemanticModel};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix::edits::{Parentheses, remove_argument};
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 use crate::{Fix, FixAvailability, Violation};
@@ -34,7 +35,7 @@ use crate::{Fix, FixAvailability, Violation};
 ///     partner_id = fields.Many2one("res.partner")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Suspicious)]
 pub(crate) struct AttributeStringRedundant;
 
 impl Violation for AttributeStringRedundant {

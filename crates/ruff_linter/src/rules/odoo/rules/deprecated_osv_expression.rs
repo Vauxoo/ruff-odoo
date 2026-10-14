@@ -3,6 +3,7 @@ use ruff_python_ast::Expr;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::importer::ImportRequest;
 use crate::rules::odoo::helpers::odoo_version_applies;
 use crate::rules::odoo::settings::OdooVersion;
@@ -39,7 +40,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// The now-unused `from odoo.osv import expression` is left in place; `F401` reports it.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.33")]
+#[violation_metadata(preview_since = "0.16.3.33", category = Category::Suspicious)]
 pub(crate) struct DeprecatedOsvExpression {
     name: String,
     replacement: String,

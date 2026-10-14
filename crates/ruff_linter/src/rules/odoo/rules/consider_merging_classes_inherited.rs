@@ -1,6 +1,7 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 
 use crate::Violation;
+use crate::codes::Category;
 
 /// ## What it does
 /// Checks for multiple Odoo model extension classes in the same module that use
@@ -27,7 +28,7 @@ use crate::Violation;
 ///     _inherit = "res.partner"
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.11")]
+#[violation_metadata(preview_since = "0.16.2.11", category = Category::Complexity)]
 pub(crate) struct ConsiderMergingClassesInherited {
     pub(crate) model: String,
     pub(crate) locations: String,

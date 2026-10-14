@@ -5,6 +5,7 @@ use ruff_python_ast as ast;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 
 /// ## What it does
@@ -35,7 +36,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range};
 ///
 /// The default requires `license` alone, as pylint-odoo does.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Style)]
 pub(crate) struct ManifestRequiredKey {
     key: String,
 }
