@@ -165,7 +165,7 @@ fn is_literal_evaluable_expr(expr: &Expr) -> bool {
 ///
 /// `_inherits` is deliberately not accepted on its own. It is delegation, not definition —
 /// a class using it still has to name itself through `_name`, so it is already covered.
-pub(crate) fn class_declares_model_attribute(class_def: &ast::StmtClassDef) -> bool {
+fn class_declares_model_attribute(class_def: &ast::StmtClassDef) -> bool {
     class_def.body.iter().any(|stmt| {
         let targets: &[Expr] = match stmt {
             ast::Stmt::Assign(assign) => &assign.targets,

@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 
 /// ## What it does
@@ -55,7 +56,7 @@ use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_field_type};
 /// migrated from the old relation table to the new one, which is a decision for a migration
 /// script rather than for a linter.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.25")]
+#[violation_metadata(preview_since = "0.16.3.25", category = Category::Suspicious)]
 pub(crate) struct M2mRelationIsLabel {
     relation: String,
 }

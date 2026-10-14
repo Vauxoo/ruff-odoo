@@ -4,6 +4,7 @@ use ruff_text_size::TextRange;
 
 use crate::Locator;
 use crate::checkers::ast::LintContext;
+use crate::codes::Category;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
@@ -19,7 +20,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// # vim: fileencoding=utf-8
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Suspicious)]
 pub(crate) struct UseVimComment;
 
 impl Violation for UseVimComment {

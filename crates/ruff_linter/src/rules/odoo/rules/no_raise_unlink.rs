@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
 
@@ -32,7 +33,7 @@ use crate::rules::odoo::settings::OdooVersion;
 ///         raise UserError("Cannot delete a done record")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct NoRaiseUnlink;
 
 impl Violation for NoRaiseUnlink {

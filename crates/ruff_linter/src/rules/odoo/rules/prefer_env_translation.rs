@@ -7,6 +7,7 @@ use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{
     is_odoo_controller_class, is_odoo_model_class, odoo_version_applies,
 };
@@ -50,7 +51,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// which covers an aliased import (`from odoo import _ as lt`) and leaves a `_` that came
 /// from `gettext`, or a local of that name, reported but untouched.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct PreferEnvTranslation;
 
 impl Violation for PreferEnvTranslation {

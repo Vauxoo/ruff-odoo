@@ -3,6 +3,7 @@ use ruff_python_semantic::{Binding, BindingKind, Imported};
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::fix;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -31,7 +32,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// offered when `UserError` is already bound to something other than
 /// `odoo.exceptions.UserError`.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Complexity)]
 pub(crate) struct OdooExceptionWarning;
 
 impl Violation for OdooExceptionWarning {

@@ -3,6 +3,7 @@ use ruff_python_ast as ast;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::importer::ImportRequest;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -34,7 +35,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// `itertools.groupby` lazily yields one group per *consecutive* run. Code that relied on
 /// the consecutive-run behavior, or on the groups being iterators, changes meaning.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct BadBuiltinGroupby;
 
 impl Violation for BadBuiltinGroupby {

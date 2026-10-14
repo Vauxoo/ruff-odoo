@@ -22,3 +22,11 @@ slow-timeout =  { period = "1s", terminate-after = 60 }
 
 # Show slow jobs in the final summary
 final-status-level = "slow"
+
+# Vauxoo fork: forks run CI on 2-core `ubuntu-latest` runners rather than astral-sh's
+# 16-core Depot ones. `ty`'s corpus tests check whole fixture trees; the `f` shard of
+# `linter_no_panic` takes ~19s on Depot and goes past the 60s deadlock stop-gap above on
+# the smaller runners, so these get three minutes there.
+[[profile.ci.overrides]]
+filter = 'binary(corpus)'
+slow-timeout = { period = "1s", terminate-after = 180 }

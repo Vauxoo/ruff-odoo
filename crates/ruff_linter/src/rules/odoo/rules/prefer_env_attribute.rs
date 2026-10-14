@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability};
@@ -29,7 +30,7 @@ use crate::{Edit, Fix, FixAvailability};
 /// lang = self.env.context.get("lang")
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.14")]
+#[violation_metadata(preview_since = "0.16.2.14", category = Category::Suspicious)]
 pub(crate) struct PreferEnvAttribute {
     receiver: String,
     deprecated: String,

@@ -7,9 +7,15 @@ description: Use when a user says "summarise ecosystem results", "summarize this
 
 ## Priorities
 
-1. Reproduce every retained behavior with the exact environment used by the Actions run.
-2. Lead the report with new or meaningfully changed project failures, including intermittent severe failures, then cover stable diagnostic changes and clear minimized examples.
-3. Keep execution, audit, and traceability bookkeeping out of the report.
+1. **Produce a readable document that pulls out common themes and patterns across the ecosystem.** Explain what changed, why it changed, and which recurring code patterns account for the effects. But don't be too verbose in your prose: show the changes through examples, and keep prose descriptions of these examples reasonably concise. Exhaustive reproduction, minimized examples, and complete entry inventories provide the evidence for your synthesis.
+2. Reproduce every retained source-attributable behavior with the exact environment used by the Actions run.
+3. Minimize every distinct source-attributable behavior change using the [minimizing-ty-ecosystem-changes skill](../minimizing-ty-ecosystem-changes/SKILL.md).
+4. Highlight new or meaningfully changed project failures, including intermittent severe failures, in the opening summary.
+5. Keep execution, audit, and traceability bookkeeping out of the report, except for the entry inventories and concise reproduction information required by the template.
+
+## GitHub CLI Telemetry
+
+Prefix every direct or indirect `gh` invocation with `GH_TELEMETRY=false`, including `GH_TELEMETRY=false uv run --script scripts/collect_ty_ecosystem_run_metadata.py ...`. Require the same of subagents. Codex tool calls may start separate shells, so an `export` in an earlier call is insufficient.
 
 ## Deliverable
 
@@ -22,17 +28,28 @@ If summarising an ecosystem report is the only thing you're asked to do in a Cod
 ## Reporting Policy
 
 - Focus on new or meaningfully changed behavior relative to the merge base. Evaluate individual diagnostics and failure outcomes, not a project's overall flaky or persistent status.
+- Ignore all `unknown-rule` diagnostic changes from ecosystem-analyzer. Exclude them from reproduction assignments, report entries, and hit counts.
 - Omit flaky diagnostic changes, unchanged failures, and frequency fluctuations that leave the observed outcomes unchanged.
-- Report new or changed panics, crashes, overflows, and timeouts, including merge-base and PR run frequencies when intermittent behavior is involved.
+- Report new, fixed, or meaningfully changed panics, crashes, overflows, and timeouts, including merge-base and PR run frequencies when intermittent behavior is involved.
 
 ## Workflow
 
-1. **Freeze the evidence.** Preserve any report URL or ecosystem-results comment explicitly supplied by the user before identifying the PR. For PR-only input, find its ecosystem-results comment and linked detailed report. Capture the matching Actions run and attempt as described in [references/evidence-acquisition.md](references/evidence-acquisition.md); never replace a supplied report with the PR's current report. Ignore later comment edits, PR updates, and workflow runs. Use the frozen detailed report as the authoritative change list and the comment for orientation when available.
-2. **Identify changed outcomes.** Check the detailed report for new, fixed, or changed project failures, panics, overflows, timeouts, abnormal exits, and diagnostic changes, applying the reporting policy to each entry and outcome.
-3. **Reproduce from scratch.** Ignore retained memories and previous local artifacts. Load the `minimizing-ty-ecosystem-changes` skill, use its metadata helper and exact-run workflow, and reproduce each report entry before explaining or minimizing it. Reproduce intermittent severe failure changes with the reported run counts.
-4. **Minimize with provenance.** Include a standalone reproducer only when a verified reduction chain connects it to a cited ecosystem entry and preserves the same underlying trigger. If either cannot be verified, retain the original source excerpt and identify it as unminimized.
-5. **Group by cause.** Group entries only when the same base-to-PR behavior, underlying trigger, explanation, and reproducer account for every entry. Identical diagnostic text or displayed `@Todo` types do not establish equivalence.
+1. **Freeze the evidence.** Preserve any report URL or ecosystem-results comment explicitly supplied by the user before identifying the PR. For PR-only input, find its ecosystem-results comment and linked detailed report. Capture the matching Actions run and attempt as described in [references/evidence-acquisition.md](references/evidence-acquisition.md); never replace a supplied report with the PR's current report. Recover exact-run metadata promptly, review runtime evidence as described in the minimizing skill, then prepare both exact-revision profiling binaries and the shared configuration in the chosen execution environment before assigning subagent work. Ignore later comment edits, PR updates, and workflow runs. Prefer the selected attempt's validated `full-report/diff.json` as the authoritative structured change inventory, retain its matching frozen HTML report, and use the comment for orientation when available. Fall back to the frozen HTML report if the JSON report is unavailable.
+2. **Identify changed outcomes.** Inspect the structured diff for added, removed, and modified projects; stable diagnostic additions, removals, and rewrites; project failures; and intermittent exit-status changes. Preserve diagnostic levels, duplicate occurrences, source permalinks, project strictness, panic evidence, and observed run frequencies. Apply Reporting Policy above without excluding stable diagnostics or changed severe failures merely because they come from flaky projects. Use the matching HTML report for visual context, or as the primary evidence when structured JSON cannot be obtained safely.
+3. **Reproduce from scratch.** Ignore retained memories and previous local artifacts. Load the `minimizing-ty-ecosystem-changes` skill, collect exact-run metadata once, and reproduce every retained, source-attributable diagnostic or panic before explaining or minimizing it. Reproduce intermittent severe failure changes with the reported merge-base and PR run counts. Verify retained outcomes without recoverable source against their captured statuses, stderr, panic evidence, and run frequencies.
+4. **Minimize to completion with provenance.** For each distinct source-attributable behavior change, complete the minimizing skill's advanced-minimization workflow and final audit. If a genuine external blocker prevents completion, report that blocker to the user and identify the report as incomplete.
+5. **Deduplicate and synthesize.** After reproducing every retained diagnostic, deduplicate reproducers only when the same base-to-PR behavior, underlying trigger, explanation, and reproducer account for every represented entry. Identical diagnostic text or displayed `@Todo` types do not establish equivalence. Review the complete set of findings together, including results from different subagents, to identify recurring code patterns and shared causes across projects. Build the report around those themes, explaining the connections between representative examples and the broader ecosystem effects, following the report template.
 6. **Find existing ty issues.** When a diagnostic change exposes a pre-existing shortcoming in ty, search the `astral-sh/ty` issue tracker for the precise underlying behavior. Link matching issues directly from the relevant report section; do not mistake incorrect or incomplete third-party annotations for ty shortcomings.
-7. **Write and verify.** Fill the report template, record each affected project's strict or non-strict analysis mode, and include both strict-analysis flags in the comparison method when applicable. Check every change number, link, diagnostic, reproducer's source provenance, and causal fingerprint when required, then run `uv run --only-group dev --locked prek run --files PR_<number>_ECOSYSTEM_SUMMARY.md`. Present the Markdown file as the finished product.
+7. **Write and verify.** First verify that a reader can understand the main ecosystem patterns and their significance from the narrative and representative examples. Check the report template's presentation and coverage requirements. Verify that every source-attributable behavior change has a reproducer that satisfies the minimizing skill's completion criteria. The primary agent must verify that every retained import is necessary: neither removing it nor inlining its definitions preserves the underlying behavior. For retained third-party imports, also verify that the library's identity or third-party search-path classification is essential to identified ty behavior. Verify that each minimized example and its explanation make the original real-world code pattern understandable. If minimization has obscured that pattern, restore meaningful names or enough surrounding structure to make the connection clear, then reverify both revisions. Preserve the minimizing skill’s priority for removing avoidable imports and inlining definitions; when inlining makes the original pattern less recognizable, briefly explain the connection in prose. Ensure the prose accurately describes the final example. Check every change number, link, diagnostic, reproducer's source provenance, and causal fingerprint when required. Present the Markdown file as the finished product only after these checks pass.
 
-When parallelizing reproduction or minimization, read [references/subagent-handoff.md](references/subagent-handoff.md). Otherwise, keep batches small and work through them sequentially.
+## Parallel execution
+
+This skill explicitly requests subagents when the report contains multiple affected projects or independently investigable entries.
+
+Once the exact-run metadata, both profiling binaries, and shared configuration are ready, spawn as many subagents as the available concurrency budget and independent work allow, reserving one slot for the primary agent. Keep available slots occupied by assigning further work as subagents finish.
+
+Assign disjoint projects or explicit report entries. Apparent similarity may guide scheduling, but does not establish causal equivalence. Follow all existing requirements for exhaustive reproduction, verified reduction chains, exhaustive minimization, and grouping by verified cause.
+
+The primary agent owns the frozen evidence, shared profiling binaries, configuration, coordination, and final report. Follow [references/subagent-handoff.md](references/subagent-handoff.md) for handoff and shared-artifact requirements.
+
+If multiple independent assignments exist but no subagents are spawned, record the specific reason.

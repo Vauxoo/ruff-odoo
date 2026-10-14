@@ -5,6 +5,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{class_defines_method, inherits_non_builtin};
 use crate::rules::odoo::removals::removals_for;
 use crate::rules::odoo::settings::OdooVersion;
@@ -73,8 +74,10 @@ use crate::warn_user_once;
 ///     def matching(self, domain):
 ///         return self._search(domain)
 /// ```
+// Not in a default category: without `lint.odoo.odoo-version` the rule only warns that it is
+// skipping itself, which `--preview` would otherwise print on every project, Odoo or not.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.34")]
+#[violation_metadata(preview_since = "0.16.3.34", category = Category::Restriction)]
 pub(crate) struct RemovedOdooMethodCall {
     name: String,
     removed_in: OdooVersion,

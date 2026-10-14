@@ -6,6 +6,7 @@ use ruff_python_stdlib::keyword::is_keyword;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::codes::Rule;
 use crate::rules::odoo::helpers::odoo_version_applies;
 use crate::rules::odoo::settings::OdooVersion;
@@ -51,7 +52,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// introduced in Odoo 14.0, and because a function named `_` that is not Odoo's
 /// translation function (e.g. `gettext.gettext`) does not accept the extra arguments.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Suspicious)]
 pub(crate) struct TranslationNotLazy;
 
 impl Violation for TranslationNotLazy {
@@ -102,7 +103,7 @@ impl Violation for TranslationNotLazy {
 /// translation machinery looks up changes (`Hello {}` becomes `Hello %s`), so the exported
 /// translation entries have to be regenerated.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Suspicious)]
 pub(crate) struct TranslationFormatInterpolation;
 
 impl Violation for TranslationFormatInterpolation {
@@ -150,7 +151,7 @@ impl Violation for TranslationFormatInterpolation {
 /// unsafe because the term the translation machinery looks up changes, so the exported
 /// translation entries have to be regenerated.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Suspicious)]
 pub(crate) struct TranslationFstringInterpolation;
 
 impl Violation for TranslationFstringInterpolation {
@@ -189,7 +190,7 @@ impl Violation for TranslationFstringInterpolation {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Correctness)]
 pub(crate) struct TranslationUnsupportedFormat {
     unsupported_char: char,
     index: usize,
@@ -232,7 +233,7 @@ impl Violation for TranslationUnsupportedFormat {
 /// _("Progress: %s %%", progress)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Correctness)]
 pub(crate) struct TranslationFormatTruncated;
 
 impl Violation for TranslationFormatTruncated {
@@ -265,7 +266,7 @@ impl Violation for TranslationFormatTruncated {
 /// _("Hello %s", name)
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Correctness)]
 pub(crate) struct TranslationTooManyArgs;
 
 impl Violation for TranslationTooManyArgs {
@@ -311,7 +312,7 @@ impl Violation for TranslationTooManyArgs {
 /// placeholders count: `_("100% off")` reads as prose even though `% o` is a valid
 /// space-flagged conversion.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.9")]
+#[violation_metadata(preview_since = "0.16.2.9", category = Category::Correctness)]
 pub(crate) struct TranslationTooFewArgs;
 
 impl Violation for TranslationTooFewArgs {
@@ -597,7 +598,7 @@ fn printf_template_from_fstring(
     fstring: &ast::ExprFString,
 ) -> Option<(String, String)> {
     let mut parts = fstring.value.iter();
-    let (Some(ast::FStringPart::FString(part)), None) = (parts.next(), parts.next()) else {
+    let (Some(ast::FStringPartRef::FString(part)), None) = (parts.next(), parts.next()) else {
         return None;
     };
     let quote_char = part.flags.quote_style().as_char();

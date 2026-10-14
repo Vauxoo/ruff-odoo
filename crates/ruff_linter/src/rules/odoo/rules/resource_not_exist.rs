@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{MANIFEST_DATA_KEYS, is_manifest_root_dict, manifest_item};
 
 /// ## What it does
@@ -34,7 +35,7 @@ use crate::rules::odoo::helpers::{MANIFEST_DATA_KEYS, is_manifest_root_dict, man
 /// }
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.5")]
+#[violation_metadata(preview_since = "0.16.2.5", category = Category::Correctness)]
 pub(crate) struct ResourceNotExist {
     key: String,
     resource: String,

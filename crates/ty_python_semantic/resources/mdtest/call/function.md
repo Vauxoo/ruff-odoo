@@ -181,6 +181,30 @@ dynamic: Any = []
 reveal_type(map(operator.add, ints, dynamic))  # revealed: map[Unknown]
 ```
 
+## Generic overloaded callable constraints in constructors
+
+An overloaded callback can have a type variable of its own. An overload rejected by the constructor
+must not leave a mapping for that variable that causes the accepted overload to be rejected.
+
+```py
+from typing import Generic, TypeVar, overload
+
+T = TypeVar("T", str, bytes)
+
+class Result(Generic[T]): ...
+
+@overload
+def convert(value: T) -> Result[T]: ...
+@overload
+def convert(value: Result[T]) -> Result[T]: ...
+def convert(value: T | Result[T]) -> Result[T]:
+    raise NotImplementedError
+
+# TODO: Preserve correlated overloaded-callback solutions (astral-sh/ty#2799) to infer
+# `map[Result[str]]`.
+reveal_type(map(convert, ["a"]))  # revealed: map[Unknown]
+```
+
 ## Decorated
 
 ```py
@@ -245,8 +269,8 @@ f(1)
 f(__x=1)
 ```
 
-But not if they follow a non-positional-only parameter. This is flagged with a different error code
-since (per the typing spec), this is likely a mistake from the user:
+But not if they follow a non-positional-only parameter. When enabled,
+`invalid-legacy-positional-parameter` flags this as an incorrect use of the legacy convention:
 
 ```py
 from typing import overload
@@ -429,6 +453,197 @@ def _(args: tuple[int, str]) -> None:
     takes_at_least_one(*args)
     takes_at_least_two(*args)  # error: [invalid-argument-type]
     takes_at_least_two_positional_only(*args)  # error: [invalid-argument-type]
+```
+
+### Excess elements in unpacked tuples
+
+The diagnostic counts every element, including those after the first excess argument.
+
+```py
+def pair(x: int, y: str) -> None: ...
+
+pair(*(1, "two", 3, 4))  # error: [too-many-positional-arguments] "expected 2, got 4"
+```
+
+### Literal promotion in unpacked tuples
+
+Call unpacking uses the tuple's inferred element types. Tuples with more than 64 elements promote
+integer literals to `int`, so only the shorter tuple can satisfy `Literal[0]`.
+
+```py
+from typing import Literal
+
+def first_zero(first: Literal[0], *rest: int) -> None: ...
+
+# fmt: off
+first_zero(*(
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+))
+
+# error: [invalid-argument-type]
+first_zero(*(
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0,
+))
+# fmt: on
+```
+
+### Immediate list arguments
+
+Unpacking a list constructed in the call preserves its exact length and each element's type. The
+list's homogeneous element type does not describe these argument positions precisely enough.
+
+```py
+def pair(x: int, y: str) -> None: ...
+
+pair(*[1, "two"])
+pair(*[1], *["two"])
+```
+
+Missing arguments, extra arguments, and incompatible element types are rejected. These diagnostics
+currently highlight the call or unpacked list rather than individual list elements.
+
+```py
+# snapshot: missing-argument
+pair(*[])
+```
+
+```snapshot
+error[missing-argument]: No arguments provided for required parameters `x`, `y` of function `pair`
+ --> src/mdtest_snippet.py:6:1
+  |
+6 | pair(*[])
+  | ^^^^^^^^^
+info: Parameters declared here
+ --> src/mdtest_snippet.py:1:9
+  |
+1 | def pair(x: int, y: str) -> None: ...
+  |         ^^^^^^^^^^^^^^^^
+```
+
+```py
+# snapshot: missing-argument
+pair(*[1])
+```
+
+```snapshot
+error[missing-argument]: No argument provided for required parameter `y` of function `pair`
+ --> src/mdtest_snippet.py:8:1
+  |
+8 | pair(*[1])
+  | ^^^^^^^^^^
+info: Parameter declared here
+ --> src/mdtest_snippet.py:1:18
+  |
+1 | def pair(x: int, y: str) -> None: ...
+  |                  ^^^^^^
+```
+
+```py
+# snapshot: too-many-positional-arguments
+pair(*[1, "two", 3, 4])
+```
+
+```snapshot
+error[too-many-positional-arguments]: Too many positional arguments to function `pair`: expected 2, got 4
+  --> src/mdtest_snippet.py:10:6
+   |
+10 | pair(*[1, "two", 3, 4])
+   |      ^^^^^^^^^^^^^^^^^
+info: Function signature here
+ --> src/mdtest_snippet.py:1:5
+  |
+1 | def pair(x: int, y: str) -> None: ...
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+```py
+# snapshot: invalid-argument-type
+pair(*["one", "two"])
+```
+
+```snapshot
+error[invalid-argument-type]: Argument to function `pair` is incorrect
+  --> src/mdtest_snippet.py:12:6
+   |
+12 | pair(*["one", "two"])
+   |      ^^^^^^^^^^^^^^^ Expected `int`, found `Literal["one"]`
+info: Function defined here
+ --> src/mdtest_snippet.py:1:5
+  |
+1 | def pair(x: int, y: str) -> None: ...
+  |     ^^^^ ------ Parameter declared here
+```
+
+An exact positional unpack still supplies a parameter that also has an explicit keyword, whether
+that keyword precedes or follows the unpack in the source.
+
+```py
+def f(x: int, *, y: int = 0) -> None: ...
+
+f(x=1, *[2])  # error: [parameter-already-assigned]
+f(*[2], x=1)  # error: [parameter-already-assigned]
+```
+
+### Immediate dictionary arguments
+
+A dictionary constructed directly in the call preserves each string key and its value type. A
+repeated key replaces the earlier value, as it does at runtime.
+
+```py
+def pair(x: int, *, y: str) -> None: ...
+
+pair(**{"y": "two", "x": 1})
+pair(**{})  # error: [missing-argument]
+pair(**{"y": "two"})  # error: [missing-argument]
+pair(**{"x": "one", "x": 1, "y": "two"})
+pair(**{"x": 1, "y": 2})  # error: [invalid-argument-type]
+pair(x=1, **{"x": 2, "y": "two"})  # error: [parameter-already-assigned]
+pair(**{"x": 1}, **{"x": 2, "y": "two"})  # error: [parameter-already-assigned]
+pair(**{"z": 3, "x": 1, "y": "two"})  # error: [unknown-argument]
+```
+
+### Aliased list arguments
+
+Assigning a list literal to a variable loses the per-position types used for immediate unpacking.
+This call is valid at runtime, but ty currently reports errors because `args` has type
+`list[int | str]`.
+
+```py
+def pair(x: int, y: str) -> None: ...
+
+args = [1, "two"]
+# error: [invalid-argument-type]
+# error: [invalid-argument-type]
+pair(*args)
+```
+
+### Mutated list arguments
+
+After a list is mutated, its original literal contents may no longer describe the arguments. This
+call raises `TypeError` at runtime because `clear()` empties the list. ty does not report this error
+because it treats `values` as a variable-length `list[int]`.
+
+```py
+def pair(x: int, y: int) -> None: ...
+
+values = [1]
+values.clear()
+pair(*values)
 ```
 
 ### Subclass of fixed-length tuple argument

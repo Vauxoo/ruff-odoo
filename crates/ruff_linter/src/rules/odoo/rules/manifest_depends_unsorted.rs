@@ -7,6 +7,7 @@ use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange, TextSize};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_item};
 use crate::{Edit, Fix, FixAvailability, Violation};
 
@@ -65,7 +66,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///   entry the comment belongs to;
 /// - an entry spans more than one line (implicit concatenation).
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.33")]
+#[violation_metadata(preview_since = "0.16.3.33", category = Category::Style)]
 pub(crate) struct ManifestDependsUnsorted;
 
 impl Violation for ManifestDependsUnsorted {

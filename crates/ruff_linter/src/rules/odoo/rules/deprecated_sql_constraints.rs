@@ -6,6 +6,7 @@ use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::importer::ImportRequest;
 use crate::line_width::LineWidthBuilder;
 use crate::rules::odoo::helpers::{is_odoo_model_class, odoo_version_applies};
@@ -62,7 +63,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// duplicated key, an entry spread over several lines, or a comment inside the assignment
 /// that the rewrite would drop.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.3.33")]
+#[violation_metadata(preview_since = "0.16.3.33", category = Category::Correctness)]
 pub(crate) struct DeprecatedSqlConstraints;
 
 impl Violation for DeprecatedSqlConstraints {

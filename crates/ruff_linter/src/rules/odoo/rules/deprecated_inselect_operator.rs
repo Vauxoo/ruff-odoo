@@ -4,6 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::odoo_version_applies;
 use crate::rules::odoo::settings::OdooVersion;
 
@@ -24,7 +25,7 @@ use crate::rules::odoo::settings::OdooVersion;
 /// domain = [("id", "in", SQL(...))]
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct DeprecatedInselectOperator {
     operator: String,
 }

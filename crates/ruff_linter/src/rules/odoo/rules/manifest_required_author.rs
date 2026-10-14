@@ -4,6 +4,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, manifest_item};
 
 /// ## What it does
@@ -26,7 +27,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_anchor_range, 
 /// A project with its own authors names them through the option, which replaces the default
 /// rather than adding to it.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Style)]
 pub(crate) struct ManifestRequiredAuthor {
     required: String,
 }

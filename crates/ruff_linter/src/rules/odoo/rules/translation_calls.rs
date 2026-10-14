@@ -4,6 +4,7 @@ use ruff_source_file::LineRanges;
 use ruff_text_size::{Ranged, TextRange};
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::codes::Rule;
 use crate::fix::edits::fits;
 use crate::line_width::LineWidthBuilder;
@@ -29,7 +30,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// _("Hello %s") % name
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct TranslationContainsVariable;
 
 impl Violation for TranslationContainsVariable {
@@ -74,7 +75,7 @@ impl Violation for TranslationContainsVariable {
 /// translations keyed on the old term (in `.po` files) no longer match and must be
 /// re-exported and re-translated.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
 pub(crate) struct TranslationPositionalUsed;
 
 impl Violation for TranslationPositionalUsed {
@@ -110,7 +111,7 @@ impl Violation for TranslationPositionalUsed {
 /// _("Hello %s") % name
 /// ```
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.2")]
+#[violation_metadata(preview_since = "0.16.2.2", category = Category::Correctness)]
 pub(crate) struct TranslationInjection;
 
 impl Violation for TranslationInjection {

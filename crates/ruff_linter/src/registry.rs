@@ -17,7 +17,10 @@ impl Rule {
         let (linter, code) = Linter::parse_code(code).ok_or(FromCodeError::Unknown)?;
         linter
             .all_rules()
-            .find(|rule| rule.noqa_code().suffix() == code)
+            .find(|rule| {
+                rule.noqa_code()
+                    .is_some_and(|rule_code| rule_code.suffix() == code)
+            })
             .ok_or(FromCodeError::Unknown)
     }
 }
@@ -376,8 +379,8 @@ impl Rule {
     /// `homepage` — is what keeps the ~1000 upstream rules linking to the upstream site,
     /// where their pages actually are.
     fn documentation_site(self) -> &'static str {
-        match self.noqa_code().prefix() {
-            "OD" | "OAPP" => "https://vauxoo.github.io/ruff-odoo",
+        match self.noqa_code().as_ref().map(codes::NoqaCode::prefix) {
+            Some("OD" | "OAPP") => "https://vauxoo.github.io/ruff-odoo",
             _ => env!("CARGO_PKG_HOMEPAGE"),
         }
     }
@@ -386,6 +389,31 @@ impl Rule {
         let name: &'static str = self.into();
         LintName::of(name)
     }
+
+    /// Return the rule's name, followed by its code in parentheses when available.
+    ///
+    /// For example:
+    ///
+    /// ```text
+    /// unused-import (F401)
+    /// ```
+    ///
+    /// When formatted with the `#` flag, both the name and code will be surrounded by backticks:
+    ///
+    /// ```text
+    /// `unused-import` (`F401`)
+    /// ```
+    pub fn name_and_code(&self) -> impl std::fmt::Display + use<> {
+        let rule = *self;
+        std::fmt::from_fn(move |f| {
+            let quote = if f.alternate() { "`" } else { "" };
+            write!(f, "{quote}{}{quote}", rule.name())?;
+            if let Some(code) = rule.noqa_code() {
+                write!(f, " ({quote}{code}{quote})")?;
+            }
+            Ok(())
+        })
+    }
 }
 
 /// Pairs of checks that shouldn't be enabled together.
@@ -393,7 +421,7 @@ pub const INCOMPATIBLE_CODES: &[(Rule, Rule, &str); 2] = &[
     (
         Rule::BlankLineBeforeClass,
         Rule::IncorrectBlankLineBeforeClass,
-        "`incorrect-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are \
+        "`incorrect-blank-line-before-class` (D203) and `blank-line-before-class` (D211) are \
          incompatible. Ignoring `incorrect-blank-line-before-class`.",
     ),
     (
@@ -420,12 +448,17 @@ pub mod clap_completion {
     impl RuleParser {
         fn values() -> impl Iterator<Item = PossibleValue> {
             Rule::iter().flat_map(|rule| {
-                let code = rule.noqa_code().to_string();
                 let name = rule.name().as_str();
-                [
-                    PossibleValue::new(&code).help(name),
-                    PossibleValue::new(name).help(code),
-                ]
+                let (code, name) = if let Some(code) = rule.noqa_code() {
+                    let code = code.to_string();
+                    (
+                        Some(PossibleValue::new(&code).help(name)),
+                        PossibleValue::new(name).help(code),
+                    )
+                } else {
+                    (None, PossibleValue::new(name))
+                };
+                code.into_iter().chain(std::iter::once(name))
             })
         }
     }
@@ -469,7 +502,7 @@ mod tests {
 
     use strum::IntoEnumIterator;
 
-    use super::{Linter, Rule, RuleNamespace};
+    use super::{Linter, Rule, RuleNamespace, codes};
 
     #[test]
     fn documentation() {
@@ -490,16 +523,15 @@ mod tests {
     fn documentation_url_matches_the_publishing_site() {
         for rule in Rule::iter() {
             let url = rule.url().expect("every rule is documented");
-            let expected = match rule.noqa_code().prefix() {
-                "OD" | "OAPP" => "https://vauxoo.github.io/ruff-odoo/rules/",
+            let expected = match rule.noqa_code().as_ref().map(codes::NoqaCode::prefix) {
+                Some("OD" | "OAPP") => "https://vauxoo.github.io/ruff-odoo/rules/",
                 _ => "https://docs.astral.sh/ruff/rules/",
             };
             assert_eq!(
                 url,
                 format!("{expected}{}", rule.name()),
-                "{} ({}) links to the wrong documentation site",
-                rule.name(),
-                rule.noqa_code()
+                "{} links to the wrong documentation site",
+                rule.name_and_code(),
             );
         }
     }
@@ -536,8 +568,12 @@ mod tests {
     #[test]
     fn check_code_serialization() {
         for rule in Rule::iter() {
+            let Some(code) = rule.noqa_code() else {
+                continue;
+            };
+
             assert!(
-                Rule::from_code(&format!("{}", rule.noqa_code())).is_ok(),
+                Rule::from_code(&code.to_string()).is_ok(),
                 "{rule:?} could not be round-trip serialized."
             );
         }
@@ -546,7 +582,10 @@ mod tests {
     #[test]
     fn linter_parse_code() {
         for rule in Rule::iter() {
-            let code = format!("{}", rule.noqa_code());
+            let Some(code) = rule.noqa_code() else {
+                continue;
+            };
+            let code = code.to_string();
             let (linter, rest) =
                 Linter::parse_code(&code).unwrap_or_else(|| panic!("couldn't parse {code:?}"));
             assert_eq!(code, format!("{}{rest}", linter.common_prefix()));

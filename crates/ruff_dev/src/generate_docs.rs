@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use itertools::Itertools;
 use regex::{Captures, Regex};
-use ruff_linter::codes::RuleGroup;
+use ruff_linter::codes::{NoqaCode, RuleStatus};
 use strum::IntoEnumIterator;
 
 use ruff_linter::FixAvailability;
@@ -53,8 +53,8 @@ pub(crate) fn main(args: &Args) -> Result<()> {
         // The `OD`/`OAPP` rules appear on the upstream-shaped site too, but they
         // belong to the fork, so their links have to point there — an upstream
         // release tag for a four-component fork version does not exist.
-        let repository = match rule.noqa_code().prefix() {
-            "OD" | "OAPP" => crate::generate_odoo_docs::FORK,
+        let repository = match rule.noqa_code().as_ref().map(NoqaCode::prefix) {
+            Some("OD" | "OAPP") => crate::generate_odoo_docs::FORK,
             _ => UPSTREAM,
         };
 
@@ -85,14 +85,14 @@ pub(crate) fn generate_rule_doc(rule: Rule, repository: Repository) -> Option<St
     let explanation = rule.explanation()?;
     let mut output = String::new();
 
-    let _ = writeln!(&mut output, "# {} ({})", rule.name(), rule.noqa_code());
+    let _ = writeln!(&mut output, "# {}", rule.name_and_code());
 
-    let group = rule.group();
-    let since = match group {
-        RuleGroup::Stable { since }
-        | RuleGroup::Preview { since }
-        | RuleGroup::Deprecated { since }
-        | RuleGroup::Removed { since } => since,
+    let status = rule.status();
+    let since = match status {
+        RuleStatus::Stable { since }
+        | RuleStatus::Preview { since }
+        | RuleStatus::Deprecated { since }
+        | RuleStatus::Removed { since } => since,
     };
     let slug = repository.slug;
     let version_link = if repository.release_tags {
@@ -100,31 +100,41 @@ pub(crate) fn generate_rule_doc(rule: Rule, repository: Repository) -> Option<St
     } else {
         format!(r#"<a href="https://github.com/{slug}/releases">{since}</a>"#)
     };
-    let status_text = match group {
-        RuleGroup::Stable { .. } => format!("Added in {version_link}"),
-        RuleGroup::Preview { .. } => format!("Preview (since {version_link})"),
-        RuleGroup::Deprecated { .. } => format!("Deprecated (since {version_link})"),
-        RuleGroup::Removed { .. } => format!("Removed (since {version_link})"),
+    let status_text = match status {
+        RuleStatus::Stable { .. } => format!("Added in {version_link}"),
+        RuleStatus::Preview { .. } => format!("Preview (since {version_link})"),
+        RuleStatus::Deprecated { .. } => format!("Deprecated (since {version_link})"),
+        RuleStatus::Removed { .. } => format!("Removed (since {version_link})"),
     };
+
+    let issue_search = format!(
+        "(%27{encoded_name}%27{code})",
+        encoded_name = url::form_urlencoded::byte_serialize(rule.name().as_str().as_bytes())
+            .collect::<String>(),
+        code = rule
+            .noqa_code()
+            .map(|code| format!("%20OR%20{code}"))
+            .unwrap_or_default(),
+    );
 
     let _ = writeln!(
         &mut output,
         r#"<small>
 {status_text} ·
-<a href="https://github.com/{slug}/issues?q=sort%3Aupdated-desc%20is%3Aissue%20is%3Aopen%20(%27{encoded_name}%27%20OR%20{rule_code})" target="_blank">Related issues</a> ·
+<a href="https://github.com/{slug}/issues?q=sort%3Aupdated-desc%20is%3Aissue%20is%3Aopen%20{issue_search}" target="_blank">Related issues</a> ·
 <a href="https://github.com/{slug}/blob/main/{file}#L{line}" target="_blank">View source</a>
 </small>
 
 "#,
-        encoded_name = url::form_urlencoded::byte_serialize(rule.name().as_str().as_bytes())
-            .collect::<String>(),
-        rule_code = rule.noqa_code(),
         file = url::form_urlencoded::byte_serialize(rule.file().replace('\\', "/").as_bytes())
             .collect::<String>(),
         line = rule.line(),
     );
-    let (linter, _) = Linter::parse_code(&rule.noqa_code().to_string()).unwrap();
-    if linter.url().is_some() {
+    if let Some(linter) = rule
+        .noqa_code()
+        .and_then(|code| Linter::parse_code(&code.to_string()).map(|(linter, _)| linter))
+        .filter(|linter| linter.url().is_some())
+    {
         let common_prefix: String = match linter.common_prefix() {
             "" => linter
                 .upstream_categories()
@@ -184,11 +194,7 @@ pub(crate) fn generate_rule_doc(rule: Rule, repository: Repository) -> Option<St
         output.push('\n');
     }
 
-    process_documentation(
-        explanation.trim(),
-        &mut output,
-        &rule.noqa_code().to_string(),
-    );
+    process_documentation(explanation.trim(), &mut output, rule.name().as_str());
 
     Some(output)
 }

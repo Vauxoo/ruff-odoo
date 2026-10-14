@@ -6,6 +6,7 @@ use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 
 /// ## What it does
@@ -40,7 +41,7 @@ use crate::rules::odoo::helpers::{is_manifest_root_dict, manifest_string_item};
 /// pylint-odoo, whose `--category-allowed` also defaults to an empty list. Paid apps have a
 /// separate rule with the store's own fixed list, `category-allowed-app` (`OAPP001`).
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.13")]
+#[violation_metadata(preview_since = "0.16.2.13", category = Category::Style)]
 pub(crate) struct CategoryAllowed {
     category: String,
 }

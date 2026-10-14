@@ -5,6 +5,7 @@ use ruff_python_ast as ast;
 use ruff_text_size::Ranged;
 
 use crate::checkers::ast::Checker;
+use crate::codes::Category;
 use crate::rules::odoo::helpers::{is_manifest_root_dict, odoo_version_applies, remove_dict_item};
 use crate::rules::odoo::settings::{ManifestDeprecatedKeys, OdooVersion};
 use crate::{Fix, FixAvailability, Violation};
@@ -51,7 +52,7 @@ use crate::{Fix, FixAvailability, Violation};
 /// their replacement (`auto_install`, an `assets` entry) rather than plain deletion, and a
 /// key named through `manifest-deprecated-keys` can mean anything at all.
 #[derive(ViolationMetadata)]
-#[violation_metadata(preview_since = "0.16.2.1")]
+#[violation_metadata(preview_since = "0.16.2.1", category = Category::Style)]
 pub(crate) struct ManifestDeprecatedKey {
     key: String,
 }

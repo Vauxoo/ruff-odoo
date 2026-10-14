@@ -114,7 +114,7 @@ def nested_transitive[T, U, V]() -> None:
     # TODO: sometimes: revealed tuple[Solution[T=list[int], U=int], Solution[T=Never, V=bytes], Solution[V=bytes]]
     # TODO: sometimes: revealed tuple[Solution[T=list[int], U=int], Solution[T=list[int], V=bytes], Solution[V=bytes]]
     # TODO: sometimes: revealed tuple[Solution[T=list[int], U=int], Solution[U=Never, V=bytes], Solution[V=bytes]]
-    # revealed: tuple[Solution[T=list[int], U=int], Solution[V=bytes]]
+    # revealed: tuple[Solution[U=int, T=list[int]], Solution[V=bytes]]
     reveal_type(constraints.solutions(inferable=tuple[T, U, V]))
 ```
 
@@ -205,13 +205,11 @@ def chain_stu[S, T, U]() -> None:
     static_assert(chain == linked)
 
     constraints = chain & ConstraintSet.lower_bound(int, S) & ConstraintSet.upper_bound(U, int)
-    # TODO: inferable typevars should not remain in these concrete solutions.
-    # TODO: sometimes: revealed tuple[Solution[S=int | U@chain_stu | T@chain_stu]]
-    # revealed: tuple[Solution[S=int | T@chain_stu | U@chain_stu]]
+    # revealed: tuple[Solution[S=int]]
     reveal_type(constraints.solutions_for(S, inferable=tuple[S, T, U]))
-    # revealed: tuple[Solution[T=S@chain_stu | int | U@chain_stu]]
+    # revealed: tuple[Solution[T=int]]
     reveal_type(constraints.solutions_for(T, inferable=tuple[S, T, U]))
-    # revealed: tuple[Solution[U=S@chain_stu | int | T@chain_stu]]
+    # revealed: tuple[Solution[U=int]]
     reveal_type(constraints.solutions_for(U, inferable=tuple[S, T, U]))
 
 def chain_uts[U, T, S]() -> None:
@@ -221,21 +219,69 @@ def chain_uts[U, T, S]() -> None:
     static_assert(chain == linked)
 
     constraints = chain & ConstraintSet.lower_bound(int, S) & ConstraintSet.upper_bound(U, int)
-    # TODO: inferable typevars should not remain in these concrete solutions.
-    # TODO: sometimes: revealed tuple[Solution[S=int | U@chain_uts | T@chain_uts]]
-    # revealed: tuple[Solution[S=int | T@chain_uts | U@chain_uts]]
+    # revealed: tuple[Solution[S=int]]
     reveal_type(constraints.solutions_for(S, inferable=tuple[S, T, U]))
-    # revealed: tuple[Solution[T=S@chain_uts | int | U@chain_uts]]
+    # revealed: tuple[Solution[T=int]]
     reveal_type(constraints.solutions_for(T, inferable=tuple[S, T, U]))
-    # revealed: tuple[Solution[U=S@chain_uts | int | T@chain_uts]]
+    # revealed: tuple[Solution[U=int]]
     reveal_type(constraints.solutions_for(U, inferable=tuple[S, T, U]))
+```
+
+## Non-inferable constraint source order and typevar orientation
+
+A non-inferable constraint can appear before or after inferable constraints, and a bare relationship
+can be encoded with either variable as its subject. Unrelated non-inferable variables are omitted,
+but a directly related non-inferable variable must be retained regardless of its orientation.
+
+```py
+from ty_extensions._internal import ConstraintSet
+
+def noninferable_constraint_first[I, J, N]() -> None:
+    constraints = ConstraintSet.range(int, N, int) & ConstraintSet.range(str, I, str) & ConstraintSet.range(bytes, J, bytes)
+    # revealed: tuple[Solution[I=str, J=bytes]]
+    reveal_type(constraints.solutions(inferable=tuple[I, J]))
+
+def noninferable_constraint_last[I, J, N]() -> None:
+    constraints = ConstraintSet.range(str, I, str) & ConstraintSet.range(bytes, J, bytes) & ConstraintSet.range(int, N, int)
+    # revealed: tuple[Solution[I=str, J=bytes]]
+    reveal_type(constraints.solutions(inferable=tuple[I, J]))
+
+def inferable_subject[I, N]() -> None:
+    constraints = ConstraintSet.range(N, I, N)
+    # TODO: sometimes: revealed tuple[Solution[I=N@inferable_subject, N=I@inferable_subject]]
+    # revealed: tuple[Solution[N=I@inferable_subject, I=N@inferable_subject]]
+    reveal_type(constraints.solutions(inferable=tuple[I]))
+
+def noninferable_subject[N, I]() -> None:
+    constraints = ConstraintSet.range(I, N, I)
+    # TODO: sometimes: revealed tuple[Solution[N=I@noninferable_subject, I=N@noninferable_subject]]
+    # revealed: tuple[Solution[I=N@noninferable_subject, N=I@noninferable_subject]]
+    reveal_type(constraints.solutions(inferable=tuple[I]))
+```
+
+## Non-inferable bound checks are ordering-independent
+
+Changing the internal constraint order must not allow a non-inferable type variable to violate its
+declared bound.
+
+```py
+from ty_extensions._internal import ConstraintSet
+
+def noninferable_declared_bound[T, U: str]() -> None:
+    constraints = ConstraintSet.equality(U, int) & ConstraintSet.equality(T, bytes)
+    # revealed: None
+    reveal_type(constraints.solutions(inferable=tuple[T]))
+
+    reversed_constraints = ConstraintSet.equality(T, bytes) & ConstraintSet.equality(U, int)
+    # revealed: None
+    reveal_type(reversed_constraints.solutions(inferable=tuple[T]))
 ```
 
 ## Abstraction and non-inferable typevars
 
-Removing non-inferable typevars rebuilds the TDD with `ite`; irrelevant positive decisions must not
-leak onto the surviving paths. Universal abstraction of an alternative must likewise leave only the
-unrelated branch.
+Irrelevant non-inferable typevars must not appear in reported solution bindings, and irrelevant
+positive decisions must not leak onto independent alternatives. Universal abstraction of an
+alternative must likewise leave only the unrelated branch.
 
 ```py
 from ty_extensions import static_assert
@@ -247,10 +293,9 @@ def noninferable_nested[T, U, V]() -> None:
     ) | ConstraintSet.lower_bound(bytes, V)
 
     # `U` is deliberately non-inferable here.
-    # TODO: We should not include a solution for non-inferable U.
-    # TODO: sometimes: revealed tuple[Solution[T=list[int], U=int], Solution[T=Never, V=bytes], Solution[V=bytes]]
-    # TODO: sometimes: revealed tuple[Solution[T=list[int], U=int], Solution[T=list[int], V=bytes], Solution[V=bytes]]
-    # revealed: tuple[Solution[T=list[int], U=int], Solution[V=bytes]]
+    # TODO: sometimes: revealed tuple[Solution[T=list[int]], Solution[T=Never, V=bytes], Solution[V=bytes]]
+    # TODO: sometimes: revealed tuple[Solution[T=list[int]], Solution[T=list[int], V=bytes], Solution[V=bytes]]
+    # revealed: tuple[Solution[T=list[int]], Solution[V=bytes]]
     reveal_type(constraints.solutions(inferable=tuple[T, V]))
     # TODO: sometimes: revealed tuple[Solution[T=list[int]], Solution[T=Never], Solution[]]
     # TODO: sometimes: revealed tuple[Solution[T=list[int]], Solution[T=list[int]], Solution[]]
@@ -303,6 +348,29 @@ reveal_type(infer_from_callbacks(accepts_p, accepts_q))
 reveal_type(infer_from_callbacks(accepts_q, accepts_p))
 ```
 
+## Generic callback inference through a type alias
+
+Relating a generic function to a generic callback consistently infers the same union, but the
+union's displayed element order currently depends on the constraint ordering.
+
+```py
+from collections.abc import Callable
+
+type Items = tuple[int] | tuple[str]
+
+def identity[T](value: T) -> T:
+    return value
+
+def extract[T](callback: Callable[[Items], tuple[T]]) -> T:
+    raise NotImplementedError
+
+result = extract(identity)
+
+# TODO: sometimes: revealed int | str
+# revealed: str | int
+reveal_type(result)
+```
+
 ## Generic-callable and protocol relation constraints
 
 Relations can introduce fresh typevars and nested invariant constraints before those typevars are
@@ -319,9 +387,6 @@ def listify[T](value: T) -> list[T]:
 
 def invariant_callable[U, V]() -> None:
     constraints = ConstraintSet.range(bool, U, int) & ConstraintSet.equality(V, int)
-    # TODO: no error. Existential reduction of the callable's fresh typevar is currently lossy.
-    # TODO: sometimes: no error
-    # error: [static-assert-error]
     static_assert(constraints.implies_subtype_of(TypeOf[listify], Callable[[U], list[V]]))
 
 ConstrainedValue = TypeVar("ConstrainedValue", int, object, covariant=True)
@@ -339,8 +404,8 @@ def get_value(value: GetValue[ConstrainedValue]) -> ConstrainedValue:
     raise NotImplementedError
 
 def typed_dict_union(value: ValueA | ValueB) -> None:
-    # TODO: sometimes: revealed object
-    # revealed: int
+    # TODO: revealed int
+    # revealed: object
     reveal_type(get_value(value))
 ```
 
@@ -370,7 +435,7 @@ class Concrete[T]:
         return ""
 
 def convert[T](value: Concrete[T]) -> Array:
-    return cast(Array, value)
+    return cast(Array, value)  # error: [disjoint-cast]
 
 # error: [invalid-assignment]
 invalid: Array = Concrete[int]()
