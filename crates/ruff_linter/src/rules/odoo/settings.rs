@@ -234,12 +234,12 @@ impl Display for ConfiguredList {
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(try_from = "String", into = "String")]
 pub struct OdooVersion {
-    pub major: u16,
-    pub minor: u16,
+    pub(crate) major: u16,
+    pub(crate) minor: u16,
 }
 
 impl OdooVersion {
-    pub const fn new(major: u16, minor: u16) -> Self {
+    pub(crate) const fn new(major: u16, minor: u16) -> Self {
         Self { major, minor }
     }
 }

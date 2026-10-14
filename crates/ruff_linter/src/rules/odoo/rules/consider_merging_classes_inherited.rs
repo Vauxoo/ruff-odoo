@@ -30,8 +30,8 @@ use crate::codes::Category;
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.11", category = Category::Complexity)]
 pub(crate) struct ConsiderMergingClassesInherited {
-    pub(crate) model: String,
-    pub(crate) locations: String,
+    model: String,
+    locations: String,
 }
 
 impl Violation for ConsiderMergingClassesInherited {

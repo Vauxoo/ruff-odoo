@@ -174,15 +174,8 @@ kind = "inherent_method"
 level = "expect"
 reason = "public union construction documentation recommends this optimized constructor"
 
-# Keep the public code-component accessor API symmetric.
-
-[[override]]
-lint = "hawk::dead_public"
-crate = "ruff_linter"
-item = "codes::NoqaCode::prefix"
-kind = "inherent_method"
-level = "expect"
-reason = "preserves the intentional symmetric prefix and suffix accessor API"
+# Vauxoo fork: no expectation for `codes::NoqaCode::prefix` being dead public API, as upstream
+# keeps; the fork reads it from `ruff_dev` to route the `OD`/`OAPP` rule pages to its own site.
 
 [[override]]
 lint = "hawk::unnecessary_public"
@@ -1033,13 +1026,9 @@ kind = "inherent_method"
 level = "expect"
 reason = "public indentation settings expose their stable string representation"
 
-[[override]]
-lint = "hawk::unnecessary_public"
-crate = "ruff_linter"
-item = "registry::<impl codes::Rule>::url"
-kind = "inherent_method"
-level = "expect"
-reason = "public rule metadata includes its documentation URL"
+# Vauxoo fork: no expectation for `registry::<impl codes::Rule>::url` being needlessly public,
+# as upstream keeps; the fork's `consider-merging-classes-inherited` diagnostic is built in the
+# `ruff` crate and attaches the rule's documentation URL from there.
 
 [[override]]
 lint = "hawk::unnecessary_public"
