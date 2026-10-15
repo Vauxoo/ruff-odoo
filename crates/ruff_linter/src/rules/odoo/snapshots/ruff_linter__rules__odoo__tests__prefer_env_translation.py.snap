@@ -7,151 +7,137 @@ ODW8161 Better using self.env._
 4 | # No fix: `self.env` needs a `self`, and there is none out here.
 5 | MODULE_LEVEL = _("at module level")
   |                ^
-help: Replace with `self.env._`
-
-ODW8161 Better using self.env._
- --> prefer_env_translation.py:9:12
+6 |
+7 | # No diagnostic: `_lt` is how a constant gets translated where there is no `env`.
   |
-8 | def outside_a_class():
-9 |     return _("in a plain function")
-  |            ^
 help: Replace with `self.env._`
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:15:16
+  --> prefer_env_translation.py:12:12
    |
-13 |     def method(self):
-14 |         # No fix: the class is not an Odoo one, so its `self` carries no `env`.
-15 |         return _("in a plain class")
+11 | def outside_a_class():
+12 |     return _("in a plain function")
+   |            ^
+help: Replace with `self.env._`
+
+ODW8161 Better using self.env._
+  --> prefer_env_translation.py:18:16
+   |
+16 |     def method(self):
+17 |         # No fix: the class is not an Odoo one, so its `self` carries no `env`.
+18 |         return _("in a plain class")
    |                ^
 help: Replace with `self.env._`
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:22:13
+  --> prefer_env_translation.py:25:13
    |
-21 |     # No fix: a call in the class body is an attribute, not a method.
-22 |     LABEL = _("class attribute")
+24 |     # No fix: a call in the class body is an attribute, not a method.
+25 |     LABEL = _("class attribute")
    |             ^
-23 |
-24 |     def my_method(self):
+26 |
+27 |     def my_method(self):
    |
 help: Replace with `self.env._`
-
-ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:25:16
-   |
-24 |     def my_method(self):
-25 |         return _("old translated")
-   |                ^
-26 |
-27 |     def other_method(self):
-   |
-help: Replace with `self.env._`
-   |
-24 |     def my_method(self):
-   -         return _("old translated")
-25 +         return self.env._("old translated")
-26 |
-   |
 
 ODW8161 [*] Better using self.env._
   --> prefer_env_translation.py:28:16
    |
-27 |     def other_method(self):
-28 |         return _lt("also old")
-   |                ^^^
+27 |     def my_method(self):
+28 |         return _("old translated")
+   |                ^
 29 |
-30 |     def imported_under_another_name(self):
+30 |     def lazy_translation(self):
    |
 help: Replace with `self.env._`
    |
-27 |     def other_method(self):
-   -         return _lt("also old")
-28 +         return self.env._("also old")
+27 |     def my_method(self):
+   -         return _("old translated")
+28 +         return self.env._("old translated")
 29 |
    |
 
 ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:32:16
+  --> prefer_env_translation.py:37:16
    |
-30 |     def imported_under_another_name(self):
-31 |         # What the function resolves to is what matters, not what it is called here.
-32 |         return lt("aliased import")
+35 |     def imported_under_another_name(self):
+36 |         # What the function resolves to is what matters, not what it is called here.
+37 |         return lt("aliased import")
    |                ^^
-33 |
-34 |     def nested_calls(self):
+38 |
+39 |     def nested_calls(self):
    |
 help: Replace with `self.env._`
    |
-31 |         # What the function resolves to is what matters, not what it is called here.
+36 |         # What the function resolves to is what matters, not what it is called here.
    -         return lt("aliased import")
-32 +         return self.env._("aliased import")
-33 |
+37 +         return self.env._("aliased import")
+38 |
    |
 
 ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:35:16
+  --> prefer_env_translation.py:40:16
    |
-34 |     def nested_calls(self):
-35 |         return _("outer %s", _("inner"))
+39 |     def nested_calls(self):
+40 |         return _("outer %s", _("inner"))
    |                ^
-36 |
-37 |     def already_fixed(self):
+41 |
+42 |     def already_fixed(self):
    |
 help: Replace with `self.env._`
    |
-34 |     def nested_calls(self):
+39 |     def nested_calls(self):
    -         return _("outer %s", _("inner"))
-35 +         return self.env._("outer %s", _("inner"))
-36 |
+40 +         return self.env._("outer %s", _("inner"))
+41 |
    |
 
 ODW8161 [*] Better using self.env._
-  --> prefer_env_translation.py:35:30
+  --> prefer_env_translation.py:40:30
    |
-34 |     def nested_calls(self):
-35 |         return _("outer %s", _("inner"))
+39 |     def nested_calls(self):
+40 |         return _("outer %s", _("inner"))
    |                              ^
-36 |
-37 |     def already_fixed(self):
+41 |
+42 |     def already_fixed(self):
    |
 help: Replace with `self.env._`
    |
-34 |     def nested_calls(self):
+39 |     def nested_calls(self):
    -         return _("outer %s", _("inner"))
-35 +         return _("outer %s", self.env._("inner"))
-36 |
+40 +         return _("outer %s", self.env._("inner"))
+41 |
    |
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:42:16
+  --> prefer_env_translation.py:47:16
    |
-40 |     @staticmethod
-41 |     def static_method():
-42 |         return _("no self")
+45 |     @staticmethod
+46 |     def static_method():
+47 |         return _("no self")
    |                ^
-43 |
-44 |     def nested_function(self):
+48 |
+49 |     def nested_function(self):
    |
 help: Replace with `self.env._`
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:46:20
+  --> prefer_env_translation.py:51:20
    |
-44 |     def nested_function(self):
-45 |         def inner():
-46 |             return _("no self in the inner function")
+49 |     def nested_function(self):
+50 |         def inner():
+51 |             return _("no self in the inner function")
    |                    ^
-47 |
-48 |         return inner
+52 |
+53 |         return inner
    |
 help: Replace with `self.env._`
 
 ODW8161 Better using self.env._
-  --> prefer_env_translation.py:57:16
+  --> prefer_env_translation.py:62:16
    |
-55 |     @http.route("/page", auth="public")
-56 |     def page(self):
-57 |         return _("in a controller outside an addon")
+60 |     @http.route("/page", auth="public")
+61 |     def page(self):
+62 |         return _("in a controller outside an addon")
    |                ^
 help: Replace with `self.env._`

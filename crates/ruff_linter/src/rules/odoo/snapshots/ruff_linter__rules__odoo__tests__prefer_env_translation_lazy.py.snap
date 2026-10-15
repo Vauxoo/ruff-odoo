@@ -1,0 +1,19 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW8161 [*] Better using self.env._
+  --> prefer_env_translation_lazy.py:17:17
+   |
+15 |     def method(self):
+16 |         lazy = _lt("Deferred")
+17 |         eager = _("Reported")
+   |                 ^
+18 |         return lazy, eager
+   |
+help: Replace with `self.env._`
+   |
+16 |         lazy = _lt("Deferred")
+   -         eager = _("Reported")
+17 +         eager = self.env._("Reported")
+18 |         return lazy, eager
+   |

@@ -4,6 +4,9 @@ from odoo import _ as lt
 # No fix: `self.env` needs a `self`, and there is none out here.
 MODULE_LEVEL = _("at module level")
 
+# No diagnostic: `_lt` is how a constant gets translated where there is no `env`.
+LABELS = {"greeting": _lt("Hello")}
+
 
 def outside_a_class():
     return _("in a plain function")
@@ -24,8 +27,10 @@ class MyModel(models.Model):
     def my_method(self):
         return _("old translated")
 
-    def other_method(self):
-        return _lt("also old")
+    def lazy_translation(self):
+        # No diagnostic: `self.env._` would translate the term now instead of when it is
+        # turned into text, so it is no replacement for `_lt`.
+        return _lt("still lazy")
 
     def imported_under_another_name(self):
         # What the function resolves to is what matters, not what it is called here.

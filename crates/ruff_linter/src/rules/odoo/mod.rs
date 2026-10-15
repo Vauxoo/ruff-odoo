@@ -107,6 +107,10 @@ mod tests {
     #[test_case(Rule::PreferEnvTranslation, Path::new("prefer_env_translation.py"))]
     #[test_case(
         Rule::PreferEnvTranslation,
+        Path::new("prefer_env_translation_lazy.py")
+    )]
+    #[test_case(
+        Rule::PreferEnvTranslation,
         Path::new("prefer_env_translation_not_odoo.py")
     )]
     #[test_case(

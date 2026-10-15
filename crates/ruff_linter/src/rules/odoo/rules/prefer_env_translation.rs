@@ -15,10 +15,14 @@ use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
 
 /// ## What it does
-/// Checks for calls to the bare `_()`/`_lt()` translation functions.
+/// Checks for calls to the bare `_()` translation function.
 ///
 /// ## Why is this bad?
-/// Since Odoo 18.0, `self.env._()` is preferred over the bare `_()`/`_lt()` functions.
+/// Since Odoo 18.0, `self.env._()` is preferred over the bare `_()` function.
+///
+/// `_lt()` is not reported. It returns a lazy term that is translated only when it is turned
+/// into text, which is how a module-level constant gets translated, since there is no `env`
+/// there. `self.env._()` returns the text already translated, so it cannot replace `_lt()`.
 ///
 /// The rule only applies from Odoo 18.0 on: `self.env._` does not exist in earlier versions,
 /// so on an older codebase the bare `_()` is the only correct call. Configure the targeted
@@ -47,8 +51,7 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 /// nested function or in a class that is not Odoo's, the call is reported without a fix,
 /// since `self.env` would resolve to nothing there.
 ///
-/// The same goes for what the call resolves to: only `odoo._`/`odoo._lt` are rewritten,
-/// which covers an aliased import (`from odoo import _ as lt`) and leaves a `_` that came
+/// The same goes for what the call resolves to: only `odoo._` is rewritten, which covers an aliased import (`from odoo import _ as lt`) and leaves a `_` that came
 /// from `gettext`, or a local of that name, reported but untouched.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
@@ -103,19 +106,20 @@ pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall, pa
     let Expr::Name(ast::ExprName { id, .. }) = call.func.as_ref() else {
         return;
     };
-    // The function is Odoo's when it resolves to `odoo._`/`odoo._lt`, which also catches an
-    // alias (`from odoo import _ as lt`). The bare names are reported even when the import
-    // can not be resolved, the way pylint-odoo did, but only a resolved one is rewritten:
-    // `self.env._` is no replacement for a `_` that comes from `gettext`.
+    // The function is Odoo's when it resolves to `odoo._`, which also catches an alias
+    // (`from odoo import _ as lt`). The bare name is reported even when the import can not be
+    // resolved, the way pylint-odoo does, but only a resolved one is rewritten, because
+    // `self.env._` is no replacement for a `_` that comes from `gettext`. `_lt` is left out on
+    // purpose, since its lazy term is not the same thing as the text `self.env._` returns.
     let is_odoo_translation = matches!(
         checker
             .semantic()
             .resolve_qualified_name(call.func.as_ref())
             .as_ref()
             .map(QualifiedName::segments),
-        Some(["odoo", "_" | "_lt"])
+        Some(["odoo", "_"])
     );
-    if !is_odoo_translation && id != "_" && id != "_lt" {
+    if !is_odoo_translation && id != "_" {
         return;
     }
     if in_controller_without_env(checker, path) {
