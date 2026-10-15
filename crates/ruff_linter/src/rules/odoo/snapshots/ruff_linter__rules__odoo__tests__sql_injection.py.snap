@@ -97,3 +97,14 @@ ODE8103 SQL injection risk. Use parameters if you can. - More info https://githu
 29 |
 30 |     def no_injection_parameters(self, cr, name):
    |
+
+ODE8103 SQL injection risk. Use parameters if you can. - More info https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst#no-sql-injection
+  --> sql_injection.py:66:5
+   |
+64 | def post_init_hook(env):
+65 |     # Flagged: `env.cr` is the cursor of the environment Odoo hands to the hook.
+66 |     env.cr.execute("UPDATE res_partner SET active = %s" % env.context.get("active"))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+67 |     # Not flagged: the value goes in as a parameter.
+68 |     env.cr.execute("UPDATE res_partner SET active = %s", (True,))
+   |

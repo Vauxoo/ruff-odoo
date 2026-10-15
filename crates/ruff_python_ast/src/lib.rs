@@ -45,6 +45,8 @@ pub enum SourceType {
     Toml(TomlSourceType),
     /// The file contains Markdown.
     Markdown,
+    /// The file contains XML, such as an Odoo data file.
+    Xml,
 }
 
 impl SourceType {
@@ -52,6 +54,7 @@ impl SourceType {
         match ext {
             "toml" => Self::Toml(TomlSourceType::Unrecognized),
             "md" => Self::Markdown,
+            "xml" => Self::Xml,
             _ => Self::Python(PySourceType::from_extension(ext)),
         }
     }

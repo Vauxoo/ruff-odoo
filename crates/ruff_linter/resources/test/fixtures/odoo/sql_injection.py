@@ -59,3 +59,10 @@ class TestModel:
     def no_injection_other_cursor(self, other, name):
         # Not flagged: not a known cursor expression.
         other.execute("SELECT id FROM res_partner WHERE name = '%s'" % name)
+
+
+def post_init_hook(env):
+    # Flagged: `env.cr` is the cursor of the environment Odoo hands to the hook.
+    env.cr.execute("UPDATE res_partner SET active = %s" % env.context.get("active"))
+    # Not flagged: the value goes in as a parameter.
+    env.cr.execute("UPDATE res_partner SET active = %s", (True,))

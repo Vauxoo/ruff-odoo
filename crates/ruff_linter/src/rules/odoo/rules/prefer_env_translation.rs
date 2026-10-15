@@ -9,7 +9,7 @@ use ruff_text_size::Ranged;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
 use crate::rules::odoo::helpers::{
-    is_odoo_controller_class, is_odoo_model_class, odoo_version_applies,
+    code_field, is_odoo_controller_class, is_odoo_model_class, odoo_version_applies,
 };
 use crate::rules::odoo::settings::OdooVersion;
 use crate::{Edit, Fix, FixAvailability, Violation};
@@ -53,20 +53,27 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// The same goes for what the call resolves to: only `odoo._` is rewritten, which covers an aliased import (`from odoo import _ as lt`) and leaves a `_` that came
 /// from `gettext`, or a local of that name, reported but untouched.
+///
+/// In the code of a cron or server action, written in an Odoo XML data file, the environment
+/// is `env` rather than `self.env`, so the message names `env._` instead.
 #[derive(ViolationMetadata)]
 #[violation_metadata(preview_since = "0.16.2.2", category = Category::Suspicious)]
-pub(crate) struct PreferEnvTranslation;
+pub(crate) struct PreferEnvTranslation {
+    replacement: &'static str,
+}
 
 impl Violation for PreferEnvTranslation {
     const FIX_AVAILABILITY: FixAvailability = FixAvailability::Sometimes;
 
     #[derive_message_formats]
     fn message(&self) -> String {
-        "Better using self.env._".to_string()
+        let PreferEnvTranslation { replacement } = self;
+        format!("Better using {replacement}")
     }
 
     fn fix_title(&self) -> Option<String> {
-        Some("Replace with `self.env._`".to_string())
+        let PreferEnvTranslation { replacement } = self;
+        Some(format!("Replace with `{replacement}`"))
     }
 }
 
@@ -126,7 +133,23 @@ pub(crate) fn prefer_env_translation(checker: &Checker, call: &ast::ExprCall, pa
         return;
     }
 
-    let mut diagnostic = checker.report_diagnostic(PreferEnvTranslation, call.func.range());
+    // The code of a cron or server action has `env` in its evaluation context, and no `_`.
+    if code_field(checker).is_some() {
+        checker.report_diagnostic(
+            PreferEnvTranslation {
+                replacement: "env._",
+            },
+            call.func.range(),
+        );
+        return;
+    }
+
+    let mut diagnostic = checker.report_diagnostic(
+        PreferEnvTranslation {
+            replacement: "self.env._",
+        },
+        call.func.range(),
+    );
 
     if !is_odoo_translation {
         return;

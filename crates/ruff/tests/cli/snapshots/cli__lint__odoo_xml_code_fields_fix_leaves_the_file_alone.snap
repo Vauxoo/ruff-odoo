@@ -1,0 +1,24 @@
+---
+source: crates/ruff/tests/cli/lint.rs
+info:
+  program: ruff
+  args:
+    - check
+    - "--no-cache"
+    - "--output-format"
+    - concise
+    - "--isolated"
+    - "--select"
+    - "F821,UP"
+    - "--fix"
+    - ir_cron.xml
+---
+success: false
+exit_code: 1
+----- stdout -----
+ir_cron.xml:7:34: F821 Undefined name `undefined_name`
+ir_cron.xml:14:1: invalid-syntax: Unexpected indentation
+ir_cron.xml:25:28: F821 Undefined name `missing_model`
+Found 3 errors.
+
+----- stderr -----

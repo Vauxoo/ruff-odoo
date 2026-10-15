@@ -99,6 +99,10 @@ fn format_internal(
             tracing::warn!("Formatting TOML files is not supported");
             Ok(FormatResult::Unchanged)
         }
+        SourceType::Xml => {
+            tracing::warn!("Formatting XML files is not supported");
+            Ok(FormatResult::Unchanged)
+        }
     }
 }
 
@@ -122,6 +126,10 @@ fn format_external(
             tracing::warn!("Formatting TOML files not supported");
             return Ok(FormatResult::Unchanged);
         }
+        SourceType::Xml => {
+            tracing::warn!("Formatting XML files not supported");
+            return Ok(FormatResult::Unchanged);
+        }
     };
     let uv_command = UvFormatCommand::from(format_options);
     uv_command.format_document(document.contents(), path)
@@ -143,6 +151,10 @@ pub(crate) fn format_range(
         }
         SourceType::Toml(_) => {
             tracing::warn!("Formatting TOML files not supported");
+            return Ok(None);
+        }
+        SourceType::Xml => {
+            tracing::warn!("Formatting XML files not supported");
             return Ok(None);
         }
     };

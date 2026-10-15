@@ -107,3 +107,10 @@ class MyController(WebsiteSale):
         # Not reported: `self` in a controller is the controller, not a recordset.
         self.search([])
         return partners
+
+
+def post_init_hook(env):
+    # Reported: a bare `env` names its model through the subscript just the same.
+    env["account.move"].search([])
+    # Not reported: a non-empty domain is only reported in the code of a cron.
+    env["account.move"].search([("state", "=", "draft")])

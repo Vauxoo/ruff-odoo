@@ -2714,3 +2714,60 @@ print( 'hello' )
     "#);
     Ok(())
 }
+
+const ODOO_XML_DATA: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_sync" model="ir.cron">
+        <field name="code">model._cron_sync( force=True )</field>
+    </record>
+    <record id="ir_cron_indented" model="ir.cron">
+        <field name="code">
+            for partner in records.filtered(lambda p: p.credit&lt;0):
+                partner.write({'note':'negative'})
+        </field>
+    </record>
+    <record id="action_write" model="ir.actions.server">
+        <field name="state">object_write</field>
+        <field name="code">records.unused( )</field>
+    </record>
+    <record id="action_code" model="ir.actions.server">
+        <field name="code"><![CDATA[
+if records and records[0].credit<0 :
+    action = {'res_model':'res.partner'}
+]]></field>
+    </record>
+</odoo>
+"#;
+
+#[test]
+fn odoo_xml_formatting() -> Result<()> {
+    let test = CliTest::with_file("ir_cron.xml", ODOO_XML_DATA)?;
+
+    assert_cmd_snapshot!(
+        test.format_command()
+            .args(["--isolated", "--check"])
+            .arg("ir_cron.xml")
+    );
+    assert_cmd_snapshot!(
+        test.format_command()
+            .args(["--isolated"])
+            .arg("ir_cron.xml")
+    );
+    insta::assert_snapshot!(test.read_file("ir_cron.xml")?);
+
+    Ok(())
+}
+
+#[test]
+fn odoo_xml_formatting_stdin() -> Result<()> {
+    let test = CliTest::new()?;
+
+    assert_cmd_snapshot!(
+        test.format_command()
+            .args(["--isolated", "--stdin-filename", "ir_cron.xml"])
+            .arg("-")
+            .pass_stdin(ODOO_XML_DATA)
+    );
+
+    Ok(())
+}

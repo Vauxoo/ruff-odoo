@@ -20,6 +20,7 @@ use ruff_linter::source_kind::{SourceError, SourceKind, SourceKindDiff};
 use ruff_linter::toml::{TomlFixerResult, lint_fix_toml, lint_toml};
 use ruff_linter::{IOError, Violation, fs};
 use ruff_notebook::{NotebookError, NotebookIndex};
+use ruff_odoo_xml::lint_code_fields;
 use ruff_python_ast::{SourceType, TomlSourceType};
 use ruff_source_file::SourceFileBuilder;
 use ruff_text_size::TextRange;
@@ -268,6 +269,24 @@ pub(crate) fn lint_path(
                 notebook_indexes: FxHashMap::default(),
             });
         }
+        SourceType::Xml => {
+            let contents = match SourceKind::from_path(path, SourceType::Xml) {
+                Ok(Some(SourceKind::Xml(contents))) => contents,
+                Ok(_) => return Ok(Diagnostics::default()),
+                Err(err) => {
+                    return Ok(Diagnostics::from_source_error(&err, Some(path), settings));
+                }
+            };
+            let diagnostics = lint_code_fields(path, package, &contents, settings, noqa);
+            if let Some((cache, relative_path, key)) = caching {
+                cache.set_linted(relative_path.to_owned(), &key, diagnostics.is_empty());
+            }
+            return Ok(Diagnostics {
+                inner: diagnostics,
+                fixed: FixMap::from_iter([(fs::relativize_path(path), FixTable::default())]),
+                notebook_indexes: FxHashMap::default(),
+            });
+        }
         SourceType::Toml(_) | SourceType::Markdown => return Ok(Diagnostics::default()),
         SourceType::Python(source_type) => source_type,
     };
@@ -453,6 +472,21 @@ pub(crate) fn lint_stdin(
             });
         }
 
+        SourceType::Xml => {
+            // The XML source type comes from the path's extension, so there is always a path.
+            let Some(path) = path else {
+                return Ok(Diagnostics::default());
+            };
+            if fix_mode.is_apply() {
+                // Fixes are not applied to XML documents, so the input goes back unchanged.
+                write!(&mut io::stdout().lock(), "{contents}")?;
+            }
+            return Ok(Diagnostics {
+                inner: lint_code_fields(path, package, &contents, &settings.linter, noqa),
+                fixed: FixMap::from_iter([(fs::relativize_path(path), FixTable::default())]),
+                notebook_indexes: FxHashMap::default(),
+            });
+        }
         SourceType::Toml(_) | SourceType::Markdown => return Ok(Diagnostics::default()),
         source_type @ SourceType::Python(py_source_type) => (source_type, py_source_type),
     };

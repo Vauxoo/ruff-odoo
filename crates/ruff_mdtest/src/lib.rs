@@ -131,7 +131,7 @@ fn run_test(
                         SourceType::Toml(source_type) => {
                             lint_toml(path, source.as_str(), &settings.linter, source_type)
                         }
-                        SourceType::Markdown => Vec::new(),
+                        SourceType::Markdown | SourceType::Xml => Vec::new(),
                     }
                 },
                 test_file,

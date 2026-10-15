@@ -1,13 +1,14 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
 use ruff_python_ast::{self as ast, Expr};
-use ruff_python_semantic::{ScopeKind, SemanticModel};
+use ruff_python_semantic::ScopeKind;
 use ruff_text_size::Ranged;
 
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
 use crate::rules::odoo::helpers::{
-    class_declares_model, class_defines_method, is_odoo_model_class,
+    RecordsetScope, class_declares_model, class_defines_method, env_subscript_model,
+    is_env_subscript, is_injected_recordset, recordset_scope,
 };
 use crate::rules::odoo::settings::OdooVersion;
 use crate::rules::odoo::signatures::{ArgumentMismatch, SHIPPED_VERSIONS, signatures_for};
@@ -34,7 +35,9 @@ use crate::warn_user_once;
 ///
 /// Only receivers that are certainly recordsets are checked: `self` and `super()` inside a
 /// model class, `env[...]` subscripts anywhere, and chains of recordset-returning ORM calls
-/// over either, so `self.env["res.partner"].sudo().search(...)` is covered. A local is not,
+/// over either, so `self.env["res.partner"].sudo().search(...)` is covered. In the `code` field
+/// of a cron or a server action, the `model`, `record` and `records` Odoo injects count as
+/// well. A local is not,
 /// because nothing distinguishes one holding a recordset from one holding a worksheet. A
 /// method the file defines itself is left alone too, since the call may well mean that
 /// override rather than Odoo's -- except through `env["other.model"]`, which reaches a model
@@ -136,7 +139,7 @@ pub(crate) fn invalid_odoo_method_call(checker: &Checker, call: &ast::ExprCall) 
         return;
     };
     let semantic = checker.semantic();
-    let Some(receiver) = recordset_receiver(semantic, value) else {
+    let Some(receiver) = recordset_receiver(checker, value) else {
         return;
     };
 
@@ -188,7 +191,8 @@ enum Receiver {
     Super,
     /// An `env[...]` subscript, wherever it appears, carrying the model it names when that
     /// is a plain string -- `env[model_name]` gives `None`, and nothing can be concluded
-    /// about which model it reaches.
+    /// about which model it reaches. The recordsets Odoo injects into a code field
+    /// (`records`) are one too, of a model only known by its XML id.
     Environment { model: Option<String> },
 }
 
@@ -223,23 +227,16 @@ const RECORDSET_RETURNING: &[&str] = &[
 /// `BaseModel.write(self, vals)` is exactly the kind of false positive that would make the
 /// rule unusable — measured on a real 16.0 codebase, unrestricted receivers produced 277
 /// reports of which essentially none were about Odoo at all.
-fn recordset_receiver(semantic: &SemanticModel, expr: &Expr) -> Option<Receiver> {
+fn recordset_receiver(checker: &Checker, expr: &Expr) -> Option<Receiver> {
     // `env[...]` carries its own proof: the subscript yields a recordset whatever the
     // surrounding scope is, which is what lets the rule reach controllers too, where
     // `request.env["res.partner"].name_search(args=...)` lives.
-    if let Expr::Subscript(ast::ExprSubscript { value, slice, .. }) = expr {
-        let is_environment = match value.as_ref() {
-            Expr::Name(ast::ExprName { id, .. }) => id == "env",
-            Expr::Attribute(ast::ExprAttribute { attr, .. }) => attr == "env",
-            _ => false,
-        };
-        if is_environment {
-            let model = match slice.as_ref() {
-                Expr::StringLiteral(literal) => Some(literal.value.to_str().to_string()),
-                _ => None,
-            };
-            return Some(Receiver::Environment { model });
-        }
+    if let Expr::Subscript(subscript) = expr
+        && is_env_subscript(subscript)
+    {
+        return Some(Receiver::Environment {
+            model: env_subscript_model(subscript),
+        });
     }
 
     // A chain of recordset-returning calls keeps whatever the chain started as.
@@ -249,12 +246,19 @@ fn recordset_receiver(semantic: &SemanticModel, expr: &Expr) -> Option<Receiver>
                 // What the chain yields is a plain recordset, so an override defined in
                 // this file does apply to the next call even when the chain started at
                 // `super()`.
-                return match recordset_receiver(semantic, value)? {
+                return match recordset_receiver(checker, value)? {
                     Receiver::Super => Some(Receiver::SelfRecord),
                     other => Some(other),
                 };
             }
         }
+    }
+
+    // The recordsets Odoo injects into a code field prove themselves the same way.
+    if let Expr::Name(ast::ExprName { id, .. }) = expr
+        && is_injected_recordset(checker, id)
+    {
+        return Some(Receiver::Environment { model: None });
     }
 
     let receiver = match expr {
@@ -270,10 +274,5 @@ fn recordset_receiver(semantic: &SemanticModel, expr: &Expr) -> Option<Receiver>
     };
     // `self` only means a recordset inside a model; in a controller or a plain helper class
     // it means anything at all.
-    semantic
-        .current_scopes()
-        .any(|scope| {
-            matches!(scope.kind, ScopeKind::Class(class_def) if is_odoo_model_class(semantic, class_def))
-        })
-        .then_some(receiver)
+    matches!(recordset_scope(checker), Some(RecordsetScope::Model(_))).then_some(receiver)
 }

@@ -6,7 +6,9 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
-use crate::rules::odoo::helpers::{class_defines_method, inherits_non_builtin};
+use crate::rules::odoo::helpers::{
+    class_defines_method, inherits_non_builtin, is_code_field_recordset,
+};
 use crate::rules::odoo::removals::removals_for;
 use crate::rules::odoo::settings::OdooVersion;
 use crate::rules::odoo::signatures::SHIPPED_VERSIONS;
@@ -56,6 +58,11 @@ use crate::warn_user_once;
 /// A class that defines the method itself keeps its call, since the call means that
 /// definition rather than Odoo's. A class inheriting only `object`, `Exception` or another
 /// builtin is left alone: it is Python, not Odoo.
+///
+/// In the `code` field of a cron or a server action, written in an Odoo XML data file, there
+/// is no class to vouch for the receiver, so it has to be a recordset itself: the `model`,
+/// `record` or `records` Odoo injects, an `env[...]` subscript, or a chain of calls on either,
+/// as in `records.sudo().name_get()`.
 ///
 /// ## Example
 /// ```python
@@ -121,7 +128,7 @@ pub(crate) fn removed_odoo_method_call(checker: &Checker, call: &ast::ExprCall) 
         }
         return;
     };
-    let Expr::Attribute(ast::ExprAttribute { attr, .. }) = call.func.as_ref() else {
+    let Expr::Attribute(ast::ExprAttribute { value, attr, .. }) = call.func.as_ref() else {
         return;
     };
     let Some(removed_in) = removals.get(attr.as_str()).copied() else {
@@ -144,7 +151,11 @@ pub(crate) fn removed_odoo_method_call(checker: &Checker, call: &ast::ExprCall) 
         }
         in_odoo_class |= inherits_non_builtin(semantic, class_def);
     }
-    if !in_odoo_class {
+    // The code field of a cron or server action has no class to vouch for the receiver, so
+    // there the receiver has to be a recordset itself: one Odoo injects, an `env[...]`, or a
+    // chain of calls on either (`records.sudo().name_get()`). Anything else,
+    // `payload.name_get()` say, is not known to be one.
+    if !in_odoo_class && !is_code_field_recordset(checker, value) {
         return;
     }
 

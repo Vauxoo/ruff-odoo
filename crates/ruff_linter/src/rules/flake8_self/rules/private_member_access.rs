@@ -128,6 +128,15 @@ pub(crate) fn private_member_access(checker: &Checker, expr: &Expr) {
         }
     }
 
+    // In the `code` field of an Odoo cron or server action, the `model`, `record` and
+    // `records` Odoo injects are what `self` is in a method: `model._cron_send_reminders()`
+    // is how such a field calls into its model.
+    if let Expr::Name(name) = value.as_ref()
+        && crate::rules::odoo::helpers::is_injected_recordset(checker, &name.id)
+    {
+        return;
+    }
+
     if let Expr::Name(name) = value.as_ref() {
         // Ignore accesses on class members from _within_ the class.
         if semantic

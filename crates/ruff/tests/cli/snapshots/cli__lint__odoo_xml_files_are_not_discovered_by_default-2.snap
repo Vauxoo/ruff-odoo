@@ -1,0 +1,26 @@
+---
+source: crates/ruff/tests/cli/lint.rs
+info:
+  program: ruff
+  args:
+    - check
+    - "--no-cache"
+    - "--output-format"
+    - concise
+    - "--isolated"
+    - "--select"
+    - F821
+    - "--config"
+    - "extend-include = ['*.xml']"
+    - "."
+---
+success: false
+exit_code: 1
+----- stdout -----
+my_module/data/ir_cron.xml:7:34: F821 Undefined name `undefined_name`
+my_module/data/ir_cron.xml:14:1: invalid-syntax: Unexpected indentation
+my_module/data/ir_cron.xml:25:28: F821 Undefined name `missing_model`
+my_module/models.py:1:1: F821 Undefined name `undefined_name`
+Found 4 errors.
+
+----- stderr -----

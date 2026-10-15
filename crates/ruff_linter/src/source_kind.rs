@@ -24,6 +24,8 @@ pub enum SourceKind {
     IpyNotebook(Box<Notebook>),
     /// The source contains Markdown text.
     Markdown(String),
+    /// The source contains XML text.
+    Xml(String),
 }
 
 impl SourceKind {
@@ -35,14 +37,14 @@ impl SourceKind {
         match self {
             SourceKind::IpyNotebook(notebook) => Some(notebook),
             SourceKind::Python { .. } => None,
-            SourceKind::Markdown(_) => None,
+            SourceKind::Markdown(_) | SourceKind::Xml(_) => None,
         }
     }
 
     pub fn as_python(&self) -> Option<&str> {
         match self {
             SourceKind::Python { code, .. } => Some(code),
-            SourceKind::Markdown(_) => None,
+            SourceKind::Markdown(_) | SourceKind::Xml(_) => None,
             SourceKind::IpyNotebook(_) => None,
         }
     }
@@ -50,7 +52,15 @@ impl SourceKind {
     pub fn as_markdown(&self) -> Option<&str> {
         match self {
             SourceKind::Markdown(code) => Some(code),
-            SourceKind::Python { .. } => None,
+            SourceKind::Python { .. } | SourceKind::Xml(_) => None,
+            SourceKind::IpyNotebook(_) => None,
+        }
+    }
+
+    pub fn as_xml(&self) -> Option<&str> {
+        match self {
+            SourceKind::Xml(code) => Some(code),
+            SourceKind::Python { .. } | SourceKind::Markdown(_) => None,
             SourceKind::IpyNotebook(_) => None,
         }
     }
@@ -81,7 +91,7 @@ impl SourceKind {
             Self::IpyNotebook(_) => PySourceType::Ipynb,
             Self::Python { is_stub: true, .. } => PySourceType::Stub,
             Self::Python { is_stub: false, .. } => PySourceType::Python,
-            Self::Markdown(_) => PySourceType::Python,
+            Self::Markdown(_) | Self::Xml(_) => PySourceType::Python,
         }
     }
 
@@ -98,18 +108,22 @@ impl SourceKind {
                 is_stub: *is_stub,
             },
             SourceKind::Markdown(_) => SourceKind::Markdown(new_source),
+            SourceKind::Xml(_) => SourceKind::Xml(new_source),
         }
     }
 
     /// Returns the Python source code for this source kind.
     pub fn source_code(&self) -> &str {
         match self {
-            SourceKind::Python { code, .. } | SourceKind::Markdown(code) => code,
+            SourceKind::Python { code, .. }
+            | SourceKind::Markdown(code)
+            | SourceKind::Xml(code) => code,
             SourceKind::IpyNotebook(notebook) => notebook.source_code(),
         }
     }
 
-    /// Read the [`SourceKind`] from the given path. Returns `None` if the source is a TOML file.
+    /// Read the [`SourceKind`] from the given path. Returns `None` if the source is a TOML file,
+    /// a non-Python notebook, or an XML file that is not UTF-8.
     pub fn from_path(path: &Path, source_type: SourceType) -> Result<Option<Self>, SourceError> {
         match source_type {
             SourceType::Python(PySourceType::Ipynb) => {
@@ -129,6 +143,13 @@ impl SourceKind {
                 let contents = std::fs::read_to_string(path)?;
                 Ok(Some(Self::Markdown(contents)))
             }
+            SourceType::Xml => match std::fs::read_to_string(path) {
+                Ok(contents) => Ok(Some(Self::Xml(contents))),
+                // The Python code embedded in XML is only looked for in Odoo data files, which
+                // are UTF-8; any other XML file is skipped rather than reported.
+                Err(err) if err.kind() == io::ErrorKind::InvalidData => Ok(None),
+                Err(err) => Err(err.into()),
+            },
             SourceType::Toml(_) => Ok(None),
         }
     }
@@ -152,6 +173,7 @@ impl SourceKind {
             })),
             SourceType::Toml(_) => Ok(None),
             SourceType::Markdown => Ok(Some(Self::Markdown(source_code))),
+            SourceType::Xml => Ok(Some(Self::Xml(source_code))),
         }
     }
 
@@ -160,7 +182,9 @@ impl SourceKind {
     /// For Jupyter notebooks, this will write out the notebook as JSON.
     pub fn write(&self, writer: &mut dyn Write) -> Result<(), SourceError> {
         match self {
-            SourceKind::Python { code, .. } | SourceKind::Markdown(code) => {
+            SourceKind::Python { code, .. }
+            | SourceKind::Markdown(code)
+            | SourceKind::Xml(code) => {
                 writer.write_all(code.as_bytes())?;
                 Ok(())
             }
@@ -190,7 +214,8 @@ impl SourceKind {
                 kind: DiffKind::IpyNotebook(src, dst),
                 path,
             }),
-            (SourceKind::Markdown(src), SourceKind::Markdown(dst)) => Some(SourceKindDiff {
+            (SourceKind::Markdown(src), SourceKind::Markdown(dst))
+            | (SourceKind::Xml(src), SourceKind::Xml(dst)) => Some(SourceKindDiff {
                 kind: DiffKind::Text(src, dst),
                 path,
             }),

@@ -3442,7 +3442,7 @@ pub struct OdooOptions {
     pub no_missing_return: Option<Vec<String>>,
     /// The expressions that denote a database cursor (`ODE8102, ODE8103`). Setting it replaces the built-in list.
     #[option(
-        default = r#"["cr", "self._cr", "self.cr", "self.env.cr"]"#,
+        default = r#"["cr", "self._cr", "self.cr", "self.env.cr", "env.cr"]"#,
         value_type = "list[str]",
         example = r#"
             # This codebase reaches the cursor through a helper.
@@ -3594,6 +3594,7 @@ impl OdooOptions {
                 None => odoo::settings::ConfiguredList::BuiltIn,
             },
             readme_template_url: self.readme_template_url,
+            code_field: None,
         }
     }
 }

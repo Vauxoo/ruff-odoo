@@ -44,7 +44,9 @@ impl super::BackgroundDocumentRequestHandler for CodeActions {
         let is_python = match query.source_type_for_lint() {
             SourceType::Python(_) => true,
             SourceType::Toml(TomlSourceType::Pyproject | TomlSourceType::Ruff) => false,
-            SourceType::Toml(_) | SourceType::Markdown => return Ok(Some(response)),
+            SourceType::Toml(_) | SourceType::Markdown | SourceType::Xml => {
+                return Ok(Some(response));
+            }
         };
 
         let document_path = query.virtual_file_path();

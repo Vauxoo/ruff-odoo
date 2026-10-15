@@ -1,0 +1,40 @@
+---
+source: crates/ruff/tests/cli/format.rs
+info:
+  program: ruff
+  args:
+    - format
+    - "--no-cache"
+    - "--isolated"
+    - "--stdin-filename"
+    - ir_cron.xml
+    - "-"
+  stdin: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<odoo>\n    <record id=\"ir_cron_sync\" model=\"ir.cron\">\n        <field name=\"code\">model._cron_sync( force=True )</field>\n    </record>\n    <record id=\"ir_cron_indented\" model=\"ir.cron\">\n        <field name=\"code\">\n            for partner in records.filtered(lambda p: p.credit&lt;0):\n                partner.write({'note':'negative'})\n        </field>\n    </record>\n    <record id=\"action_write\" model=\"ir.actions.server\">\n        <field name=\"state\">object_write</field>\n        <field name=\"code\">records.unused( )</field>\n    </record>\n    <record id=\"action_code\" model=\"ir.actions.server\">\n        <field name=\"code\"><![CDATA[\nif records and records[0].credit<0 :\n    action = {'res_model':'res.partner'}\n]]></field>\n    </record>\n</odoo>\n"
+---
+success: true
+exit_code: 0
+----- stdout -----
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_sync" model="ir.cron">
+        <field name="code">model._cron_sync(force=True)</field>
+    </record>
+    <record id="ir_cron_indented" model="ir.cron">
+        <field name="code">
+            for partner in records.filtered(lambda p: p.credit &lt; 0):
+                partner.write({"note": "negative"})
+        </field>
+    </record>
+    <record id="action_write" model="ir.actions.server">
+        <field name="state">object_write</field>
+        <field name="code">records.unused( )</field>
+    </record>
+    <record id="action_code" model="ir.actions.server">
+        <field name="code"><![CDATA[
+if records and records[0].credit < 0:
+    action = {"res_model": "res.partner"}
+]]></field>
+    </record>
+</odoo>
+
+----- stderr -----

@@ -7,7 +7,7 @@ use ruff_text_size::Ranged;
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
-use crate::rules::odoo::helpers::odoo_version_applies;
+use crate::rules::odoo::helpers::{code_field, odoo_version_applies};
 use crate::rules::odoo::settings::OdooVersion;
 
 /// ## What it does
@@ -90,11 +90,17 @@ const ODOO_EXCEPTIONS: &[&str] = &[
 /// `self.env._` replaced the bare `_` in Odoo 18.0. Recommending the bare `_` on a 18.0+
 /// codebase would immediately be flagged by `prefer-env-translation` (`ODW8161`), so the two
 /// rules have to agree on the cutoff.
-fn translation_method(checker: &Checker) -> &'static str {
-    if odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None) {
-        "self.env._"
-    } else {
-        "_"
+///
+/// The code of a cron or server action reaches the environment as `env`, not `self.env`.
+/// Before 18.0 it has no translation function at all: Odoo puts no `_` in its evaluation
+/// context, so there is nothing to recommend and `None` silences the rule.
+fn translation_method(checker: &Checker) -> Option<&'static str> {
+    let has_env_translation = odoo_version_applies(checker, Some(OdooVersion::new(18, 0)), None);
+    match (code_field(checker).is_some(), has_env_translation) {
+        (true, true) => Some("env._"),
+        (true, false) => None,
+        (false, true) => Some("self.env._"),
+        (false, false) => Some("_"),
     }
 }
 
@@ -158,7 +164,9 @@ pub(crate) fn translation_required(checker: &Checker, call: &ast::ExprCall, path
     if attr != "message_post" {
         return;
     }
-    let translation_method = translation_method(checker);
+    let Some(translation_method) = translation_method(checker) else {
+        return;
+    };
 
     for arg in &call.arguments.args {
         if let Some(literal) = untranslated_literal(arg) {
@@ -224,11 +232,14 @@ pub(crate) fn translation_required_raise(checker: &Checker, raise: &ast::StmtRai
     let Some(literal) = untranslated_literal(message) else {
         return;
     };
+    let Some(translation_method) = translation_method(checker) else {
+        return;
+    };
     checker.report_diagnostic(
         TranslationRequired {
             func: func.to_string(),
             keyword: String::new(),
-            translation_method: translation_method(checker),
+            translation_method,
         },
         literal.range(),
     );

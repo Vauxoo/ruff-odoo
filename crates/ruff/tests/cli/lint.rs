@@ -5464,3 +5464,121 @@ fn ruff_toml_is_linted() -> Result<()> {
 
     Ok(())
 }
+
+const ODOO_XML_DATA: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_sync" model="ir.cron">
+        <field name="state">code</field>
+        <field name="code">
+for partner in model.search([]):
+    if partner.credit &lt; 0 and undefined_name:
+        log("negative")
+</field>
+    </record>
+    <record id="ir_cron_broken" model="ir.cron">
+        <field name="code">
+            records.check()
+            records.done()
+        </field>
+    </record>
+    <record id="action_write" model="ir.actions.server">
+        <field name="state">object_write</field>
+        <field name="code">this_is_ignored(</field>
+    </record>
+    <record id="action_code" model="ir.actions.server">
+        <field name="state">code</field>
+        <field name="code"><![CDATA[
+if records:
+    action = {"res_model": missing_model}
+]]></field>
+    </record>
+</odoo>
+"#;
+
+#[test]
+fn odoo_xml_code_fields() -> Result<()> {
+    let test = CliTest::with_file("my_module/data/ir_cron.xml", ODOO_XML_DATA)?;
+
+    assert_cmd_snapshot!(
+        test.check_command()
+            .args(["--isolated", "--select", "F821,E1"])
+            .arg("my_module/data/ir_cron.xml"),
+    );
+
+    Ok(())
+}
+
+#[test]
+fn odoo_xml_code_fields_full_output() -> Result<()> {
+    let test = CliTest::with_file("my_module/data/ir_cron.xml", ODOO_XML_DATA)?;
+
+    assert_cmd_snapshot!(
+        test.command()
+            .args(["check", "--no-cache", "--isolated", "--select", "F821"])
+            .arg("my_module/data/ir_cron.xml"),
+    );
+
+    Ok(())
+}
+
+#[test]
+fn odoo_xml_code_fields_stdin() -> Result<()> {
+    let test = CliTest::new()?;
+
+    assert_cmd_snapshot!(
+        test.check_command()
+            .args([
+                "--isolated",
+                "--select",
+                "F821",
+                "--stdin-filename",
+                "ir_cron.xml"
+            ])
+            .pass_stdin(ODOO_XML_DATA),
+    );
+
+    Ok(())
+}
+
+#[test]
+fn odoo_xml_code_fields_fix_leaves_the_file_alone() -> Result<()> {
+    let test = CliTest::with_file("ir_cron.xml", ODOO_XML_DATA)?;
+
+    assert_cmd_snapshot!(
+        test.check_command()
+            .args(["--isolated", "--select", "F821,UP", "--fix"])
+            .arg("ir_cron.xml"),
+    );
+    assert_eq!(test.read_file("ir_cron.xml")?, ODOO_XML_DATA);
+
+    Ok(())
+}
+
+#[test]
+fn odoo_xml_files_are_not_discovered_by_default() -> Result<()> {
+    let test = CliTest::with_files([
+        ("my_module/data/ir_cron.xml", ODOO_XML_DATA),
+        ("my_module/models.py", "undefined_name\n"),
+    ])?;
+
+    // Only the Python file is found when walking a directory.
+    assert_cmd_snapshot!(
+        test.check_command()
+            .args(["--isolated", "--select", "F821"])
+            .arg("."),
+    );
+    // `extend-include` opts the XML files in.
+    assert_cmd_snapshot!(
+        test.check_command()
+            .args([
+                "--isolated",
+                "--select",
+                "F821",
+                "--config",
+                "extend-include = ['*.xml']"
+            ])
+            .arg("."),
+    );
+
+    Ok(())
+}

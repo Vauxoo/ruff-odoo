@@ -3097,6 +3097,7 @@ dependencies = [
  "ruff_macros",
  "ruff_markdown",
  "ruff_notebook",
+ "ruff_odoo_xml",
  "ruff_options_metadata",
  "ruff_python_ast",
  "ruff_python_formatter",
@@ -3477,6 +3478,24 @@ dependencies = [
  "test-case",
  "thiserror 2.0.20",
  "uuid",
+]
+
+[[package]]
+name = "ruff_odoo_xml"
+version = "0.0.17"
+dependencies = [
+ "insta",
+ "quick-xml",
+ "ruff_db",
+ "ruff_formatter",
+ "ruff_linter",
+ "ruff_python_ast",
+ "ruff_python_formatter",
+ "ruff_python_parser",
+ "ruff_source_file",
+ "ruff_text_size",
+ "ruff_workspace",
+ "serde_json",
 ]
 
 [[package]]

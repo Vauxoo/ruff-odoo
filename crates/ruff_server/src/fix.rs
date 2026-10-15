@@ -46,7 +46,9 @@ pub(crate) fn fix_all(
         SourceType::Toml(source_type @ (TomlSourceType::Pyproject | TomlSourceType::Ruff)) => {
             return fix_toml(query, linter_settings, source_type, encoding);
         }
-        SourceType::Toml(_) | SourceType::Markdown => return Ok(Fixes::default()),
+        SourceType::Toml(_) | SourceType::Markdown | SourceType::Xml => {
+            return Ok(Fixes::default());
+        }
     };
     let source_kind = query.make_python_source_kind(source_type);
 

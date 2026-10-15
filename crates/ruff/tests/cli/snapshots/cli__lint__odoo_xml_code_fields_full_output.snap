@@ -1,0 +1,51 @@
+---
+source: crates/ruff/tests/cli/lint.rs
+info:
+  program: ruff
+  args:
+    - check
+    - "--no-cache"
+    - "--isolated"
+    - "--select"
+    - F821
+    - my_module/data/ir_cron.xml
+---
+success: false
+exit_code: 1
+----- stdout -----
+F821 Undefined name `undefined_name`
+ --> my_module/data/ir_cron.xml:7:34
+  |
+5 |         <field name="code">
+6 | for partner in model.search([]):
+7 |     if partner.credit &lt; 0 and undefined_name:
+  |                                  ^^^^^^^^^^^^^^
+8 |         log("negative")
+9 | </field>
+  |
+
+invalid-syntax: Unexpected indentation
+  --> my_module/data/ir_cron.xml:14:1
+   |
+12 |         <field name="code">
+13 |             records.check()
+14 |             records.done()
+   | ^^^^^^^^^^^^
+15 |         </field>
+16 |     </record>
+   |
+
+F821 Undefined name `missing_model`
+  --> my_module/data/ir_cron.xml:25:28
+   |
+23 |         <field name="code"><![CDATA[
+24 | if records:
+25 |     action = {"res_model": missing_model}
+   |                            ^^^^^^^^^^^^^
+26 | ]]></field>
+27 |     </record>
+   |
+
+Found 3 errors.
+
+----- stderr -----

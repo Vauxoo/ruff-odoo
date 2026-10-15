@@ -1,0 +1,25 @@
+---
+source: crates/ruff/tests/cli/lint.rs
+info:
+  program: ruff
+  args:
+    - check
+    - "--no-cache"
+    - "--output-format"
+    - concise
+    - "--isolated"
+    - "--select"
+    - F821
+    - "--stdin-filename"
+    - ir_cron.xml
+  stdin: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<odoo>\n    <record id=\"ir_cron_sync\" model=\"ir.cron\">\n        <field name=\"state\">code</field>\n        <field name=\"code\">\nfor partner in model.search([]):\n    if partner.credit &lt; 0 and undefined_name:\n        log(\"negative\")\n</field>\n    </record>\n    <record id=\"ir_cron_broken\" model=\"ir.cron\">\n        <field name=\"code\">\n            records.check()\n            records.done()\n        </field>\n    </record>\n    <record id=\"action_write\" model=\"ir.actions.server\">\n        <field name=\"state\">object_write</field>\n        <field name=\"code\">this_is_ignored(</field>\n    </record>\n    <record id=\"action_code\" model=\"ir.actions.server\">\n        <field name=\"state\">code</field>\n        <field name=\"code\"><![CDATA[\nif records:\n    action = {\"res_model\": missing_model}\n]]></field>\n    </record>\n</odoo>\n"
+---
+success: false
+exit_code: 1
+----- stdout -----
+ir_cron.xml:7:34: F821 Undefined name `undefined_name`
+ir_cron.xml:14:1: invalid-syntax: Unexpected indentation
+ir_cron.xml:25:28: F821 Undefined name `missing_model`
+Found 3 errors.
+
+----- stderr -----
