@@ -2373,6 +2373,12 @@ impl<'db> Type<'db> {
         })
     }
 
+    /// Checks whether the visited type contents contain no dynamic types.
+    ///
+    /// This is not a complete test for semantic staticness: the visitor skips original function
+    /// signatures and can find `Any` inside already-materialized types such as `Top[list[Any]]`.
+    /// Callers that need to determine whether top and bottom materializations differ should compare
+    /// those materializations directly.
     fn is_fully_static(self, db: &'db dyn Db, env: &ProgramEnvironment) -> bool {
         dynamic_content(db, env, self).is_absent()
     }
@@ -3796,10 +3802,21 @@ impl<'db> Type<'db> {
             Type::PropertyInstance(property) => property
                 .recursive_type_normalized_impl(db, env, div, nested)
                 .map(Type::PropertyInstance),
-            Type::SlotDescriptor(descriptor) => descriptor
-                .value_type(db)
-                .recursive_type_normalized_impl(db, env, div, true)
-                .map(|value_type| Type::SlotDescriptor(SlotDescriptorType::new(db, value_type))),
+            Type::SlotDescriptor(descriptor) => {
+                let value_type = descriptor
+                    .value_type(db)
+                    .recursive_type_normalized_impl(db, env, div, true);
+                // Preserve the outer descriptor so recursive values do not prevent slot lookup
+                // from using the receiver's independently inferred instance storage type.
+                let value_type = if nested {
+                    value_type?
+                } else {
+                    value_type.unwrap_or(div)
+                };
+                Some(Type::SlotDescriptor(SlotDescriptorType::new(
+                    db, value_type,
+                )))
+            }
             Type::KnownBoundMethod(method_kind) => method_kind
                 .recursive_type_normalized_impl(db, env, div, nested)
                 .map(Type::KnownBoundMethod),
@@ -10617,6 +10634,14 @@ impl<'db> Type<'db> {
         target: Type<'db>,
         negated_cache: &mut Option<Type<'db>>,
     ) -> bool {
+        if negated_cache.is_none()
+            && let (Type::NominalInstance(source), Type::NominalInstance(target)) = (self, target)
+        {
+            // `~object` is `Never`. Every other nominal negation has only the implicit
+            // positive element `object`, which is a subtype of no other nominal type.
+            return source.is_object() || target.is_object();
+        }
+
         match self {
             Type::Intersection(intersection) => {
                 intersection.negation_is_subtype_of(db, env, target)

@@ -1222,7 +1222,7 @@ still permits assignment to the attribute:
 
 ```py
 class WithExcludedMember(Protocol):
-    __doc__: str  # error: [invalid-mutable-override]
+    __doc__: str
 
     def method(self) -> None:
         self.__doc__ = "Protocol documentation"  # no error
@@ -5270,7 +5270,7 @@ class NObject:
 
 class NStaticMethodShadowed(NStaticMethodGood):
     def __init__(self) -> None:
-        self.x: int = 1
+        self.x: int = 1  # error: [invalid-attribute-override]
 
 class PFactory(Protocol):
     @classmethod
@@ -6993,6 +6993,7 @@ def extract[T](consumer: Consumer[T]) -> T:
     raise NotImplementedError
 
 def check(value: Consumer[Consumer[int]]) -> None:
+    # TODO: Validate and refine individual specializations to reveal Consumer[int].
     reveal_type(extract(value))  # revealed: Consumer[int] | int
 ```
 
@@ -7347,6 +7348,7 @@ bad_assignment: Node[int] = Mismatched(1)  # error: [invalid-assignment]
 def extract[U](node: Node[U]) -> U:
     raise NotImplementedError
 
+# TODO: Refine the structural and inherited specializations separately to reveal str | Literal[1].
 reveal_type(extract(Mismatched(1)))  # revealed: object
 ```
 

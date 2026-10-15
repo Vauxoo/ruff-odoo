@@ -24,6 +24,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use smallvec::{SmallVec, smallvec, smallvec_inline};
 
 use self::constructor::{ConstructorBinding, ConstructorContext};
+use super::ambiguous::merge_ambiguous_returns;
 use super::{Argument, CallArguments, CallError, CallErrorKind, InferContext, Signature, Type};
 use crate::db::Db;
 use crate::dunder_all::dunder_all_names;
@@ -2057,6 +2058,18 @@ impl<'db> Bindings<'db> {
                                 }
                             },
                         );
+                        // Unlike `strict=None`, `Field(frozen=None)` is an explicit value that
+                        // leaves the field mutable and overrides an earlier `frozen=True`.
+                        let frozen = get_argument_type("frozen", false).map_or(
+                            ConfigBoolean::Unspecified,
+                            |frozen| {
+                                if frozen.is_none(db) {
+                                    ConfigBoolean::Disabled
+                                } else {
+                                    ConfigBoolean::from_type(frozen)
+                                }
+                            },
+                        );
 
                         // `dataclasses.field` and field-specifier functions of commonly used
                         // libraries like `pydantic`, `attrs`, and `SQLAlchemy` all return
@@ -2196,7 +2209,7 @@ impl<'db> Bindings<'db> {
                         // to `T`. Otherwise, we would error on `name: str = field(default="")`.
                         overload.set_return_type(Type::KnownInstance(KnownInstanceType::Field(
                             FieldInstance::new(
-                                db, default_ty, init, kw_only, alias, converter, strict,
+                                db, default_ty, init, kw_only, alias, converter, strict, frozen,
                             ),
                         )));
                     }
@@ -3364,17 +3377,23 @@ impl<'db> Bindings<'db> {
                 }
             }
 
-            // Known method overrides can resolve ambiguous return types.
+            // Known method overrides can resolve ambiguity or change the shared return structure.
             if matches!(
                 binding.overload_call_result,
-                Some(OverloadCallResult::Ambiguous)
-            ) && binding
-                .matching_overloads()
-                .map(|(_, overload)| overload.return_type())
-                .all_equal_value()
-                .is_ok()
-            {
-                binding.overload_call_result = None;
+                Some(OverloadCallResult::Ambiguous(_))
+            ) {
+                binding.overload_call_result = if binding
+                    .matching_overloads()
+                    .map(|(_, overload)| overload.return_type())
+                    .all_equal_value()
+                    .is_ok()
+                {
+                    None
+                } else {
+                    Some(OverloadCallResult::Ambiguous(
+                        binding.merge_ambiguous_return_types(db, env),
+                    ))
+                };
             }
         }
 
@@ -3460,7 +3479,8 @@ pub(crate) struct CallableBinding<'db> {
     /// overloads for the expanded argument lists. We also retain the overloads selected for
     /// deprecation reporting without discarding the other matches used for argument inference.
     ///
-    /// For (2) and (3), the final return type is [`Unknown`].
+    /// For (2), shared structure in the return types is preserved, with differing parts replaced
+    /// by [`Unknown`]. For (3), the final return type is [`Unknown`].
     ///
     /// [`Unknown`]: crate::types::DynamicType::Unknown
     overload_call_result: Option<OverloadCallResult<'db>>,
@@ -4444,8 +4464,22 @@ impl<'db> CallableBinding<'db> {
 
         if !are_return_types_equivalent_for_all_matching_overloads {
             // Overload matching is ambiguous.
-            self.overload_call_result = Some(OverloadCallResult::Ambiguous);
+            self.overload_call_result = Some(OverloadCallResult::Ambiguous(
+                self.merge_ambiguous_return_types(db, env),
+            ));
         }
+    }
+
+    fn merge_ambiguous_return_types(
+        &self,
+        db: &'db dyn Db,
+        env: &ProgramEnvironment<'db>,
+    ) -> Type<'db> {
+        let return_types: SmallVec<[_; 4]> = self
+            .matching_overloads()
+            .map(|(_, overload)| overload.return_type())
+            .collect();
+        merge_ambiguous_returns(db, env, &return_types)
     }
 
     fn as_result(&self) -> Result<(), CallErrorKind> {
@@ -4564,7 +4598,7 @@ impl<'db> CallableBinding<'db> {
                     .cases
                     .iter()
                     .any(|case| case.selected_overloads.contains(index)),
-                OverloadCallResult::Ambiguous => true,
+                OverloadCallResult::Ambiguous(_) => true,
                 OverloadCallResult::ArgumentTypeExpansionLimitReached(_) => false,
             }
         }))
@@ -4652,7 +4686,7 @@ impl<'db> CallableBinding<'db> {
             return match overload_call_result {
                 OverloadCallResult::ArgumentTypeExpansion(expanded) => expanded.return_type,
                 OverloadCallResult::ArgumentTypeExpansionLimitReached(_) => Type::unknown(),
-                OverloadCallResult::Ambiguous => Type::Dynamic(DynamicType::AmbiguousOverload),
+                OverloadCallResult::Ambiguous(return_type) => *return_type,
             };
         }
         if let Some((_, first_overload)) = self.matching_overloads().next() {
@@ -4908,8 +4942,10 @@ enum OverloadCallResult<'db> {
     ArgumentTypeExpansion(Box<ExpandedOverloadCall<'db>>),
     /// Argument expansion stopped at this argument's expansion limit.
     ArgumentTypeExpansionLimitReached(usize),
-    /// Several overloads remain with non-equivalent return types.
-    Ambiguous,
+    /// Several overloads remain with non-equivalent return types. Their shared structure is
+    /// preserved, with each differing part replaced by `DynamicType::AmbiguousOverload`, which
+    /// displays as `Unknown`.
+    Ambiguous(Type<'db>),
 }
 
 /// The combined return type and selected overloads from successful argument expansion.
@@ -5021,6 +5057,42 @@ impl<'a, 'db> ArgumentMatcher<'a, 'db> {
                     Argument::Synthetic | Argument::Positional | Argument::Variadic
                 )
             })
+    }
+
+    /// Returns the minimum number of positional values supplied by the arguments after the
+    /// argument at `argument_index`.
+    ///
+    /// In `f(*args, x, *tail)`, this counts one value for `x` plus the minimum length of `tail`.
+    /// Unlike [`Self::has_later_positional_input`], this ignores iterables that might be empty.
+    fn later_minimum_positional_count(
+        &self,
+        db: &'db dyn Db,
+        env: &ProgramEnvironment<'db>,
+        argument_index: usize,
+    ) -> usize {
+        self.arguments
+            .iter()
+            .skip(argument_index + 1)
+            .map(|argument| match argument {
+                CallArgument::Synthetic(_) | CallArgument::Positional(_) => 1,
+                CallArgument::Variadic(variadic) => variadic
+                    .sequence(db, env)
+                    .map_or(0, |sequence| sequence.len().minimum()),
+                CallArgument::Keyword { .. } | CallArgument::Keywords(_) => 0,
+            })
+            .sum()
+    }
+
+    /// Returns the number of positional parameters, starting at `next_positional`, that can still
+    /// be filled positionally. This stops at the first parameter that has an explicit keyword
+    /// argument, or that cannot be filled positionally (a keyword-only or variadic parameter).
+    fn available_positional_parameter_count(&self) -> usize {
+        (self.next_positional..self.parameters.len())
+            .take_while(|index| {
+                self.parameters.get_positional(*index).is_some()
+                    && !self.explicit_keyword_parameters.contains(index)
+            })
+            .count()
     }
 
     fn get_argument_index(&self, argument_index: usize) -> Option<usize> {
@@ -5170,14 +5242,43 @@ impl<'a, 'db> ArgumentMatcher<'a, 'db> {
         variadic: &VariadicArgument<'db>,
     ) -> Result<(), ()> {
         let argument = Argument::Variadic;
+        let has_variadic_parameter = self.parameters.variadic().is_some();
+        let reserved_positional_parameters = if !has_variadic_parameter {
+            self.later_minimum_positional_count(db, env, argument_index)
+        } else {
+            // For `def f(a: str, *args: object)`, a later argument could fill `a` or `args`.
+            // Keep matching greedily until we can consider both possibilities.
+            0
+        };
         // Correlations between tuple-union lengths and element types are only safe to
         // combine when later arguments cannot shift their positional slots.
-        let unpacked = variadic.matching(
+        let mut unpacked = variadic.matching(
             db,
             env,
-            self.parameters.variadic().is_none()
-                && !self.has_later_positional_input(argument_index),
+            !has_variadic_parameter && !self.has_later_positional_input(argument_index),
         );
+        // Choose an unpacked length that leaves room for later positional values. Resizing
+        // preserves both fixed ends: truncating the element iterator could discard a required
+        // suffix, or treat the variable element as a required value when that segment is empty.
+        // Keep at least the minimum length so excess required elements are still reported.
+        if reserved_positional_parameters > 0
+            && unpacked.length.is_variable()
+            && unpacked.variable_element.is_some()
+            && let Some(sequence) = variadic.sequence(db, env)
+            && let Ok(sequence) = sequence.resize(
+                db,
+                env,
+                TupleLength::Fixed(
+                    self.available_positional_parameter_count()
+                        .saturating_sub(reserved_positional_parameters)
+                        .max(unpacked.length.minimum()),
+                ),
+            )
+        {
+            unpacked.types = sequence.iter_element_types(db).collect();
+            unpacked.length = sequence.len();
+            unpacked.variable_element = None;
+        }
         let argument_types = unpacked.types;
         let length = unpacked.length;
         let variable_element = unpacked.variable_element;
@@ -5236,24 +5337,18 @@ impl<'a, 'db> ArgumentMatcher<'a, 'db> {
         // If the tuple is truly variable-length, we assume that it will soak up all remaining
         // positional parameters, stopping only when we reach a parameter that has an explicit
         // keyword argument or a parameter that can only be provided via keyword argument, or if
-        // we run out of `argument_types` and have no `variable_element`.
-        } else if is_variable {
-            while self
-                .parameters
-                .get_positional(self.next_positional)
-                .is_some()
-            {
-                if self
-                    .explicit_keyword_parameters
-                    .contains(&self.next_positional)
-                {
+        // we run out of `argument_types` and have no `variable_element`. If the callable has no
+        // variadic parameter, we also leave room for the minimum number of positional values
+        // supplied by later arguments, since the unpacked iterable could be short enough to fit.
+        } else {
+            let available = self
+                .available_positional_parameter_count()
+                .saturating_sub(reserved_positional_parameters);
+            for _ in 0..available {
+                let Some(argument_type) = argument_types.next().or(variable_element) else {
                     break;
-                }
-                let arg_type = argument_types.next().or(variable_element);
-                if arg_type.is_none() {
-                    break;
-                }
-                self.match_positional(argument_index, argument, arg_type, is_variable)?;
+                };
+                self.match_positional(argument_index, argument, Some(argument_type), is_variable)?;
             }
         }
 
@@ -5274,17 +5369,12 @@ impl<'a, 'db> ArgumentMatcher<'a, 'db> {
         // argument types to it, but only if there is at least one remaining argument type. This is
         // because a variadic parameter is optional, so if this was done unconditionally, ty could
         // raise a false positive as "too many arguments".
-        if self.parameters.variadic().is_some() {
-            if let Some(argument_type) = argument_types.next().or(variable_element) {
+        if has_variadic_parameter
+            && let Some(argument_type) = argument_types.next().or(variable_element)
+        {
+            self.match_positional(argument_index, argument, Some(argument_type), is_variable)?;
+            for argument_type in argument_types {
                 self.match_positional(argument_index, argument, Some(argument_type), is_variable)?;
-                for argument_type in argument_types {
-                    self.match_positional(
-                        argument_index,
-                        argument,
-                        Some(argument_type),
-                        is_variable,
-                    )?;
-                }
             }
         }
 
@@ -8554,7 +8644,19 @@ impl<'db> Binding<'db> {
         compound_diag: Option<&dyn CompoundDiagnostic>,
         matching_overload: Option<&MatchingOverloadLiteral<'db>>,
     ) {
+        let mut reported_argument_errors: FxHashMap<_, SmallVec<[_; 1]>> = FxHashMap::default();
         for error in &self.errors {
+            // Multiple elements of one starred argument can produce the same type error for a
+            // variadic parameter. Deduplicate only when reporting: overload selection uses the
+            // number of binding errors, so removing errors earlier could change inference.
+            if let BindingError::InvalidArgumentType { argument_index, .. } = error {
+                let reported = reported_argument_errors.entry(argument_index).or_default();
+                if reported.contains(&error) {
+                    continue;
+                }
+                reported.push(error);
+            }
+
             error.report_diagnostic(
                 context,
                 node,
@@ -10502,6 +10604,55 @@ def swap(value: int | str) -> int | str:
         let int = KnownClass::Int.to_instance(db, &env);
         let str = KnownClass::Str.to_instance(db, &env);
 
+        assert_eq!(
+            paths.iter().map(AsRef::as_ref).collect::<FxHashSet<_>>(),
+            FxHashSet::from_iter([
+                [Some(Resolved(int)), Some(Resolved(str))].as_slice(),
+                [Some(Resolved(str)), Some(Resolved(int))].as_slice(),
+            ])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn intersection_argument_retains_correlated_inference() -> anyhow::Result<()> {
+        let mut db = setup_db();
+        db.write_dedented(
+            "/src/a.py",
+            r#"
+from ty_extensions import Intersection
+
+class Source[T]:
+    def get(self) -> T:
+        raise NotImplementedError
+
+class IntStrSource(Source[tuple[int, str]]): ...
+class StrIntSource(Source[tuple[str, int]]): ...
+
+def infer_pair[T, U](source: Source[tuple[T, U]]) -> tuple[T, U]:
+    return source.get()
+
+source: Intersection[IntStrSource, StrIntSource]
+"#,
+        )?;
+        let db = &db;
+        let env = db.program_environment();
+        let file = system_path_to_file(db, "/src/a.py")?;
+        let file = ProgramFile::new(db, file, env.program(db));
+        let callable = global_symbol(db, file, "infer_pair").place.expect_type();
+        let argument = global_symbol(db, file, "source").place.expect_type();
+        let inference = call_inference(db, callable, [argument], TypeContext::default())?;
+        let TypeVarInferenceSolutions::Alternatives(paths) = inference.solutions(db) else {
+            anyhow::bail!(
+                "expected correlated alternatives, got {:?}",
+                inference.solutions(db)
+            );
+        };
+        let int = KnownClass::Int.to_instance(db, &env);
+        let str = KnownClass::Str.to_instance(db, &env);
+
+        // Each intersection member supplies a complete pair; collecting its tuple elements
+        // independently would introduce the unsupported (int, int) and (str, str) alternatives.
         assert_eq!(
             paths.iter().map(AsRef::as_ref).collect::<FxHashSet<_>>(),
             FxHashSet::from_iter([

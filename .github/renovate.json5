@@ -49,13 +49,6 @@
       description: "Weekly update of prek dependencies",
     },
     {
-      matchFileNames: ["pyproject.toml"],
-      matchPackageNames: ["pygls"],
-      matchJsonata: ["depType = 'dependency-groups' and managerData.depGroup = 'ruff-lsp-test'"],
-      description: "ruff-lsp compatibility tests require the pygls 1.x server API",
-      rangeStrategy: "in-range-only",
-    },
-    {
       groupName: "NPM Development dependencies",
       matchManagers: ["npm"],
       matchDepTypes: ["devDependencies"],
@@ -66,6 +59,12 @@
       matchManagers: ["npm"],
       matchPackageNames: ["monaco"],
       description: "Weekly update of the Monaco editor",
+    },
+    {
+      groupName: "phf",
+      matchManagers: ["cargo"],
+      matchPackageNames: ["phf", "phf_codegen"],
+      description: "Weekly update of phf dependencies",
     },
     {
       groupName: "strum",
