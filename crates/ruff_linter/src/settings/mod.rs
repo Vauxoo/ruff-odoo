@@ -1075,6 +1075,7 @@ mod tests {
         	m2m-relation-is-label (ODW9501),
         	deprecated-osv-expression (ODW9502),
         	duplicate-field-declaration (ODW9503),
+        	new-id-in-domain (ODW9504),
         	category-allowed-app (OAPP001),
         	missing-odoo-file-app (OAPP002),
         	manifest-required-key-app (OAPP003),

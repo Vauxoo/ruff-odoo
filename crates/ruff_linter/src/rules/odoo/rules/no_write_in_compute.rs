@@ -6,7 +6,7 @@ use ruff_text_size::{Ranged, TextRange};
 use crate::Violation;
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
-use crate::rules::odoo::helpers::{dotted_name, is_odoo_model_class, odoo_field_type};
+use crate::rules::odoo::helpers::{compute_method_names, dotted_name, is_odoo_model_class};
 
 /// ## What it does
 /// Checks for `self.write(...)` calls inside compute methods.
@@ -149,31 +149,7 @@ pub(crate) fn no_write_in_compute(checker: &Checker, class_def: &ast::StmtClassD
         return;
     }
 
-    // Collect the method names referenced by `compute=` field arguments in this class.
-    let mut compute_methods: Vec<&str> = Vec::new();
-    for stmt in &class_def.body {
-        let Stmt::Assign(assign) = stmt else {
-            continue;
-        };
-        let Expr::Call(call) = assign.value.as_ref() else {
-            continue;
-        };
-        if odoo_field_type(&call.func).is_none() {
-            continue;
-        }
-        for keyword in &call.arguments.keywords {
-            if keyword.arg.as_deref() != Some("compute") {
-                continue;
-            }
-            match &keyword.value {
-                Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
-                    compute_methods.push(value.to_str());
-                }
-                Expr::Name(ast::ExprName { id, .. }) => compute_methods.push(id.as_str()),
-                _ => {}
-            }
-        }
-    }
+    let compute_methods = compute_method_names(class_def);
     if compute_methods.is_empty() {
         return;
     }

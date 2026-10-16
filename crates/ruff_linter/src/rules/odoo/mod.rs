@@ -153,6 +153,7 @@ mod tests {
     )]
     #[test_case(Rule::NoRaiseUnlink, Path::new("no_raise_unlink.py"))]
     #[test_case(Rule::NoWriteInCompute, Path::new("no_write_in_compute.py"))]
+    #[test_case(Rule::NewIdInDomain, Path::new("new_id_in_domain.py"))]
     #[test_case(
         Rule::TranslationContainsVariable,
         Path::new("translation_contains_variable.py")

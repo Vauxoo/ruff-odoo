@@ -441,6 +441,36 @@ pub(crate) fn odoo_field_type(func: &Expr) -> Option<&str> {
     matches!(value.as_ref(), Expr::Name(name) if name.id == "fields").then_some(attr.as_str())
 }
 
+/// Returns the names of the methods the fields of the class name in `compute=`, as in
+/// `total = fields.Float(compute="_compute_total")`.
+pub(crate) fn compute_method_names(class_def: &ast::StmtClassDef) -> Vec<&str> {
+    let mut names = Vec::new();
+    for stmt in &class_def.body {
+        let ast::Stmt::Assign(assign) = stmt else {
+            continue;
+        };
+        let Expr::Call(call) = assign.value.as_ref() else {
+            continue;
+        };
+        if odoo_field_type(&call.func).is_none() {
+            continue;
+        }
+        for keyword in &call.arguments.keywords {
+            if keyword.arg.as_deref() != Some("compute") {
+                continue;
+            }
+            match &keyword.value {
+                Expr::StringLiteral(ast::ExprStringLiteral { value, .. }) => {
+                    names.push(value.to_str());
+                }
+                Expr::Name(ast::ExprName { id, .. }) => names.push(id.as_str()),
+                _ => {}
+            }
+        }
+    }
+    names
+}
+
 /// Returns `true` if the class body defines a function named `name`.
 pub(crate) fn class_defines_method(class_def: &ast::StmtClassDef, name: &str) -> bool {
     class_def.body.iter().any(|stmt| {
