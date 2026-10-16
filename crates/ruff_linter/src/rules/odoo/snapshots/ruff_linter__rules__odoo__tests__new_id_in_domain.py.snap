@@ -1,0 +1,192 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9504 [*] `partner.id` is a `NewId` when the record is new, which a domain cannot match; use `partner.ids`
+  --> new_id_in_domain.py:19:57
+   |
+17 |             partner.registration_count = self.env["event.registration"].search_count(
+18 |                 [
+19 |                     ("attendee_partner_id", "child_of", partner.id),  # error
+   |                                                         ^^^^^^^^^^
+20 |                     ("state", "not in", ("cancel", "draft")),
+21 |                 ]
+   |
+help: Replace with `partner.ids`
+   |
+18 |                 [
+   -                     ("attendee_partner_id", "child_of", partner.id),  # error
+19 +                     ("attendee_partner_id", "child_of", partner.ids),  # error
+20 |                     ("state", "not in", ("cancel", "draft")),
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `partner.id` is a `NewId` when the record is new, which a domain cannot match; use `partner.ids`
+  --> new_id_in_domain.py:28:38
+   |
+26 |         for partner in self.filtered(lambda p: p.active):
+27 |             partner.order_count = self.env["sale.order"].search_count(
+28 |                 [("partner_id", "=", partner.id)]  # error, fix to `in`
+   |                                      ^^^^^^^^^^
+29 |             )
+   |
+help: Replace with `"in", partner.ids`
+   |
+27 |             partner.order_count = self.env["sale.order"].search_count(
+   -                 [("partner_id", "=", partner.id)]  # error, fix to `in`
+28 +                 [("partner_id", "in", partner.ids)]  # error, fix to `in`
+29 |             )
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:35:76
+   |
+33 |         for record in self.sudo():
+34 |             orders = self.env["sale.order"]
+35 |             record.other_count = orders.search_count([("partner_id", '!=', record.id)])  # error
+   |                                                                            ^^^^^^^^^
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+   |
+help: Replace with `"not in", record.ids`
+   |
+34 |             orders = self.env["sale.order"]
+   -             record.other_count = orders.search_count([("partner_id", '!=', record.id)])  # error
+35 +             record.other_count = orders.search_count([("partner_id", 'not in', record.ids)])  # error
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:36:81
+   |
+34 |             orders = self.env["sale.order"]
+35 |             record.other_count = orders.search_count([("partner_id", '!=', record.id)])  # error
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+   |                                                                                 ^^^^^^^^^
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+   |
+help: Replace with `record.ids`
+   |
+35 |             record.other_count = orders.search_count([("partner_id", '!=', record.id)])  # error
+   -             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+36 +             record.other_count += orders.search_count([("partner_id", "not in", record.ids)])  # error
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:37:77
+   |
+35 |             record.other_count = orders.search_count([("partner_id", '!=', record.id)])  # error
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+   |                                                                             ^^^^^^^^^
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+39 |             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+   |
+help: Replace with `record.ids`
+   |
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+   -             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+37 +             record.other_count += orders.search_count([("partner_id", "in", record.ids)])  # error
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:38:84
+   |
+36 |             record.other_count += orders.search_count([("partner_id", "not in", record.id)])  # error
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+   |                                                                                    ^^^^^^^^^
+39 |             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+40 |             # Reported, but no list operator to rewrite it to.
+   |
+help: Replace with `record.ids`
+   |
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+   -             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+38 +             record.other_count += orders.search_count([("partner_id", "parent_of", record.ids)])  # error
+39 |             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:39:81
+   |
+37 |             record.other_count += orders.search_count([("partner_id", "in", record.id)])  # error
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+39 |             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+   |                                                                                 ^^^^^^^^^
+40 |             # Reported, but no list operator to rewrite it to.
+41 |             record.other_count += orders.search_count([("partner_id", ">", record.id)])  # error
+   |
+help: Replace with `"in", record.ids`
+   |
+38 |             record.other_count += orders.search_count([("partner_id", "parent_of", record.id)])  # error
+   -             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+39 +             record.other_count += orders.search_count(Domain("partner_id", "in", record.ids))  # error
+40 |             # Reported, but no list operator to rewrite it to.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:41:76
+   |
+39 |             record.other_count += orders.search_count(Domain("partner_id", "=", record.id))  # error
+40 |             # Reported, but no list operator to rewrite it to.
+41 |             record.other_count += orders.search_count([("partner_id", ">", record.id)])  # error
+   |                                                                            ^^^^^^^^^
+42 |             # An operator spelled as an implicit concatenation is reported but not rewritten.
+43 |             record.other_count += orders.search_count([("partner_id", "!" "=", record.id)])  # error
+   |
+
+ODW9504 `record.id` is a `NewId` when the record is new, which a domain cannot match; use `record.ids`
+  --> new_id_in_domain.py:43:80
+   |
+41 |             record.other_count += orders.search_count([("partner_id", ">", record.id)])  # error
+42 |             # An operator spelled as an implicit concatenation is reported but not rewritten.
+43 |             record.other_count += orders.search_count([("partner_id", "!" "=", record.id)])  # error
+   |                                                                                ^^^^^^^^^
+44 |         self.other_count = len(
+45 |             [p for p in self if self.search_count([("parent_id", "=", p.id)])]  # error
+   |
+
+ODW9504 [*] `p.id` is a `NewId` when the record is new, which a domain cannot match; use `p.ids`
+  --> new_id_in_domain.py:45:71
+   |
+43 |             record.other_count += orders.search_count([("partner_id", "!" "=", record.id)])  # error
+44 |         self.other_count = len(
+45 |             [p for p in self if self.search_count([("parent_id", "=", p.id)])]  # error
+   |                                                                       ^^^^
+46 |         )
+   |
+help: Replace with `"in", p.ids`
+   |
+44 |         self.other_count = len(
+   -             [p for p in self if self.search_count([("parent_id", "=", p.id)])]  # error
+45 +             [p for p in self if self.search_count([("parent_id", "in", p.ids)])]  # error
+46 |         )
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9504 [*] `self.id` is a `NewId` when the record is new, which a domain cannot match; use `self.ids`
+  --> new_id_in_domain.py:50:52
+   |
+48 |     @api.onchange("parent_id")
+49 |     def _onchange_parent_id(self):
+50 |         children = self.search([("parent_id", "=", self.id)])  # error
+   |                                                    ^^^^^^^
+51 |         return {"domain": {"child_ids": [("id", "in", children.ids)]}}
+   |
+help: Replace with `"in", self.ids`
+   |
+49 |     def _onchange_parent_id(self):
+   -         children = self.search([("parent_id", "=", self.id)])  # error
+50 +         children = self.search([("parent_id", "in", self.ids)])  # error
+51 |         return {"domain": {"child_ids": [("id", "in", children.ids)]}}
+   |
+note: This is an unsafe fix and may change runtime behavior

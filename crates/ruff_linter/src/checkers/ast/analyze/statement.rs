@@ -411,6 +411,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::NoWriteInCompute) {
                 odoo::rules::no_write_in_compute(checker, class_def);
             }
+            if checker.is_rule_enabled(Rule::NewIdInDomain) {
+                odoo::rules::new_id_in_domain(checker, class_def);
+            }
             if checker.is_rule_enabled(Rule::NoWizardInModels) {
                 odoo::rules::no_wizard_in_models(checker, class_def, checker.path);
             }
