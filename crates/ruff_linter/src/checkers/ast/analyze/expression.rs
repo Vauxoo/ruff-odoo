@@ -199,6 +199,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if checker.is_rule_enabled(Rule::AccessAnnotationsFromClassDict) {
                 ruff::rules::access_annotations_from_class_dict_by_key(checker, subscript);
             }
+            if checker.is_rule_enabled(Rule::RecordCacheWrite) {
+                odoo::rules::record_cache_write_subscript(checker, subscript);
+            }
             pandas_vet::rules::subscript(checker, value, expr);
         }
         Expr::Tuple(ast::ExprTuple {
@@ -1416,6 +1419,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             }
             if checker.is_rule_enabled(Rule::RemovedOdooMethodCall) {
                 odoo::rules::removed_odoo_method_call(checker, call);
+            }
+            if checker.is_rule_enabled(Rule::RecordCacheWrite) {
+                odoo::rules::record_cache_write_call(checker, call);
             }
             if checker.any_rule_enabled(&[
                 Rule::TranslationContainsVariable,

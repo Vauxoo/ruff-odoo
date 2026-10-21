@@ -1,0 +1,379 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:12:9
+   |
+10 |     def cron_send_emails(self, template):
+11 |         # Error, fixable: vauxoo/ircodoo orphan_management at 18.0.
+12 |         template._cache["report_template_ids"] = None
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |         # Error, fixable: the value the cache format expects for an x2many.
+14 |         template._cache["report_template_ids"] = ()
+   |
+help: Store the value with `Field._update_cache`
+   |
+11 |         # Error, fixable: vauxoo/ircodoo orphan_management at 18.0.
+   -         template._cache["report_template_ids"] = None
+12 +         template._fields["report_template_ids"]._update_cache(template, None)
+13 |         # Error, fixable: the value the cache format expects for an x2many.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:14:9
+   |
+12 |         template._cache["report_template_ids"] = None
+13 |         # Error, fixable: the value the cache format expects for an x2many.
+14 |         template._cache["report_template_ids"] = ()
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |
+16 |     def _compute_payment_mode(self):
+   |
+help: Store the value with `Field._update_cache`
+   |
+13 |         # Error, fixable: the value the cache format expects for an x2many.
+   -         template._cache["report_template_ids"] = ()
+14 +         template._fields["report_template_ids"]._update_cache(template, ())
+15 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:18:9
+   |
+16 |     def _compute_payment_mode(self):
+17 |         # Error, fixable: `self` is a record in a model class.
+18 |         self._cache["payment_mode"] = "own_account"
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |         self._cache["payment_mode"] = "company_account"  # trailing comment kept
+   |
+help: Store the value with `Field._update_cache`
+   |
+17 |         # Error, fixable: `self` is a record in a model class.
+   -         self._cache["payment_mode"] = "own_account"
+18 +         self._fields["payment_mode"]._update_cache(self, "own_account")
+19 |         self._cache["payment_mode"] = "company_account"  # trailing comment kept
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:19:9
+   |
+17 |         # Error, fixable: `self` is a record in a model class.
+18 |         self._cache["payment_mode"] = "own_account"
+19 |         self._cache["payment_mode"] = "company_account"  # trailing comment kept
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 |     def render(self, record, update):
+   |
+help: Store the value with `Field._update_cache`
+   |
+18 |         self._cache["payment_mode"] = "own_account"
+   -         self._cache["payment_mode"] = "company_account"  # trailing comment kept
+19 +         self._fields["payment_mode"]._update_cache(
+20 +             self,
+21 +             "company_account",
+22 +         )  # trailing comment kept
+23 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:23:9
+   |
+21 |     def render(self, record, update):
+22 |         # Error, fixable: the value is any expression, carried over verbatim.
+23 |         update._cache["donor_id"] = record.id if record else False
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |         # Error, fixable: an attribute chain reads the same twice.
+25 |         self.env.user._cache["name"] = "Mitchell"
+   |
+help: Store the value with `Field._update_cache`
+   |
+22 |         # Error, fixable: the value is any expression, carried over verbatim.
+   -         update._cache["donor_id"] = record.id if record else False
+23 +         update._fields["donor_id"]._update_cache(update, record.id if record else False)
+24 |         # Error, fixable: an attribute chain reads the same twice.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:25:9
+   |
+23 |         update._cache["donor_id"] = record.id if record else False
+24 |         # Error, fixable: an attribute chain reads the same twice.
+25 |         self.env.user._cache["name"] = "Mitchell"
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 |         # Error, fixable: a bare tuple is wrapped so it stays one argument.
+27 |         update._cache["tag_ids"] = 1, 2
+   |
+help: Store the value with `Field._update_cache`
+   |
+24 |         # Error, fixable: an attribute chain reads the same twice.
+   -         self.env.user._cache["name"] = "Mitchell"
+25 +         self.env.user._fields["name"]._update_cache(self.env.user, "Mitchell")
+26 |         # Error, fixable: a bare tuple is wrapped so it stays one argument.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:27:9
+   |
+25 |         self.env.user._cache["name"] = "Mitchell"
+26 |         # Error, fixable: a bare tuple is wrapped so it stays one argument.
+27 |         update._cache["tag_ids"] = 1, 2
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+28 |         # Error, fixable: the parentheses around the value are kept.
+29 |         update._cache["tag_ids"] = (
+   |
+help: Store the value with `Field._update_cache`
+   |
+26 |         # Error, fixable: a bare tuple is wrapped so it stays one argument.
+   -         update._cache["tag_ids"] = 1, 2
+27 +         update._fields["tag_ids"]._update_cache(update, (1, 2))
+28 |         # Error, fixable: the parentheses around the value are kept.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:29:9
+   |
+27 |         update._cache["tag_ids"] = 1, 2
+28 |         # Error, fixable: the parentheses around the value are kept.
+29 |         update._cache["tag_ids"] = (
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+30 |             1,
+31 |             2,
+   |
+help: Store the value with `Field._update_cache`
+   |
+28 |         # Error, fixable: the parentheses around the value are kept.
+   -         update._cache["tag_ids"] = (
+29 +         update._fields["tag_ids"]._update_cache(update, (
+30 |             1,
+31 |             2,
+   -         )
+32 +         ))
+33 |         # Error, fixable: one argument per line when the call does not fit.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:34:9
+   |
+32 |         )
+33 |         # Error, fixable: one argument per line when the call does not fit.
+34 |         update._cache["a_field_with_a_rather_long_name"] = some_quite_long_function_name(record)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+35 |
+36 |     def _compute_menu(self, menus):
+   |
+help: Store the value with `Field._update_cache`
+   |
+33 |         # Error, fixable: one argument per line when the call does not fit.
+   -         update._cache["a_field_with_a_rather_long_name"] = some_quite_long_function_name(record)
+34 +         update._fields["a_field_with_a_rather_long_name"]._update_cache(
+35 +             update,
+36 +             some_quite_long_function_name(record),
+37 +         )
+38 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:39:13
+   |
+37 |         # Error, no fix: an augmented assignment (odoo/odoo `website` at 18.0).
+38 |         for menu in menus:
+39 |             menu.parent_id._cache["child_id"] += (menu.id,)
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+40 |         # Error, no fix: a deletion.
+41 |         del menus[0]._cache["child_id"]
+   |
+help: Store the value with `Field._update_cache`
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, deleting from it raises `TypeError`
+  --> record_cache_write.py:41:13
+   |
+39 |             menu.parent_id._cache["child_id"] += (menu.id,)
+40 |         # Error, no fix: a deletion.
+41 |         del menus[0]._cache["child_id"]
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+42 |         # Error, no fix: the record is a call, written twice by the rewrite.
+43 |         self.browse(1)._cache["name"] = "x"
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:43:9
+   |
+41 |         del menus[0]._cache["child_id"]
+42 |         # Error, no fix: the record is a call, written twice by the rewrite.
+43 |         self.browse(1)._cache["name"] = "x"
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+44 |         # Error, no fix: several targets.
+45 |         value = self._cache["name"] = "x"
+   |
+help: Store the value with `Field._update_cache`
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:45:17
+   |
+43 |         self.browse(1)._cache["name"] = "x"
+44 |         # Error, no fix: several targets.
+45 |         value = self._cache["name"] = "x"
+   |                 ^^^^^^^^^^^^^^^^^^^
+46 |         # Error, no fix: a comment the rewrite would drop.
+47 |         self._cache[  # the name
+   |
+help: Store the value with `Field._update_cache`
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:47:9
+   |
+45 |           value = self._cache["name"] = "x"
+46 |           # Error, no fix: a comment the rewrite would drop.
+47 | /         self._cache[  # the name
+48 | |             "name"
+49 | |         ] = "x"
+   | |_________^
+50 |           # Error, no fix: the mapping methods are gone.
+51 |           self._cache.update({"name": "x"})
+   |
+help: Store the value with `Field._update_cache`
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, `_cache.update()` raises `AttributeError`
+  --> record_cache_write.py:51:9
+   |
+49 |         ] = "x"
+50 |         # Error, no fix: the mapping methods are gone.
+51 |         self._cache.update({"name": "x"})
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52 |         self._cache.pop("name")
+53 |         self._cache.setdefault("name", "x")
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, `_cache.pop()` raises `AttributeError`
+  --> record_cache_write.py:52:9
+   |
+50 |         # Error, no fix: the mapping methods are gone.
+51 |         self._cache.update({"name": "x"})
+52 |         self._cache.pop("name")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+53 |         self._cache.setdefault("name", "x")
+54 |         self._cache.clear()
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, `_cache.setdefault()` raises `AttributeError`
+  --> record_cache_write.py:53:9
+   |
+51 |         self._cache.update({"name": "x"})
+52 |         self._cache.pop("name")
+53 |         self._cache.setdefault("name", "x")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+54 |         self._cache.clear()
+55 |         self._cache.popitem()
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, `_cache.clear()` raises `AttributeError`
+  --> record_cache_write.py:54:9
+   |
+52 |         self._cache.pop("name")
+53 |         self._cache.setdefault("name", "x")
+54 |         self._cache.clear()
+   |         ^^^^^^^^^^^^^^^^^^^
+55 |         self._cache.popitem()
+56 |         # Error, no fix: an unpacking target.
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, `_cache.popitem()` raises `AttributeError`
+  --> record_cache_write.py:55:9
+   |
+53 |         self._cache.setdefault("name", "x")
+54 |         self._cache.clear()
+55 |         self._cache.popitem()
+   |         ^^^^^^^^^^^^^^^^^^^^^
+56 |         # Error, no fix: an unpacking target.
+57 |         self._cache["name"], other = "x", "y"
+   |
+
+ODE9504 A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:57:9
+   |
+55 |         self._cache.popitem()
+56 |         # Error, no fix: an unpacking target.
+57 |         self._cache["name"], other = "x", "y"
+   |         ^^^^^^^^^^^^^^^^^^^
+58 |
+59 |     def reads(self, template):
+   |
+help: Store the value with `Field._update_cache`
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:76:9
+   |
+74 |     def update(self, update_sudo, donor_id):
+75 |         # Error, fixable: vauxoo/ircodoo mass_mailing_project at 18.0.
+76 |         update_sudo._cache["donor_id"] = donor_id
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Store the value with `Field._update_cache`
+   |
+75 |         # Error, fixable: vauxoo/ircodoo mass_mailing_project at 18.0.
+   -         update_sudo._cache["donor_id"] = donor_id
+76 +         update_sudo._fields["donor_id"]._update_cache(update_sudo, donor_id)
+77 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:82:9
+   |
+80 |     def test_state(self, payment):
+81 |         # Error, fixable: a local in a test.
+82 |         payment._cache["state"] = "enabled"
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+83 |         # Error, fixable: an attribute of `self` in an Odoo class.
+84 |         self.partner._cache["name"] = "x"
+   |
+help: Store the value with `Field._update_cache`
+   |
+81 |         # Error, fixable: a local in a test.
+   -         payment._cache["state"] = "enabled"
+82 +         payment._fields["state"]._update_cache(payment, "enabled")
+83 |         # Error, fixable: an attribute of `self` in an Odoo class.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+  --> record_cache_write.py:84:9
+   |
+82 |         payment._cache["state"] = "enabled"
+83 |         # Error, fixable: an attribute of `self` in an Odoo class.
+84 |         self.partner._cache["name"] = "x"
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+85 |         # OK: a test case is not a record.
+86 |         self._cache["name"] = "x"
+   |
+help: Store the value with `Field._update_cache`
+   |
+83 |         # Error, fixable: an attribute of `self` in an Odoo class.
+   -         self.partner._cache["name"] = "x"
+84 +         self.partner._fields["name"]._update_cache(self.partner, "x")
+85 |         # OK: a test case is not a record.
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODE9504 [*] A record's `_cache` is read-only since Odoo 19.0, assigning to it raises `TypeError`
+   --> record_cache_write.py:112:5
+    |
+110 |     partner = env.ref("base.main_partner")
+111 |     # Error, fixable: a record anywhere.
+112 |     partner._cache["name"] = "x"
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+help: Store the value with `Field._update_cache`
+    |
+111 |     # Error, fixable: a record anywhere.
+    -     partner._cache["name"] = "x"
+112 +     partner._fields["name"]._update_cache(partner, "x")
+    |
+note: This is an unsafe fix and may change runtime behavior

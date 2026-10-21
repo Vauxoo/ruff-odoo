@@ -1042,6 +1042,7 @@ mod tests {
         	translation-too-many-args (ODE8305),
         	translation-too-few-args (ODE8306),
         	deprecated-sql-constraints (ODE9501),
+        	record-cache-write (ODE9504),
         	resource-not-exist (ODF8101),
         	odoo-exception-warning (ODR8101),
         	consider-merging-classes-inherited (ODR8180),
