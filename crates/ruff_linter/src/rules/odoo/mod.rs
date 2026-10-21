@@ -261,6 +261,7 @@ mod tests {
         Rule::DuplicateFieldDeclaration,
         Path::new("duplicate_field_declaration.py")
     )]
+    #[test_case(Rule::RecordCacheWrite, Path::new("record_cache_write.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
@@ -402,6 +403,43 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::DeprecatedSqlConstraints)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The record cache is writable up to 18.0, so a project that says so is not reported.
+    #[test]
+    fn record_cache_write_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "record_cache_write_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/record_cache_write.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RecordCacheWrite)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// With 19.0 configured, `Field._update_cache` is known to exist, so the rewrite that is
+    /// offered as an unsafe fix without the setting becomes a safe one.
+    #[test]
+    fn record_cache_write_safe_at_odoo_19() -> Result<()> {
+        let snapshot = "record_cache_write_safe_at_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/record_cache_write.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(19, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::RecordCacheWrite)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);

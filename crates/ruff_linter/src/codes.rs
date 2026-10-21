@@ -1201,6 +1201,7 @@ pub fn code_to_rule(linter: Linter, code: &str) -> Option<(RuleStatus, Rule)> {
         (Odoo, "E9501") => rules::odoo::rules::DeprecatedSqlConstraints,
         (Odoo, "E9502") => rules::odoo::rules::InvalidOdooMethodCall,
         (Odoo, "E9503") => rules::odoo::rules::RemovedOdooMethodCall,
+        (Odoo, "E9504") => rules::odoo::rules::RecordCacheWrite,
         (Odoo, "F8101") => rules::odoo::rules::ResourceNotExist,
         (Odoo, "R8101") => rules::odoo::rules::OdooExceptionWarning,
         (Odoo, "R8180") => rules::odoo::rules::ConsiderMergingClassesInherited,
