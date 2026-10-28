@@ -97,6 +97,13 @@ does, keeping the markup, the escaping style, the line endings and the indentati
 tag. XML that is not well-formed or not UTF-8 is skipped without a diagnostic, and so is a field
 that uses an entity declared in a `DOCTYPE`.
 
+The domains in an XML file are read too, by the rules that look at a domain
+([`scalar-in-domain`](rules/scalar-in-domain.md)): the `domain`, `filter_domain` and `attrs`
+attributes, `<attribute name="domain">`, and the `domain` and `domain_force` fields of a record.
+Each is linted as an expression with only those rules on, and one Python cannot parse (a `%(...)s`
+placeholder) is skipped. In a domain a bare name stands for a field of the form, so a name
+ending in `_id` is read as the id of a many2one.
+
 ## Versioning
 
 Releases use four components, `x.y.z.w`: `x.y.z` is the upstream Ruff release this fork is

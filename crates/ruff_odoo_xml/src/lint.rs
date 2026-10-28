@@ -7,11 +7,13 @@ use ruff_linter::linter::{ParseSource, lint_only};
 use ruff_linter::package::PackageRoot;
 use ruff_linter::registry::Rule;
 use ruff_linter::rules::odoo::settings::CodeFieldContext;
+use ruff_linter::settings::rule_table::RuleTable;
 use ruff_linter::settings::{LinterSettings, flags};
 use ruff_linter::source_kind::SourceKind;
 use ruff_python_ast::PySourceType;
 use ruff_source_file::{SourceFile, SourceFileBuilder};
 
+use crate::domain::extract_domain_fields;
 use crate::{CodeField, eval_context_names, extract_code_fields};
 
 /// The rules that judge the file a code field lives in rather than the code itself, and therefore
@@ -36,7 +38,12 @@ const FILE_LEVEL_RULES: &[Rule] = &[
 ];
 
 /// Lints the Python body of every `ir.cron` and `ir.actions.server` record in `contents`, and
-/// reports each diagnostic at the place in the XML document its code came from.
+/// the domains written in it, and reports each diagnostic at the place in the XML document its
+/// code came from.
+///
+/// A domain is linted on its own as an expression, with only the rules that read domains turned
+/// on (the rules in `DOMAIN_RULES`), and `domain_field` set so that they read a bare name as a field of the
+/// form. A domain Python cannot parse is skipped without a diagnostic.
 ///
 /// Each field is linted on its own, as the module Odoo compiles it into, with the names Odoo
 /// injects into its evaluation context in the configured `odoo-version` (and, for an AI tool,
@@ -53,14 +60,19 @@ pub fn lint_code_fields(
     noqa: flags::Noqa,
 ) -> Vec<Diagnostic> {
     let fields = extract_code_fields(contents);
-    if fields.is_empty() {
+    let domains = if settings.rules.any_enabled(DOMAIN_RULES) {
+        extract_domain_fields(contents)
+    } else {
+        Vec::new()
+    };
+    if fields.is_empty() && domains.is_empty() {
         return Vec::new();
     }
 
-    let settings = code_field_settings(settings);
     let file = SourceFileBuilder::new(path.to_string_lossy(), contents).finish();
+    let mut diagnostics = lint_domains(path, package, settings, noqa, &domains, &file);
 
-    let mut diagnostics = Vec::new();
+    let settings = code_field_settings(settings);
     for field in &fields {
         let mut settings = with_builtins(&settings, &field.names);
         settings.odoo.code_field = Some(CodeFieldContext {
@@ -85,6 +97,59 @@ pub fn lint_code_fields(
                 .diagnostics
                 .into_iter()
                 .map(|diagnostic| relocate(diagnostic, field, &file)),
+        );
+    }
+    diagnostics
+}
+
+/// The rules that read the domains of an XML file.
+const DOMAIN_RULES: &[Rule] = &[Rule::ScalarInDomain];
+
+/// Lints each of `domains` as an expression, with [`DOMAIN_RULES`] only.
+fn lint_domains(
+    path: &Path,
+    package: Option<PackageRoot<'_>>,
+    settings: &LinterSettings,
+    noqa: flags::Noqa,
+    domains: &[CodeField],
+    file: &SourceFile,
+) -> Vec<Diagnostic> {
+    if domains.is_empty() {
+        return Vec::new();
+    }
+    let mut settings = settings.clone();
+    let mut rules = RuleTable::empty();
+    for rule in DOMAIN_RULES {
+        if settings.rules.enabled(*rule) {
+            rules.enable(*rule, false);
+        }
+    }
+    settings.rules = rules;
+    settings.odoo.domain_field = true;
+    let settings = &settings;
+
+    let mut diagnostics = Vec::new();
+    for domain in domains {
+        let source_kind = SourceKind::Python {
+            code: domain.code.clone(),
+            is_stub: false,
+        };
+        let result = lint_only(
+            path,
+            package,
+            settings,
+            noqa,
+            &source_kind,
+            PySourceType::Python,
+            ParseSource::None,
+        );
+        diagnostics.extend(
+            result
+                .diagnostics
+                .into_iter()
+                // A domain is not always plain Python (a `%(...)s` placeholder, say).
+                .filter(|diagnostic| !diagnostic.is_invalid_syntax())
+                .map(|diagnostic| relocate(diagnostic, domain, file)),
         );
     }
     diagnostics

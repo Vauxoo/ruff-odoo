@@ -3595,6 +3595,7 @@ impl OdooOptions {
             },
             readme_template_url: self.readme_template_url,
             code_field: None,
+            domain_field: false,
         }
     }
 }

@@ -36,6 +36,12 @@ pub struct Settings {
     /// clones for each field, which is how the rules learn that `env`, `model`, `record` and
     /// `records` are the names Odoo injects rather than arbitrary module-level variables.
     pub code_field: Option<CodeFieldContext>,
+    /// Set while linting a domain written in an Odoo XML file, and `false` everywhere else.
+    ///
+    /// Like `code_field`, it is never read from the configuration: `ruff_odoo_xml` sets it on the
+    /// settings it clones for each domain, which is how the rules learn that a bare name in the
+    /// expression is a field of the form (`donation_type_id`) rather than an arbitrary variable.
+    pub domain_field: bool,
 }
 
 /// What the rules know about the Odoo XML `code` field they are linting.
