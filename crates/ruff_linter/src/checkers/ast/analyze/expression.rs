@@ -214,6 +214,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             range: _,
             node_index: _,
         }) => {
+            if checker.is_rule_enabled(Rule::ScalarInDomain) {
+                odoo::rules::scalar_in_domain(checker, elts);
+            }
             if checker.is_rule_enabled(Rule::ImplicitStringConcatenationInCollectionLiteral) {
                 flake8_implicit_str_concat::rules::implicit_string_concatenation_in_collection_literal(
                     checker,

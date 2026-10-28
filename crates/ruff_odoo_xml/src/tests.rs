@@ -1126,3 +1126,100 @@ fn format_leaves_a_body_indented_with_tabs_alone() {
         XmlFormatResult::Unchanged
     );
 }
+
+const SCALAR_IN_DOMAIN: Rule = Rule::ScalarInDomain;
+
+#[test]
+fn scalar_in_domain_reads_the_domain_attributes() {
+    let source = r#"<odoo>
+    <record id="view_search" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <search>
+                <filter name="favourites" domain="[('starred_user_ids', 'in', uid)]" />
+                <filter name="mine" filter_domain="[('user_ids', 'not in', user.id)]" />
+                <field name="donation_type_ids" domain="[('id', 'in', donation_type_id)]" />
+                <field name="team_id" domain="[('team_ids', 'in', [team_id])]" />
+                <field name="company_id" domain="[('company_ids', 'in', company_id)]" />
+                <field name="active" domain="[('state', 'in', &quot;draft&quot;)]" />
+            </search>
+        </field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [SCALAR_IN_DOMAIN]), @r#"
+    5:79 ODW9505 The domain condition `('starred_user_ids', 'in', uid)` has a scalar value; `in` expects a list
+    6:76 ODW9505 The domain condition `('user_ids', 'not in', user.id)` has a scalar value; `not in` expects a list
+    7:71 ODW9505 The domain condition `('id', 'in', donation_type_id)` has a scalar value; `in` expects a list
+    9:73 ODW9505 The domain condition `('company_ids', 'in', company_id)` has a scalar value; `in` expects a list
+    10:63 ODW9505 The domain condition `('state', 'in', "draft")` has a scalar value; `in` expects a list
+    "#);
+}
+
+#[test]
+fn scalar_in_domain_reads_the_text_of_an_inheriting_view_and_a_record() {
+    let source = r#"<odoo>
+    <record id="inherit" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='payment_journal_id']" position="attributes">
+                <attribute name="domain">[('donation_type_ids', 'in', donation_type_id)]</attribute>
+            </xpath>
+            <field name="x" position="attributes">
+                <attribute name="domain">
+                    [
+                        ('a_ids', 'in', [donation_type_id] if donation_type_id else []),
+                        ('b_ids', 'in', active_id),
+                    ]
+                </attribute>
+            </field>
+        </field>
+    </record>
+    <record id="rule" model="ir.rule">
+        <field name="domain_force">[('user_ids', 'in', user.id)]</field>
+    </record>
+    <record id="action" model="ir.actions.act_window">
+        <field name="domain" eval="[('partner_ids', 'in', user.partner_id.id)]" />
+    </record>
+    <record id="safe" model="ir.rule">
+        <field name="domain_force">[('user_ids', 'in', user.ids), ('b', 'in', [user.id])]</field>
+        <field name="domain" ref="some_domain" />
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [SCALAR_IN_DOMAIN]), @r#"
+    5:71 ODW9505 The domain condition `('donation_type_ids', 'in', donation_type_id)` has a scalar value; `in` expects a list
+    11:41 ODW9505 The domain condition `('b_ids', 'in', active_id)` has a scalar value; `in` expects a list
+    18:56 ODW9505 The domain condition `('user_ids', 'in', user.id)` has a scalar value; `in` expects a list
+    21:59 ODW9505 The domain condition `('partner_ids', 'in', user.partner_id.id)` has a scalar value; `in` expects a list
+    "#);
+}
+
+#[test]
+fn scalar_in_domain_is_not_confused_by_what_is_not_a_domain() {
+    // A domain Python cannot parse is skipped, a text that is not in a domain slot is not read,
+    // and the rule is only on when it is selected.
+    let source = r#"<odoo>
+    <record id="rule" model="ir.rule">
+        <field name="name">[('user_ids', 'in', user.id)]</field>
+        <field name="domain_force">[('user_ids', 'in', %(uid)s)]</field>
+        <field name="context">{'domain': [('user_ids', 'in', user.id)]}</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [SCALAR_IN_DOMAIN]), @"");
+    assert_snapshot!(lint(source, [Rule::UnusedImport]), @"");
+}
+
+#[test]
+fn scalar_in_domain_leaves_the_other_rules_out_of_a_domain() {
+    // The domain is not a module: no docstring, no undefined names (`uid` is Odoo's).
+    let source = r#"<odoo>
+    <record id="rule" model="ir.rule">
+        <field name="domain_force">[('user_ids', 'in', uid), ('x', '=', undefined_name)]</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(
+        lint(source, [SCALAR_IN_DOMAIN, Rule::UndefinedName, Rule::UndocumentedPublicModule]),
+        @r#"3:56 ODW9505 The domain condition `('user_ids', 'in', uid)` has a scalar value; `in` expects a list"#
+    );
+}

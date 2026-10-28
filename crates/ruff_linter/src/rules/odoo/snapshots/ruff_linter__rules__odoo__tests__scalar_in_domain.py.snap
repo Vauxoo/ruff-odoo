@@ -1,0 +1,401 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9505 [*] The domain condition `("state", "in", "open")` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:8:80
+   |
+ 7 |     country_id = fields.Many2one("res.country")
+ 8 |     campaign_ids = fields.Many2many("orphan.campaign", domain=[("state", "in", "open")])
+   |                                                                                ^^^^^^
+ 9 |
+10 |     def positive_id(self):
+   |
+help: Wrap `"open"` in a list
+  |
+7 |     country_id = fields.Many2one("res.country")
+  -     campaign_ids = fields.Many2many("orphan.campaign", domain=[("state", "in", "open")])
+8 +     campaign_ids = fields.Many2many("orphan.campaign", domain=[("state", "in", ["open"])])
+9 |
+  |
+
+ODW9505 [*] The domain condition `("country_ids", "in", orphan.country_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:13:68
+   |
+11 |         # ODW9505: `.id` is the id of one record.
+12 |         for orphan in self:
+13 |             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)], limit=1)
+   |                                                                    ^^^^^^^^^^^^^^^^^^^^
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+   |
+help: Use `.ids` instead of `.id`
+   |
+12 |         for orphan in self:
+   -             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)], limit=1)
+13 +             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.ids)], limit=1)
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("country_ids", "not in", orphan.country_id.id)` has a scalar value; `not in` expects a list
+  --> scalar_in_domain.py:14:78
+   |
+12 |         for orphan in self:
+13 |             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)], limit=1)
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+   |                                                                              ^^^^^^^^^^^^^^^^^^^^
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+   |
+help: Use `.ids` instead of `.id`
+   |
+13 |             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)], limit=1)
+   -             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+14 +             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.ids)])
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("country_ids", "in", self.env.company.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:15:69
+   |
+13 |             self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)], limit=1)
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+   |                                                                     ^^^^^^^^^^^^^^^^^^^
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+17 |         return self.env["orphan.group"]._search([("country_ids", "in", self.id)])
+   |
+help: Use `.ids` instead of `.id`
+   |
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+   -         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+15 +         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.ids)])
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("country_ids", "in", self.country_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:16:53
+   |
+14 |             self.env["orphan.group"].search_count([("country_ids", "not in", orphan.country_id.id)])
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+   |                                                     ^^^^^^^^^^^^^^^^^^
+17 |         return self.env["orphan.group"]._search([("country_ids", "in", self.id)])
+   |
+help: Use `.ids` instead of `.id`
+   |
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+   -         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+16 +         self.filtered_domain([("country_ids", "in", self.country_id.ids)])
+17 |         return self.env["orphan.group"]._search([("country_ids", "in", self.id)])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("country_ids", "in", self.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:17:72
+   |
+15 |         self.env["orphan.group"].search_read([("country_ids", "in", self.env.company.id)])
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+17 |         return self.env["orphan.group"]._search([("country_ids", "in", self.id)])
+   |                                                                        ^^^^^^^
+18 |
+19 |     def positive_uid(self):
+   |
+help: Use `.ids` instead of `.id`
+   |
+16 |         self.filtered_domain([("country_ids", "in", self.country_id.id)])
+   -         return self.env["orphan.group"]._search([("country_ids", "in", self.id)])
+17 +         return self.env["orphan.group"]._search([("country_ids", "in", self.ids)])
+18 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("starred_user_ids", "in", self.env.uid)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:21:68
+   |
+19 |     def positive_uid(self):
+20 |         # ODW9505: `uid` is the id of the user.
+21 |         self.env["res.partner"].search([("starred_user_ids", "in", self.env.uid)])
+   |                                                                    ^^^^^^^^^^^^
+22 |         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+23 |         return [("starred_user_ids", "in", uid)]
+   |
+help: Wrap `self.env.uid` in a list
+   |
+20 |         # ODW9505: `uid` is the id of the user.
+   -         self.env["res.partner"].search([("starred_user_ids", "in", self.env.uid)])
+21 +         self.env["res.partner"].search([("starred_user_ids", "in", [self.env.uid])])
+22 |         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("starred_user_ids", "not in", self._uid)` has a scalar value; `not in` expects a list
+  --> scalar_in_domain.py:22:72
+   |
+20 |         # ODW9505: `uid` is the id of the user.
+21 |         self.env["res.partner"].search([("starred_user_ids", "in", self.env.uid)])
+22 |         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+   |                                                                        ^^^^^^^^^
+23 |         return [("starred_user_ids", "in", uid)]
+   |
+help: Wrap `self._uid` in a list
+   |
+21 |         self.env["res.partner"].search([("starred_user_ids", "in", self.env.uid)])
+   -         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+22 +         self.env["res.partner"].search([("starred_user_ids", "not in", [self._uid])])
+23 |         return [("starred_user_ids", "in", uid)]
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("starred_user_ids", "in", uid)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:23:44
+   |
+21 |         self.env["res.partner"].search([("starred_user_ids", "in", self.env.uid)])
+22 |         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+23 |         return [("starred_user_ids", "in", uid)]
+   |                                            ^^^
+24 |
+25 |     def positive_literals(self):
+   |
+help: Wrap `uid` in a list
+   |
+22 |         self.env["res.partner"].search([("starred_user_ids", "not in", self._uid)])
+   -         return [("starred_user_ids", "in", uid)]
+23 +         return [("starred_user_ids", "in", [uid])]
+24 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("state", "in", "draft")` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:27:57
+   |
+25 |     def positive_literals(self):
+26 |         # ODW9505: a literal is a scalar; a falsy one turns the condition into a constant.
+27 |         self.env["res.partner"].search([("state", "in", "draft")])
+   |                                                         ^^^^^^^
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+29 |         self.env["res.partner"].search([("active", "in", True)])
+   |
+help: Wrap `"draft"` in a list
+   |
+26 |         # ODW9505: a literal is a scalar; a falsy one turns the condition into a constant.
+   -         self.env["res.partner"].search([("state", "in", "draft")])
+27 +         self.env["res.partner"].search([("state", "in", ["draft"])])
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+   |
+
+ODW9505 [*] The domain condition `("sequence", "not in", 5)` has a scalar value; `not in` expects a list
+  --> scalar_in_domain.py:28:64
+   |
+26 |         # ODW9505: a literal is a scalar; a falsy one turns the condition into a constant.
+27 |         self.env["res.partner"].search([("state", "in", "draft")])
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+   |                                                                ^
+29 |         self.env["res.partner"].search([("active", "in", True)])
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+   |
+help: Wrap `5` in a list
+   |
+27 |         self.env["res.partner"].search([("state", "in", "draft")])
+   -         self.env["res.partner"].search([("sequence", "not in", 5)])
+28 +         self.env["res.partner"].search([("sequence", "not in", [5])])
+29 |         self.env["res.partner"].search([("active", "in", True)])
+   |
+
+ODW9505 [*] The domain condition `("active", "in", True)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:29:58
+   |
+27 |         self.env["res.partner"].search([("state", "in", "draft")])
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+29 |         self.env["res.partner"].search([("active", "in", True)])
+   |                                                          ^^^^
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+31 |         self.env["res.partner"].search([("parent_id", "in", None)])
+   |
+help: Wrap `True` in a list
+   |
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+   -         self.env["res.partner"].search([("active", "in", True)])
+29 +         self.env["res.partner"].search([("active", "in", [True])])
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+   |
+
+ODW9505 The domain condition `("parent_id", "in", False)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:30:61
+   |
+28 |         self.env["res.partner"].search([("sequence", "not in", 5)])
+29 |         self.env["res.partner"].search([("active", "in", True)])
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+   |                                                             ^^^^^
+31 |         self.env["res.partner"].search([("parent_id", "in", None)])
+32 |         self.env["res.partner"].search([("parent_id", "not in", 0)])
+   |
+
+ODW9505 The domain condition `("parent_id", "in", None)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:31:61
+   |
+29 |         self.env["res.partner"].search([("active", "in", True)])
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+31 |         self.env["res.partner"].search([("parent_id", "in", None)])
+   |                                                             ^^^^
+32 |         self.env["res.partner"].search([("parent_id", "not in", 0)])
+33 |         self.env["res.partner"].search([("name", "in", "")])
+   |
+
+ODW9505 The domain condition `("parent_id", "not in", 0)` has a scalar value; `not in` expects a list
+  --> scalar_in_domain.py:32:65
+   |
+30 |         self.env["res.partner"].search([("parent_id", "in", False)])
+31 |         self.env["res.partner"].search([("parent_id", "in", None)])
+32 |         self.env["res.partner"].search([("parent_id", "not in", 0)])
+   |                                                                 ^
+33 |         self.env["res.partner"].search([("name", "in", "")])
+34 |         self.env["res.partner"].search([("sequence", "in", -1)])
+   |
+
+ODW9505 The domain condition `("name", "in", "")` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:33:56
+   |
+31 |         self.env["res.partner"].search([("parent_id", "in", None)])
+32 |         self.env["res.partner"].search([("parent_id", "not in", 0)])
+33 |         self.env["res.partner"].search([("name", "in", "")])
+   |                                                        ^^
+34 |         self.env["res.partner"].search([("sequence", "in", -1)])
+   |
+
+ODW9505 [*] The domain condition `("sequence", "in", -1)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:34:60
+   |
+32 |         self.env["res.partner"].search([("parent_id", "not in", 0)])
+33 |         self.env["res.partner"].search([("name", "in", "")])
+34 |         self.env["res.partner"].search([("sequence", "in", -1)])
+   |                                                            ^^
+35 |
+36 |     def positive_domain_variable(self, partner):
+   |
+help: Wrap `-1` in a list
+   |
+33 |         self.env["res.partner"].search([("name", "in", "")])
+   -         self.env["res.partner"].search([("sequence", "in", -1)])
+34 +         self.env["res.partner"].search([("sequence", "in", [-1])])
+35 |
+   |
+
+ODW9505 [*] The domain condition `("company_ids", "in", partner.company_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:38:41
+   |
+36 |     def positive_domain_variable(self, partner):
+37 |         # ODW9505: any list of conditions is looked at, not only the ones passed to `search`.
+38 |         domain = [("company_ids", "in", partner.company_id.id), ("active", "=", True)]
+   |                                         ^^^^^^^^^^^^^^^^^^^^^
+39 |         domain += [("category_id", "in", partner.category_id.id)]
+40 |         return self.env["res.partner"].search(domain)
+   |
+help: Use `.ids` instead of `.id`
+   |
+37 |         # ODW9505: any list of conditions is looked at, not only the ones passed to `search`.
+   -         domain = [("company_ids", "in", partner.company_id.id), ("active", "=", True)]
+38 +         domain = [("company_ids", "in", partner.company_id.ids), ("active", "=", True)]
+39 |         domain += [("category_id", "in", partner.category_id.id)]
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("category_id", "in", partner.category_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:39:42
+   |
+37 |         # ODW9505: any list of conditions is looked at, not only the ones passed to `search`.
+38 |         domain = [("company_ids", "in", partner.company_id.id), ("active", "=", True)]
+39 |         domain += [("category_id", "in", partner.category_id.id)]
+   |                                          ^^^^^^^^^^^^^^^^^^^^^^
+40 |         return self.env["res.partner"].search(domain)
+   |
+help: Use `.ids` instead of `.id`
+   |
+38 |         domain = [("company_ids", "in", partner.company_id.id), ("active", "=", True)]
+   -         domain += [("category_id", "in", partner.category_id.id)]
+39 +         domain += [("category_id", "in", partner.category_id.ids)]
+40 |         return self.env["res.partner"].search(domain)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 The domain condition `("cause_ids", "in", cause_id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:45:73
+   |
+43 |         # ODW9505: the only assignment of `cause_id` is a record id.
+44 |         cause_id = self.campaign_id.cause_id.id
+45 |         return self.env["product.template"].search([("cause_ids", "in", cause_id)], limit=1)
+   |                                                                         ^^^^^^^^
+46 |
+47 |     def positive_nested(self):
+   |
+
+ODW9505 [*] The domain condition `("cause_ids", "in", self.cause_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:51:33
+   |
+49 |         return [
+50 |             "|",
+51 |             ("cause_ids", "in", self.cause_id.id),
+   |                                 ^^^^^^^^^^^^^^^^
+52 |             "&",
+53 |             ("state", "=", "open"),
+   |
+help: Use `.ids` instead of `.id`
+   |
+50 |             "|",
+   -             ("cause_ids", "in", self.cause_id.id),
+51 +             ("cause_ids", "in", self.cause_id.ids),
+52 |             "&",
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("cause_ids", "in", self.other_cause_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:54:33
+   |
+52 |             "&",
+53 |             ("state", "=", "open"),
+54 |             ("cause_ids", "in", self.other_cause_id.id),
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^
+55 |         ]
+   |
+help: Use `.ids` instead of `.id`
+   |
+53 |             ("state", "=", "open"),
+   -             ("cause_ids", "in", self.other_cause_id.id),
+54 +             ("cause_ids", "in", self.other_cause_id.ids),
+55 |         ]
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("cause_ids", "in", self.cause_id.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:59:37
+   |
+57 |     def positive_list_condition(self):
+58 |         # ODW9505: a condition written as a list is the same condition.
+59 |         return [["cause_ids", "in", self.cause_id.id]]
+   |                                     ^^^^^^^^^^^^^^^^
+help: Use `.ids` instead of `.id`
+   |
+58 |         # ODW9505: a condition written as a list is the same condition.
+   -         return [["cause_ids", "in", self.cause_id.id]]
+59 +         return [["cause_ids", "in", self.cause_id.ids]]
+60 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 [*] The domain condition `("partner_ids", "in", partner.id)` has a scalar value; `in` expects a list
+  --> scalar_in_domain.py:64:35
+   |
+62 | def positive_module_level(partner):
+63 |     # ODW9505
+64 |     return [("partner_ids", "in", partner.id)]
+   |                                   ^^^^^^^^^^
+help: Use `.ids` instead of `.id`
+   |
+63 |     # ODW9505
+   -     return [("partner_ids", "in", partner.id)]
+64 +     return [("partner_ids", "in", partner.ids)]
+65 |
+   |
+note: This is an unsafe fix and may change runtime behavior

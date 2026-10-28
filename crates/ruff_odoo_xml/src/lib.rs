@@ -21,6 +21,7 @@ use std::path::Path;
 
 pub use lint::lint_code_fields;
 
+mod domain;
 mod lint;
 #[cfg(test)]
 mod tests;
