@@ -42,7 +42,7 @@ const FILE_LEVEL_RULES: &[Rule] = &[
 /// code came from.
 ///
 /// A domain is linted on its own as an expression, with only the rules that read domains turned
-/// on ([`DOMAIN_RULES`]), and `domain_field` set so that they read a bare name as a field of the
+/// on (the rules in `DOMAIN_RULES`), and `domain_field` set so that they read a bare name as a field of the
 /// form. A domain Python cannot parse is skipped without a diagnostic.
 ///
 /// Each field is linted on its own, as the module Odoo compiles it into, with the names Odoo

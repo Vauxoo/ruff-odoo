@@ -48,12 +48,12 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// ## Example
 /// ```python
-/// orphans = self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.id)])
+/// domain = [("country_ids", "in", orphan.country_id.id)]
 /// ```
 ///
 /// Use instead:
 /// ```python
-/// orphans = self.env["orphan.group"].search([("country_ids", "in", orphan.country_id.ids)])
+/// domain = [("country_ids", "in", orphan.country_id.ids)]
 /// ```
 ///
 /// ## Fix safety
