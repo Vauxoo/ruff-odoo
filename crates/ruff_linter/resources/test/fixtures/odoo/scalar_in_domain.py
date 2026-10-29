@@ -136,3 +136,38 @@ class Negative(models.Model):
     def negative_nested_condition(self, partner):
         # The subdomain of `any` is a list of conditions; the scalar inside is still reported.
         return [("partner_id", "any", [("id", "=", partner.id)])]
+
+
+class StringDomain(models.Model):
+    _name = "string.domain"
+
+    company_id = fields.Many2one("res.company")
+    # ODW9505: a field evaluates its string domain with the fields of the record.
+    journal_id = fields.Many2one("account.journal", domain="[('company_ids', 'in', company_id)]")
+    user_ids = fields.Many2many("res.users", domain="[('partner_ids', 'not in', uid)]")
+    cause_id = fields.Many2one(
+        "res.cause",
+        domain="""
+            ['|', ('country_ids', 'in', active_id), ('state', 'in', 'open')]
+        """,
+    )
+
+
+class NegativeStringDomain(models.Model):
+    _name = "negative.string.domain"
+
+    company_id = fields.Many2one("res.company")
+    company_ids = fields.Many2many("res.company")
+    # A list, a field that is a list, another operator, or a string that is not a domain.
+    ok_list = fields.Many2one("res.partner", domain="[('company_ids', 'in', [company_id])]")
+    ok_field = fields.Many2one("res.partner", domain="[('company_ids', 'in', company_ids)]")
+    ok_operator = fields.Many2one("res.partner", domain="[('company_id', '=', company_id)]")
+    ok_other_argument = fields.Many2one("res.partner", help="[('company_ids', 'in', company_id)]")
+    ok_dynamic = fields.Many2one("res.partner", domain="[('company_ids', 'in', company_id.ids)]")
+    ok_f_string = fields.Many2one("res.partner", domain=f"[('company_ids', 'in', {1})]")
+    ok_concatenated = fields.Many2one(
+        "res.partner",
+        domain="[('company_ids', 'in', " "company_id)]",
+    )
+    ok_escaped = fields.Many2one("res.partner", domain="[('company_ids', 'in', \x63ompany_id)]")
+    ok_not_python = fields.Many2one("res.partner", domain="%(placeholder)s")

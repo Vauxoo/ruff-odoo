@@ -1,7 +1,9 @@
 use ruff_macros::{ViolationMetadata, derive_message_formats};
-use ruff_python_ast::{self as ast, Expr, Number, UnaryOp};
+use ruff_python_ast::visitor::{Visitor, walk_expr};
+use ruff_python_ast::{self as ast, Expr, Keyword, Number, UnaryOp};
+use ruff_python_parser::parse_expression;
 use ruff_python_semantic::analyze::typing::find_binding_value;
-use ruff_text_size::{Ranged, TextRange};
+use ruff_text_size::{Ranged, TextRange, TextSize};
 
 use crate::checkers::ast::Checker;
 use crate::codes::Category;
@@ -29,7 +31,10 @@ use crate::{Edit, Fix, FixAvailability, Violation};
 ///
 /// In an XML file, where the names are the fields of the form, a bare name that is `id`,
 /// `active_id` or ends in `_id` (`donation_type_id`) is reported too: it holds the id of a
-/// many2one, or `False`.
+/// many2one, or `False`. The same goes for a domain written as a string in the `domain=`
+/// argument of a Python field (`fields.Many2one(domain="[('company_ids', 'in', company_id)]")`),
+/// which Odoo evaluates with the fields of the record. A string that is an f-string, is
+/// concatenated or holds an escape is not read.
 ///
 /// Everything else is left alone, because it may well be a collection: a list, tuple, set or
 /// dict display, a comprehension, a recordset, `record.ids`, `records.mapped(...)`, any call,
@@ -127,8 +132,88 @@ const FORM_ID_NAMES: &[&str] = &["id", "active_id"];
 /// How deep the chain of assignments of a name is followed.
 const MAX_BINDING_DEPTH: u8 = 4;
 
+/// Where the condition being looked at is written.
+struct Condition<'a> {
+    /// The text that the ranges of the condition index into: the whole file, or the contents of
+    /// a string literal that holds a domain.
+    text: &'a str,
+    /// Where `text` begins in the file.
+    shift: TextSize,
+    /// Whether a bare name is a field of the form, and so is read by its spelling.
+    in_form: bool,
+    /// Whether the fix may be offered: the condition is Python code of the file itself.
+    fixable: bool,
+}
+
 /// ODW9505
 pub(crate) fn scalar_in_domain(checker: &Checker, elts: &[Expr]) {
+    let condition = Condition {
+        text: checker.source(),
+        shift: TextSize::default(),
+        in_form: checker.settings().odoo.domain_field,
+        fixable: true,
+    };
+    check_condition(checker, elts, &condition);
+}
+
+/// ODW9505, for the domain that a `domain=` argument holds as a string, such as the one of a
+/// field: `fields.Many2one(domain="[('company_ids', 'in', company_id)]")`.
+///
+/// Odoo evaluates that string in the browser with the fields of the record, so a bare name is a
+/// field of the form, as in an XML file. A string that is concatenated, an f-string, a byte
+/// string or one with an escape is left alone, since its contents are not the text of the file.
+pub(crate) fn scalar_in_domain_string(checker: &Checker, keywords: &[Keyword]) {
+    for keyword in keywords {
+        if keyword.arg.as_deref() != Some("domain") {
+            continue;
+        }
+        let Expr::StringLiteral(string) = &keyword.value else {
+            continue;
+        };
+        let Some(literal) = string.as_single_part_string() else {
+            continue;
+        };
+        let contents = checker.locator().slice(literal.content_range());
+        if contents != &*literal.value {
+            continue;
+        }
+        let trimmed = contents.trim_start();
+        let Ok(parsed) = parse_expression(trimmed) else {
+            continue;
+        };
+        let leading = TextSize::try_from(contents.len() - trimmed.len()).unwrap_or_default();
+        let condition = Condition {
+            text: trimmed,
+            shift: literal.content_range().start() + leading,
+            in_form: true,
+            fixable: false,
+        };
+        let mut finder = ConditionFinder {
+            checker,
+            condition: &condition,
+        };
+        finder.visit_expr(parsed.expr());
+    }
+}
+
+/// Looks at every three-item list or tuple of a parsed domain.
+struct ConditionFinder<'a, 'b> {
+    checker: &'a Checker<'b>,
+    condition: &'a Condition<'a>,
+}
+
+impl<'a> Visitor<'a> for ConditionFinder<'_, '_> {
+    fn visit_expr(&mut self, expr: &'a Expr) {
+        if let Expr::Tuple(ast::ExprTuple { elts, .. }) | Expr::List(ast::ExprList { elts, .. }) =
+            expr
+        {
+            check_condition(self.checker, elts, self.condition);
+        }
+        walk_expr(self, expr);
+    }
+}
+
+fn check_condition(checker: &Checker, elts: &[Expr], condition: &Condition) {
     // The warning, and the constant a falsy scalar becomes, are Odoo 19.0 behaviour.
     if !odoo_version_applies(checker, Some(OdooVersion::new(19, 0)), None) {
         return;
@@ -143,16 +228,14 @@ pub(crate) fn scalar_in_domain(checker: &Checker, elts: &[Expr]) {
     if !matches!(operator, "in" | "not in") || is_operator(field) {
         return;
     }
-    let in_form = checker.settings().odoo.domain_field;
-    let Some(scalar) = classify(checker, value, in_form, 0) else {
+    let Some(scalar) = classify(checker, value, condition.in_form, 0) else {
         return;
     };
 
-    let source = checker.locator().slice(value);
-    let condition = checker
-        .locator()
-        .slice(TextRange::new(elts[0].start(), value.end()));
+    let source = slice(condition.text, value.range());
+    let text = slice(condition.text, TextRange::new(elts[0].start(), value.end()));
     let fix = match (scalar, value) {
+        _ if !condition.fixable => None,
         (Scalar::TruthyLiteral, _) => Some((Rewrite::Wrap, Applicability::Safe)),
         (Scalar::Uid, _) => Some((Rewrite::Wrap, Applicability::Unsafe)),
         (Scalar::RecordId, Expr::Attribute(_)) => Some((Rewrite::Ids, Applicability::Unsafe)),
@@ -160,12 +243,12 @@ pub(crate) fn scalar_in_domain(checker: &Checker, elts: &[Expr]) {
     };
     let mut diagnostic = checker.report_diagnostic(
         ScalarInDomain {
-            condition: format!("({condition})"),
+            condition: format!("({text})"),
             operator: operator.to_string(),
             value: source.to_string(),
             fix: fix.map(|(rewrite, _)| rewrite),
         },
-        value.range(),
+        value.range() + condition.shift,
     );
     let Some((rewrite, applicability)) = fix else {
         return;
@@ -181,6 +264,10 @@ pub(crate) fn scalar_in_domain(checker: &Checker, elts: &[Expr]) {
         Applicability::Safe => Fix::safe_edit(edit),
         Applicability::Unsafe => Fix::unsafe_edit(edit),
     });
+}
+
+fn slice(text: &str, range: TextRange) -> &str {
+    &text[range]
 }
 
 #[derive(Clone, Copy)]

@@ -399,3 +399,47 @@ help: Use `.ids` instead of `.id`
 65 |
    |
 note: This is an unsafe fix and may change runtime behavior
+
+ODW9505 The domain condition `('company_ids', 'in', company_id)` has a scalar value; `in` expects a list
+   --> scalar_in_domain.py:146:84
+    |
+144 |     company_id = fields.Many2one("res.company")
+145 |     # ODW9505: a field evaluates its string domain with the fields of the record.
+146 |     journal_id = fields.Many2one("account.journal", domain="[('company_ids', 'in', company_id)]")
+    |                                                                                    ^^^^^^^^^^
+147 |     user_ids = fields.Many2many("res.users", domain="[('partner_ids', 'not in', uid)]")
+148 |     cause_id = fields.Many2one(
+    |
+
+ODW9505 The domain condition `('partner_ids', 'not in', uid)` has a scalar value; `not in` expects a list
+   --> scalar_in_domain.py:147:81
+    |
+145 |     # ODW9505: a field evaluates its string domain with the fields of the record.
+146 |     journal_id = fields.Many2one("account.journal", domain="[('company_ids', 'in', company_id)]")
+147 |     user_ids = fields.Many2many("res.users", domain="[('partner_ids', 'not in', uid)]")
+    |                                                                                 ^^^
+148 |     cause_id = fields.Many2one(
+149 |         "res.cause",
+    |
+
+ODW9505 The domain condition `('country_ids', 'in', active_id)` has a scalar value; `in` expects a list
+   --> scalar_in_domain.py:151:41
+    |
+149 |         "res.cause",
+150 |         domain="""
+151 |             ['|', ('country_ids', 'in', active_id), ('state', 'in', 'open')]
+    |                                         ^^^^^^^^^
+152 |         """,
+153 |     )
+    |
+
+ODW9505 The domain condition `('state', 'in', 'open')` has a scalar value; `in` expects a list
+   --> scalar_in_domain.py:151:69
+    |
+149 |         "res.cause",
+150 |         domain="""
+151 |             ['|', ('country_ids', 'in', active_id), ('state', 'in', 'open')]
+    |                                                                     ^^^^^^
+152 |         """,
+153 |     )
+    |
