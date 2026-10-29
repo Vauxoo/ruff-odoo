@@ -554,6 +554,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                 node_index: _,
             },
         ) => {
+            if checker.is_rule_enabled(Rule::ScalarInDomain) {
+                odoo::rules::scalar_in_domain_string(checker, keywords);
+            }
             if checker.any_rule_enabled(&[
                 // pylint
                 Rule::BadStringFormatCharacter,
