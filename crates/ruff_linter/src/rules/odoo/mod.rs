@@ -258,6 +258,10 @@ mod tests {
         Path::new("deprecated_sql_constraints_no_import.py")
     )]
     #[test_case(
+        Rule::CredentialFieldUnrestricted,
+        Path::new("credential_field_unrestricted.py")
+    )]
+    #[test_case(
         Rule::DuplicateFieldDeclaration,
         Path::new("duplicate_field_declaration.py")
     )]
@@ -331,6 +335,25 @@ mod tests {
             },
         )?;
         assert_diagnostics!(snapshot.to_string(), diagnostics);
+        Ok(())
+    }
+
+    /// The payment providers of core only moved their credentials from `base.group_user` to
+    /// `base.group_system` in 15.0, so a module targeting 14.0 is left alone.
+    #[test]
+    fn credential_field_unrestricted_before_odoo_15() -> Result<()> {
+        let snapshot = "credential_field_unrestricted_before_odoo_15".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/credential_field_unrestricted.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(14, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::CredentialFieldUnrestricted)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
         Ok(())
     }
 
