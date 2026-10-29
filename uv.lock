@@ -1523,7 +1523,7 @@ wheels = [
 
 [[package]]
 name = "ruff-odoo"
-version = "0.17.0.35"
+version = "0.17.0.36"
 source = { editable = "." }
 
 [package.dev-dependencies]
