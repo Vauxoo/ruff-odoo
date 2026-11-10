@@ -1,3 +1,4 @@
+pub(crate) use absolute_date_in_domain::*;
 pub(crate) use attribute_deprecated::*;
 pub(crate) use attribute_string_redundant::*;
 pub(crate) use bad_builtin_groupby::*;
@@ -59,6 +60,7 @@ pub(crate) use unused_logger::*;
 pub(crate) use use_vim_comment::*;
 pub(crate) use website_manifest_key_not_valid_uri::*;
 
+mod absolute_date_in_domain;
 mod attribute_deprecated;
 mod attribute_string_redundant;
 mod bad_builtin_groupby;

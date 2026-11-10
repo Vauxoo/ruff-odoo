@@ -1,0 +1,165 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9506 The domain condition `('create_date', '>=', time.strftime('%Y-%m-%d 00:00:00'))` uses the date of the evaluation; use the relative date `('create_date', '>=', 'today')`
+  --> absolute_date_in_domain.py:13:40
+   |
+11 |     partner_id = fields.Many2one(
+12 |         "res.partner",
+13 |         domain="[('create_date', '>=', time.strftime('%Y-%m-%d 00:00:00')), ('create_date', '<=', time.strftime('%Y-%m-%d 23:59:59'))]…
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |     )
+15 |     today_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('create_date', '<=', time.strftime('%Y-%m-%d 23:59:59'))` uses the date of the evaluation; use the relative date `('create_date', '<', 'today +1d')`
+  --> absolute_date_in_domain.py:13:99
+   |
+11 | …
+12 | …
+13 | …ime('%Y-%m-%d 00:00:00')), ('create_date', '<=', time.strftime('%Y-%m-%d 23:59:59'))]",
+   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 | …
+15 | …
+   |
+
+ODW9506 The domain condition `('settlement_date', '=', context_today().strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('settlement_date', '>=', 'today'), ('settlement_date', '<', 'today +1d')`
+  --> absolute_date_in_domain.py:17:43
+   |
+15 |     today_id = fields.Many2one(
+16 |         "res.partner",
+17 |         domain="[('settlement_date', '=', context_today().strftime('%Y-%m-%d'))]",
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |     )
+19 |     pending_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date_begin', '<=', context_today())` uses the date of the evaluation; use the relative date `('date_begin', '<', 'today +1d')`
+  --> absolute_date_in_domain.py:21:39
+   |
+19 |     pending_id = fields.Many2one(
+20 |         "res.partner",
+21 |         domain="[('date_begin', '<=', context_today()), ('date_end', '>=', context_today())]",
+   |                                       ^^^^^^^^^^^^^^^
+22 |     )
+23 |     doubled_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date_end', '>=', context_today())` uses the date of the evaluation; use the relative date `('date_end', '>=', 'today')`
+  --> absolute_date_in_domain.py:21:76
+   |
+19 |     pending_id = fields.Many2one(
+20 |         "res.partner",
+21 |         domain="[('date_begin', '<=', context_today()), ('date_end', '>=', context_today())]",
+   |                                                                            ^^^^^^^^^^^^^^^
+22 |     )
+23 |     doubled_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('create_date', '>=', time.strftime('%%Y-%%m-%%d 00:00:00'))` uses the date of the evaluation; use the relative date `('create_date', '>=', 'today')`
+  --> absolute_date_in_domain.py:25:40
+   |
+23 |     doubled_id = fields.Many2one(
+24 |         "res.partner",
+25 |         domain="[('create_date', '>=', time.strftime('%%Y-%%m-%%d 00:00:00'))]",
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+26 |     )
+27 |     recent_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date', '>', (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('date', '>=', 'today -2d')`
+  --> absolute_date_in_domain.py:29:32
+   |
+27 |     recent_id = fields.Many2one(
+28 |         "res.partner",
+29 |         domain="[('date', '>', (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d'))]",
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     )
+31 |     month_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date', '>=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('date', '>=', 'today -1m')`
+  --> absolute_date_in_domain.py:33:33
+   |
+31 |     month_id = fields.Many2one(
+32 |         "res.partner",
+33 |         domain="[('date', '>=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d')), ('date', '<=', (context_today() + d…
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |     )
+35 |     now_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date', '<=', (context_today() + datetime.timedelta(weeks=1)))` uses the date of the evaluation; use the relative date `('date', '<', 'today +1w +1d')`
+  --> absolute_date_in_domain.py:33:116
+   |
+31 | …
+32 | …
+33 | …=1)).strftime('%Y-%m-%d')), ('date', '<=', (context_today() + datetime.timedelta(weeks=1)))]",
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 | …
+35 | …
+   |
+
+ODW9506 The domain condition `('create_date', '<=', datetime.datetime.now())` uses the date of the evaluation; use the relative date `('create_date', '<=', 'now')`
+  --> absolute_date_in_domain.py:37:40
+   |
+35 |     now_id = fields.Many2one(
+36 |         "res.partner",
+37 |         domain="[('create_date', '<=', datetime.datetime.now()), ('write_date', '>', datetime.datetime.now() - datetime.timedelta(days…
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^
+38 |     )
+39 |     unreadable_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('write_date', '>', datetime.datetime.now() - datetime.timedelta(days=1))` uses the date of the evaluation; use the relative date `('write_date', '>', 'now -1d')`
+  --> absolute_date_in_domain.py:37:86
+   |
+35 | …
+36 | …
+37 | …me.datetime.now()), ('write_date', '>', datetime.datetime.now() - datetime.timedelta(days=1))]",
+   |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+38 | …
+39 | …
+   |
+
+ODW9506 The domain condition `('date', '>=', context_today().strftime('%Y-%m-01'))` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+  --> absolute_date_in_domain.py:41:33
+   |
+39 |     unreadable_id = fields.Many2one(
+40 |         "res.partner",
+41 |         domain="[('date', '>=', context_today().strftime('%Y-%m-01')), ('date', '<', (context_today() + relativedelta(months=1, day=1)…
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+42 |     )
+43 |     different_id = fields.Many2one(
+   |
+
+ODW9506 The domain condition `('date', '<', (context_today() + relativedelta(months=1, day=1)))` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+  --> absolute_date_in_domain.py:41:87
+   |
+39 | …
+40 | …
+41 | …y().strftime('%Y-%m-01')), ('date', '<', (context_today() + relativedelta(months=1, day=1)))]",
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+42 | …
+43 | …
+   |
+
+ODW9506 The domain condition `('date', '!=', context_today())` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+  --> absolute_date_in_domain.py:45:33
+   |
+43 |     different_id = fields.Many2one(
+44 |         "res.partner",
+45 |         domain="[('date', '!=', context_today()), ('date', '>=', datetime.date.today() - relativedelta(years=1))]",
+   |                                 ^^^^^^^^^^^^^^^
+46 |     )
+   |
+
+ODW9506 The domain condition `('date', '>=', datetime.date.today() - relativedelta(years=1))` uses the date of the evaluation; use the relative date `('date', '>=', 'today -1y')`
+  --> absolute_date_in_domain.py:45:66
+   |
+43 |     different_id = fields.Many2one(
+44 |         "res.partner",
+45 |         domain="[('date', '!=', context_today()), ('date', '>=', datetime.date.today() - relativedelta(years=1))]",
+   |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+46 |     )
+   |
