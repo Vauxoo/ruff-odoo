@@ -266,6 +266,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
                     if checker.is_rule_enabled(Rule::DeprecatedOsvExpression) {
                         odoo::rules::deprecated_osv_expression(checker, expr);
                     }
+                    if checker.is_rule_enabled(Rule::DeprecatedOdooToolsFunction) {
+                        odoo::rules::deprecated_odoo_tools_function(checker, expr);
+                    }
                     if checker.is_rule_enabled(Rule::Airflow3Removal) {
                         airflow::rules::airflow_3_removal_expr(checker, expr);
                     }
@@ -412,6 +415,9 @@ pub(crate) fn expression(expr: &Expr, checker: &Checker) {
             if attribute.ctx == ExprContext::Load {
                 if checker.is_rule_enabled(Rule::DeprecatedOsvExpression) {
                     odoo::rules::deprecated_osv_expression(checker, expr);
+                }
+                if checker.is_rule_enabled(Rule::DeprecatedOdooToolsFunction) {
+                    odoo::rules::deprecated_odoo_tools_function(checker, expr);
                 }
                 if checker.any_rule_enabled(&[
                     Rule::SuspiciousPickleUsage,

@@ -1,0 +1,536 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:11:5
+   |
+10 | # Reported, with the safe fix: the argument is a str by construction.
+11 | a = ustr("literal")
+   |     ^^^^
+12 | b = ustr(f"fstring {a}")
+13 | c = ustr(str(a))
+   |
+help: Replace with its argument
+   |
+10 | # Reported, with the safe fix: the argument is a str by construction.
+   - a = ustr("literal")
+11 + a = "literal"
+12 | b = ustr(f"fstring {a}")
+   |
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:12:5
+   |
+10 | # Reported, with the safe fix: the argument is a str by construction.
+11 | a = ustr("literal")
+12 | b = ustr(f"fstring {a}")
+   |     ^^^^
+13 | c = ustr(str(a))
+14 | d = ustr("literal", "latin-1", "replace")
+   |
+help: Replace with its argument
+   |
+11 | a = ustr("literal")
+   - b = ustr(f"fstring {a}")
+12 + b = f"fstring {a}"
+13 | c = ustr(str(a))
+   |
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:13:5
+   |
+11 | a = ustr("literal")
+12 | b = ustr(f"fstring {a}")
+13 | c = ustr(str(a))
+   |     ^^^^
+14 | d = ustr("literal", "latin-1", "replace")
+   |
+help: Replace with its argument
+   |
+12 | b = ustr(f"fstring {a}")
+   - c = ustr(str(a))
+13 + c = str(a)
+14 | d = ustr("literal", "latin-1", "replace")
+   |
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:14:5
+   |
+12 | b = ustr(f"fstring {a}")
+13 | c = ustr(str(a))
+14 | d = ustr("literal", "latin-1", "replace")
+   |     ^^^^
+15 |
+16 | # Reported, no fix: the options are not constants, so dropping them would drop an effect.
+   |
+help: Replace with its argument
+   |
+13 | c = ustr(str(a))
+   - d = ustr("literal", "latin-1", "replace")
+14 + d = "literal"
+15 |
+   |
+
+ODW9506 `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:17:5
+   |
+16 | # Reported, no fix: the options are not constants, so dropping them would drop an effect.
+17 | e = ustr("literal", errors=handler())
+   |     ^^^^
+18 |
+19 | # Reported, with the safe fix: ustr delegates an exception to exception_to_unicode.
+   |
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:23:9
+   |
+21 |     pass
+22 | except ValueError as error:
+23 |     f = ustr(error)
+   |         ^^^^
+24 |
+25 | # Reported, with the unsafe fix to str(): the type of the value is unknown.
+   |
+help: Replace with `exception_to_unicode(...)`
+   |
+4  | from odoo.loglevels import get_encodings
+   - from odoo.tools import pycompat, ustr
+5  + from odoo.tools import pycompat, ustr, exception_to_unicode
+6  | from odoo.tools.misc import ustr as misc_ustr
+--------------------------------------------------------------------------------
+22 | except ValueError as error:
+   -     f = ustr(error)
+23 +     f = exception_to_unicode(error)
+24 |
+   |
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:26:5
+   |
+25 | # Reported, with the unsafe fix to str(): the type of the value is unknown.
+26 | g = ustr(value)
+   |     ^^^^
+27 | h = ustr(value=value)
+28 | i = ustr(self.name)
+   |
+help: Replace with `str(...)`
+   |
+25 | # Reported, with the unsafe fix to str(): the type of the value is unknown.
+   - g = ustr(value)
+26 + g = str(value)
+27 | h = ustr(value=value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:27:5
+   |
+25 | # Reported, with the unsafe fix to str(): the type of the value is unknown.
+26 | g = ustr(value)
+27 | h = ustr(value=value)
+   |     ^^^^
+28 | i = ustr(self.name)
+29 | j = tools.ustr(value)
+   |
+help: Replace with `str(...)`
+   |
+26 | g = ustr(value)
+   - h = ustr(value=value)
+27 + h = str(value)
+28 | i = ustr(self.name)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:28:5
+   |
+26 | g = ustr(value)
+27 | h = ustr(value=value)
+28 | i = ustr(self.name)
+   |     ^^^^
+29 | j = tools.ustr(value)
+30 | k = misc.ustr(value)
+   |
+help: Replace with `str(...)`
+   |
+27 | h = ustr(value=value)
+   - i = ustr(self.name)
+28 + i = str(self.name)
+29 | j = tools.ustr(value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:29:5
+   |
+27 | h = ustr(value=value)
+28 | i = ustr(self.name)
+29 | j = tools.ustr(value)
+   |     ^^^^^^^^^^
+30 | k = misc.ustr(value)
+31 | l = odoo.loglevels.ustr(value)
+   |
+help: Replace with `str(...)`
+   |
+28 | i = ustr(self.name)
+   - j = tools.ustr(value)
+29 + j = str(value)
+30 | k = misc.ustr(value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:30:5
+   |
+28 | i = ustr(self.name)
+29 | j = tools.ustr(value)
+30 | k = misc.ustr(value)
+   |     ^^^^^^^^^
+31 | l = odoo.loglevels.ustr(value)
+32 | m = misc_ustr(value)
+   |
+help: Replace with `str(...)`
+   |
+29 | j = tools.ustr(value)
+   - k = misc.ustr(value)
+30 + k = str(value)
+31 | l = odoo.loglevels.ustr(value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:31:5
+   |
+29 | j = tools.ustr(value)
+30 | k = misc.ustr(value)
+31 | l = odoo.loglevels.ustr(value)
+   |     ^^^^^^^^^^^^^^^^^^^
+32 | m = misc_ustr(value)
+   |
+help: Replace with `str(...)`
+   |
+30 | k = misc.ustr(value)
+   - l = odoo.loglevels.ustr(value)
+31 + l = str(value)
+32 | m = misc_ustr(value)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:32:5
+   |
+30 | k = misc.ustr(value)
+31 | l = odoo.loglevels.ustr(value)
+32 | m = misc_ustr(value)
+   |     ^^^^^^^^^
+33 |
+34 | # Reported, with the unsafe fix to .decode(): the options only make sense for bytes.
+   |
+help: Replace with `str(...)`
+   |
+5  | from odoo.tools import pycompat, ustr
+   - from odoo.tools.misc import ustr as misc_ustr
+6  | from odoo.tools.pycompat import csv_reader, csv_writer, to_text
+--------------------------------------------------------------------------------
+30 | l = odoo.loglevels.ustr(value)
+   - m = misc_ustr(value)
+31 + m = str(value)
+32 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:35:5
+   |
+34 | # Reported, with the unsafe fix to .decode(): the options only make sense for bytes.
+35 | n = ustr(word, errors="replace")
+   |     ^^^^
+36 | o = ustr(word, "latin-1")
+37 | p = ustr(word, "latin-1", "ignore")
+   |
+help: Replace with `.decode(...)`
+   |
+34 | # Reported, with the unsafe fix to .decode(): the options only make sense for bytes.
+   - n = ustr(word, errors="replace")
+35 + n = word.decode(errors="replace")
+36 | o = ustr(word, "latin-1")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:36:5
+   |
+34 | # Reported, with the unsafe fix to .decode(): the options only make sense for bytes.
+35 | n = ustr(word, errors="replace")
+36 | o = ustr(word, "latin-1")
+   |     ^^^^
+37 | p = ustr(word, "latin-1", "ignore")
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+   |
+help: Replace with `.decode(...)`
+   |
+35 | n = ustr(word, errors="replace")
+   - o = ustr(word, "latin-1")
+36 + o = word.decode("latin-1")
+37 | p = ustr(word, "latin-1", "ignore")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:37:5
+   |
+35 | n = ustr(word, errors="replace")
+36 | o = ustr(word, "latin-1")
+37 | p = ustr(word, "latin-1", "ignore")
+   |     ^^^^
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+39 | r = ustr(first + second, errors="replace")
+   |
+help: Replace with `.decode(...)`
+   |
+36 | o = ustr(word, "latin-1")
+   - p = ustr(word, "latin-1", "ignore")
+37 + p = word.decode("latin-1", "ignore")
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:38:5
+   |
+36 | o = ustr(word, "latin-1")
+37 | p = ustr(word, "latin-1", "ignore")
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+   |     ^^^^
+39 | r = ustr(first + second, errors="replace")
+40 | s = ustr(b"raw", errors="replace")
+   |
+help: Replace with `.decode(...)`
+   |
+37 | p = ustr(word, "latin-1", "ignore")
+   - q = ustr(word, hint_encoding="latin-1", errors="replace")
+38 + q = word.decode(encoding="latin-1", errors="replace")
+39 | r = ustr(first + second, errors="replace")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:39:5
+   |
+37 | p = ustr(word, "latin-1", "ignore")
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+39 | r = ustr(first + second, errors="replace")
+   |     ^^^^
+40 | s = ustr(b"raw", errors="replace")
+   |
+help: Replace with `.decode(...)`
+   |
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+   - r = ustr(first + second, errors="replace")
+39 + r = (first + second).decode(errors="replace")
+40 | s = ustr(b"raw", errors="replace")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:40:5
+   |
+38 | q = ustr(word, hint_encoding="latin-1", errors="replace")
+39 | r = ustr(first + second, errors="replace")
+40 | s = ustr(b"raw", errors="replace")
+   |     ^^^^
+41 |
+42 | # Reported, no fix.
+   |
+help: Replace with `.decode(...)`
+   |
+39 | r = ustr(first + second, errors="replace")
+   - s = ustr(b"raw", errors="replace")
+40 + s = b"raw".decode(errors="replace")
+41 |
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:43:5
+   |
+42 | # Reported, no fix.
+43 | t = ustr(*args)
+   |     ^^^^
+44 | u = ustr(value, bogus=True)
+45 | v = map(ustr, values)
+   |
+
+ODW9506 `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:44:5
+   |
+42 | # Reported, no fix.
+43 | t = ustr(*args)
+44 | u = ustr(value, bogus=True)
+   |     ^^^^
+45 | v = map(ustr, values)
+46 | w = list(get_encodings("utf-8"))
+   |
+
+ODW9506 `ustr` is deprecated since Odoo 18.0. Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+  --> deprecated_odoo_tools_function.py:45:9
+   |
+43 | t = ustr(*args)
+44 | u = ustr(value, bogus=True)
+45 | v = map(ustr, values)
+   |         ^^^^
+46 | w = list(get_encodings("utf-8"))
+   |
+
+ODW9506 `get_encodings` is deprecated since Odoo 18.0. Decode with the one encoding the data is known to have instead of guessing.
+  --> deprecated_odoo_tools_function.py:46:10
+   |
+44 | u = ustr(value, bogus=True)
+45 | v = map(ustr, values)
+46 | w = list(get_encodings("utf-8"))
+   |          ^^^^^^^^^^^^^
+47 |
+48 | # pycompat.
+   |
+
+ODW9506 [*] `to_text` is deprecated since Odoo 18.0. Use `str(value)`, decoding `bytes` first; `None` and `False` no longer become an empty string.
+  --> deprecated_odoo_tools_function.py:49:5
+   |
+48 | # pycompat.
+49 | x = to_text("literal")
+   |     ^^^^^^^
+50 | y = to_text(value)
+51 | z = pycompat.to_text(None)
+   |
+help: Replace with its argument
+   |
+48 | # pycompat.
+   - x = to_text("literal")
+49 + x = "literal"
+50 | y = to_text(value)
+   |
+
+ODW9506 `to_text` is deprecated since Odoo 18.0. Use `str(value)`, decoding `bytes` first; `None` and `False` no longer become an empty string.
+  --> deprecated_odoo_tools_function.py:50:5
+   |
+48 | # pycompat.
+49 | x = to_text("literal")
+50 | y = to_text(value)
+   |     ^^^^^^^
+51 | z = pycompat.to_text(None)
+52 | reader = csv_reader(stream)
+   |
+
+ODW9506 `to_text` is deprecated since Odoo 18.0. Use `str(value)`, decoding `bytes` first; `None` and `False` no longer become an empty string.
+  --> deprecated_odoo_tools_function.py:51:5
+   |
+49 | x = to_text("literal")
+50 | y = to_text(value)
+51 | z = pycompat.to_text(None)
+   |     ^^^^^^^^^^^^^^^^
+52 | reader = csv_reader(stream)
+53 | reader = csv_reader(stream, delimiter=";")
+   |
+
+ODW9506 [*] `csv_reader` is deprecated since Odoo 18.0. Use `csv.reader` over a text stream, or over `codecs.getreader("utf-8")` of a bytes stream.
+  --> deprecated_odoo_tools_function.py:52:10
+   |
+50 | y = to_text(value)
+51 | z = pycompat.to_text(None)
+52 | reader = csv_reader(stream)
+   |          ^^^^^^^^^^
+53 | reader = csv_reader(stream, delimiter=";")
+54 | writer = csv_writer(stream, quoting=1)
+   |
+help: Replace with `csv.reader` over `codecs.getreader`
+   |
+7  | from odoo.tools.pycompat import csv_reader, csv_writer, to_text
+8  + import csv
+9  + import codecs
+10 |
+--------------------------------------------------------------------------------
+53 | z = pycompat.to_text(None)
+   - reader = csv_reader(stream)
+54 + reader = csv.reader(codecs.getreader("utf-8")(stream))
+55 | reader = csv_reader(stream, delimiter=";")
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `csv_reader` is deprecated since Odoo 18.0. Use `csv.reader` over a text stream, or over `codecs.getreader("utf-8")` of a bytes stream.
+  --> deprecated_odoo_tools_function.py:53:10
+   |
+51 | z = pycompat.to_text(None)
+52 | reader = csv_reader(stream)
+53 | reader = csv_reader(stream, delimiter=";")
+   |          ^^^^^^^^^^
+54 | writer = csv_writer(stream, quoting=1)
+55 | reader = pycompat.csv_reader(stream)
+   |
+help: Replace with `csv.reader` over `codecs.getreader`
+   |
+7  | from odoo.tools.pycompat import csv_reader, csv_writer, to_text
+8  + import csv
+9  + import codecs
+10 |
+--------------------------------------------------------------------------------
+54 | reader = csv_reader(stream)
+   - reader = csv_reader(stream, delimiter=";")
+55 + reader = csv.reader(codecs.getreader("utf-8")(stream), delimiter=";")
+56 | writer = csv_writer(stream, quoting=1)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `csv_writer` is deprecated since Odoo 18.0. Use `csv.writer` over a text stream, or over `codecs.getwriter("utf-8")` of a bytes stream.
+  --> deprecated_odoo_tools_function.py:54:10
+   |
+52 | reader = csv_reader(stream)
+53 | reader = csv_reader(stream, delimiter=";")
+54 | writer = csv_writer(stream, quoting=1)
+   |          ^^^^^^^^^^
+55 | reader = pycompat.csv_reader(stream)
+56 | reader = csv_reader(stream=stream)
+   |
+help: Replace with `csv.writer` over `codecs.getwriter`
+   |
+7  | from odoo.tools.pycompat import csv_reader, csv_writer, to_text
+8  + import csv
+9  + import codecs
+10 |
+--------------------------------------------------------------------------------
+55 | reader = csv_reader(stream, delimiter=";")
+   - writer = csv_writer(stream, quoting=1)
+56 + writer = csv.writer(codecs.getwriter("utf-8")(stream), quoting=1)
+57 | reader = pycompat.csv_reader(stream)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 [*] `csv_reader` is deprecated since Odoo 18.0. Use `csv.reader` over a text stream, or over `codecs.getreader("utf-8")` of a bytes stream.
+  --> deprecated_odoo_tools_function.py:55:10
+   |
+53 | reader = csv_reader(stream, delimiter=";")
+54 | writer = csv_writer(stream, quoting=1)
+55 | reader = pycompat.csv_reader(stream)
+   |          ^^^^^^^^^^^^^^^^^^^
+56 | reader = csv_reader(stream=stream)
+   |
+help: Replace with `csv.reader` over `codecs.getreader`
+   |
+7  | from odoo.tools.pycompat import csv_reader, csv_writer, to_text
+8  + import csv
+9  + import codecs
+10 |
+--------------------------------------------------------------------------------
+56 | writer = csv_writer(stream, quoting=1)
+   - reader = pycompat.csv_reader(stream)
+57 + reader = csv.reader(codecs.getreader("utf-8")(stream))
+58 | reader = csv_reader(stream=stream)
+   |
+note: This is an unsafe fix and may change runtime behavior
+
+ODW9506 `csv_reader` is deprecated since Odoo 18.0. Use `csv.reader` over a text stream, or over `codecs.getreader("utf-8")` of a bytes stream.
+  --> deprecated_odoo_tools_function.py:56:10
+   |
+54 | writer = csv_writer(stream, quoting=1)
+55 | reader = pycompat.csv_reader(stream)
+56 | reader = csv_reader(stream=stream)
+   |          ^^^^^^^^^^

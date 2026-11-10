@@ -1,0 +1,19 @@
+---
+source: crates/ruff_linter/src/rules/odoo/mod.rs
+---
+ODW9506 [*] `ustr` was removed in Odoo 20.0 (deprecated since 18.0). Use `str(value)`, or `value.decode(...)` when `value` is `bytes`, or `exception_to_unicode` for an exception.
+ --> deprecated_odoo_tools_function_sole_use.py:5:12
+  |
+4 | def label(word):
+5 |     return ustr(word, errors="replace")
+  |            ^^^^
+help: Replace with `.decode(...)`
+  |
+  - from odoo.tools import ustr
+1 |
+2 |
+3 | def label(word):
+  -     return ustr(word, errors="replace")
+4 +     return word.decode(errors="replace")
+  |
+note: This is an unsafe fix and may change runtime behavior

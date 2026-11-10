@@ -242,6 +242,18 @@ mod tests {
         Path::new("deprecated_odoo_method_call.py")
     )]
     #[test_case(
+        Rule::DeprecatedOdooToolsFunction,
+        Path::new("deprecated_odoo_tools_function.py")
+    )]
+    #[test_case(
+        Rule::DeprecatedOdooToolsFunction,
+        Path::new("deprecated_odoo_tools_function_sole_use.py")
+    )]
+    #[test_case(
+        Rule::DeprecatedOdooToolsFunction,
+        Path::new("deprecated_odoo_tools_function_foreign.py")
+    )]
+    #[test_case(
         Rule::DeprecatedOsvExpression,
         Path::new("deprecated_osv_expression.py")
     )]
@@ -347,6 +359,42 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::InvalidOdooMethodCall)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The helpers only started to warn in 18.0, so a project on 17.0 is not reported.
+    #[test]
+    fn deprecated_odoo_tools_function_suppressed_before_odoo_18() -> Result<()> {
+        let snapshot = "deprecated_odoo_tools_function_suppressed_before_odoo_18".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_tools_function.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(17, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooToolsFunction)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// From 20.0 the helpers are gone, and the message says so.
+    #[test]
+    fn deprecated_odoo_tools_function_removed_in_odoo_20() -> Result<()> {
+        let snapshot = "deprecated_odoo_tools_function_removed_in_odoo_20".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/deprecated_odoo_tools_function_sole_use.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(20, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::DeprecatedOdooToolsFunction)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);
