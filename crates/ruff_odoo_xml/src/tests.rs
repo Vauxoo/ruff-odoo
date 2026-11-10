@@ -393,10 +393,14 @@ fn format_several_fields() {
 /// Lints `source` as `my_module/data/test.xml` and renders each diagnostic as
 /// `row:column code message` against the XML document.
 fn lint(source: &str, rules: impl IntoIterator<Item = Rule>) -> String {
+    lint_with(source, &LinterSettings::for_rules(rules))
+}
+
+/// [`lint`] with the given settings.
+fn lint_with(source: &str, settings: &LinterSettings) -> String {
     let path = Path::new("my_module/data/test.xml");
-    let settings = LinterSettings::for_rules(rules);
     let index = LineIndex::from_source_text(source);
-    lint_code_fields(path, None, source, &settings, flags::Noqa::Enabled)
+    lint_code_fields(path, None, source, settings, flags::Noqa::Enabled)
         .iter()
         .map(|diagnostic| {
             let location = index.line_column(diagnostic.range().unwrap().start(), source);
@@ -1222,4 +1226,98 @@ fn scalar_in_domain_leaves_the_other_rules_out_of_a_domain() {
         lint(source, [SCALAR_IN_DOMAIN, Rule::UndefinedName, Rule::UndocumentedPublicModule]),
         @r#"3:56 ODW9505 The domain condition `('user_ids', 'in', uid)` has a scalar value; `in` expects a list"#
     );
+}
+
+const ABSOLUTE_DATE_IN_DOMAIN: Rule = Rule::AbsoluteDateInDomain;
+
+#[test]
+fn absolute_date_in_domain_reads_the_filters_of_a_search_view() {
+    // The filters that ircodoo carried before its relative-date merge request, as written in the
+    // files: the `%` doubled, a window of a day, and an equality against a day.
+    let source = r#"<odoo>
+    <record id="view_search" model="ir.ui.view">
+        <field name="arch" type="xml">
+            <search>
+                <filter name="create_date" string="Created Today" domain="[
+                    ('create_date', '&gt;=', time.strftime('%%Y-%%m-%%d 00:00:00')),
+                    ('create_date', '&lt;=', time.strftime('%%Y-%%m-%%d 23:59:59')),
+                ]" />
+                <filter name="settled" domain="[('settlement_date', '=', context_today().strftime('%%Y-%%m-%%d'))]" />
+                <filter name="running" domain="[('date_begin', '&lt;=', context_today()), ('date_end', '&gt;=', context_today())]" />
+            </search>
+        </field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [ABSOLUTE_DATE_IN_DOMAIN]), @"
+    6:46 ODW9506 The domain condition `('create_date', '>=', time.strftime('%%Y-%%m-%%d 00:00:00'))` uses the date of the evaluation; use the relative date `('create_date', '>=', 'today')`
+    7:46 ODW9506 The domain condition `('create_date', '<=', time.strftime('%%Y-%%m-%%d 23:59:59'))` uses the date of the evaluation; use the relative date `('create_date', '<', 'today +1d')`
+    9:74 ODW9506 The domain condition `('settlement_date', '=', context_today().strftime('%%Y-%%m-%%d'))` uses the date of the evaluation; use the relative date `('settlement_date', '>=', 'today'), ('settlement_date', '<', 'today +1d')`
+    10:73 ODW9506 The domain condition `('date_begin', '<=', context_today())` uses the date of the evaluation; use the relative date `('date_begin', '<', 'today +1d')`
+    10:113 ODW9506 The domain condition `('date_end', '>=', context_today())` uses the date of the evaluation; use the relative date `('date_end', '>=', 'today')`
+    ");
+}
+
+#[test]
+fn absolute_date_in_domain_names_the_replacement_of_each_shape() {
+    let source = r#"<odoo>
+    <record id="rule" model="ir.rule">
+        <field name="domain_force">[
+            ('a', '&gt;', (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d')),
+            ('b', '&lt;', context_today() + datetime.timedelta(weeks=1)),
+            ('c', '&gt;=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d')),
+            ('d', '&lt;=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d')),
+            ('e', '=', datetime.datetime.now()),
+            ('f', '&gt;', datetime.datetime.now() - datetime.timedelta(days=1)),
+            ('g', '&gt;=', context_today().strftime('%Y-%m-01')),
+            ('h', '&lt;', context_today() + relativedelta(months=1, day=1)),
+            ('i', '!=', context_today()),
+            ('j', '&gt;=', time.strftime('%Y-%m-%d 23:59:59')),
+        ]</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [ABSOLUTE_DATE_IN_DOMAIN]), @"
+    4:27 ODW9506 The domain condition `('a', '>', (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('a', '>=', 'today -2d')`
+    5:27 ODW9506 The domain condition `('b', '<', context_today() + datetime.timedelta(weeks=1))` uses the date of the evaluation; use the relative date `('b', '<', 'today +1w')`
+    6:28 ODW9506 The domain condition `('c', '>=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('c', '>=', 'today -1m')`
+    7:28 ODW9506 The domain condition `('d', '<=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-%d'))` uses the date of the evaluation; use the relative date `('d', '<', 'today -1m +1d')`
+    8:24 ODW9506 The domain condition `('e', '=', datetime.datetime.now())` uses the date of the evaluation; use the relative date `('e', '=', 'now')`
+    9:27 ODW9506 The domain condition `('f', '>', datetime.datetime.now() - datetime.timedelta(days=1))` uses the date of the evaluation; use the relative date `('f', '>', 'now -1d')`
+    10:28 ODW9506 The domain condition `('g', '>=', context_today().strftime('%Y-%m-01'))` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+    11:27 ODW9506 The domain condition `('h', '<', context_today() + relativedelta(months=1, day=1))` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+    12:25 ODW9506 The domain condition `('i', '!=', context_today())` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+    13:28 ODW9506 The domain condition `('j', '>=', time.strftime('%Y-%m-%d 23:59:59'))` uses the date of the evaluation; use the relative date syntax (`'today'`, `'today +1d'`, `'now'`)
+    ");
+}
+
+#[test]
+fn absolute_date_in_domain_leaves_alone_what_is_not_the_clock() {
+    // The relative syntax, a field, a name, a value that is not a date, and an operator that does
+    // not bound a date.
+    let source = r#"<odoo>
+    <record id="rule" model="ir.rule">
+        <field name="domain_force">[
+            ('a', '&gt;=', 'today'), ('a', '&lt;', 'today +1d'),
+            ('b', '=', date_field), ('c', '=', context_today), ('d', 'in', [context_today()]),
+            ('e', 'ilike', context_today().strftime('%Y-%m-%d')), ('f', '=', time.strftime),
+            ('g', '=', foo.strftime('%Y-%m-%d')), ('h', '&gt;=', fields.Date.today()),
+        ]</field>
+    </record>
+</odoo>
+"#;
+    assert_snapshot!(lint(source, [ABSOLUTE_DATE_IN_DOMAIN]), @"");
+}
+
+#[test]
+fn absolute_date_in_domain_is_off_before_odoo_19() {
+    let source = r#"<odoo>
+    <record id="rule" model="ir.rule">
+        <field name="domain_force">[('a', '&gt;=', context_today())]</field>
+    </record>
+</odoo>
+"#;
+    let mut settings = LinterSettings::for_rule(ABSOLUTE_DATE_IN_DOMAIN);
+    settings.odoo.odoo_version = Some(OdooVersion::new(18, 0));
+    assert_snapshot!(lint_with(source, &settings), @"");
 }

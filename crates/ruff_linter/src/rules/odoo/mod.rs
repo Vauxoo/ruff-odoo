@@ -262,6 +262,7 @@ mod tests {
         Path::new("duplicate_field_declaration.py")
     )]
     #[test_case(Rule::ScalarInDomain, Path::new("scalar_in_domain.py"))]
+    #[test_case(Rule::AbsoluteDateInDomain, Path::new("absolute_date_in_domain.py"))]
     fn rules(rule_code: Rule, path: &Path) -> Result<()> {
         let snapshot = path.to_string_lossy().to_string();
         let diagnostics = test_path(
@@ -438,6 +439,24 @@ mod tests {
                     ..super::settings::Settings::default()
                 },
                 ..LinterSettings::for_rule(Rule::ScalarInDomain)
+            },
+        )?;
+        assert_diagnostics!(snapshot, diagnostics);
+        Ok(())
+    }
+
+    /// The relative date syntax is Odoo 19.0.
+    #[test]
+    fn absolute_date_in_domain_suppressed_before_odoo_19() -> Result<()> {
+        let snapshot = "absolute_date_in_domain_suppressed_before_odoo_19".to_string();
+        let diagnostics = test_path(
+            Path::new("odoo/absolute_date_in_domain.py"),
+            &LinterSettings {
+                odoo: super::settings::Settings {
+                    odoo_version: Some(super::settings::OdooVersion::new(18, 0)),
+                    ..super::settings::Settings::default()
+                },
+                ..LinterSettings::for_rule(Rule::AbsoluteDateInDomain)
             },
         )?;
         assert_diagnostics!(snapshot, diagnostics);

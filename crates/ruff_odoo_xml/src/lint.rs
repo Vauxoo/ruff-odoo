@@ -103,7 +103,7 @@ pub fn lint_code_fields(
 }
 
 /// The rules that read the domains of an XML file.
-const DOMAIN_RULES: &[Rule] = &[Rule::ScalarInDomain];
+const DOMAIN_RULES: &[Rule] = &[Rule::ScalarInDomain, Rule::AbsoluteDateInDomain];
 
 /// Lints each of `domains` as an expression, with [`DOMAIN_RULES`] only.
 fn lint_domains(

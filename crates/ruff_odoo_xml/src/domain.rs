@@ -196,8 +196,13 @@ pub(crate) fn extract_domain_fields(source: &str) -> Vec<CodeField> {
 
 /// Decodes the text in `range` and adds it to `fields` when it can hold a condition.
 fn push(fields: &mut Vec<CodeField>, source: &str, range: TextRange) {
-    // Every domain operator that takes a collection is spelled with `in`.
-    if !source[range].contains("in") {
+    // Every domain operator that takes a collection is spelled with `in`, and a date taken from
+    // the clock is spelled with `today` or `strftime`.
+    let text = &source[range];
+    if !["in", "today", "strftime"]
+        .iter()
+        .any(|word| text.contains(word))
+    {
         return;
     }
     if let Some(field) =

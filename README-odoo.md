@@ -203,7 +203,8 @@ What is checked is exactly what Odoo runs, `safe_eval(code.strip(), ..., mode="e
     multi-line string inside the body), the field is checked as it is and left unformatted.
 - The domains of an XML file (the `domain`, `filter_domain` and `attrs` attributes,
     `<attribute name="domain">`, and the `domain` and `domain_force` fields of a record) are
-    checked by the rules that read domains (`scalar-in-domain`, `ODW9505`), each as an
+    checked by the rules that read domains (`scalar-in-domain`, `ODW9505`, and
+    `absolute-date-in-domain`, `ODW9506`), each as an
     expression; a domain Python cannot parse is skipped without a diagnostic.
 - `check --fix` never rewrites an XML file; `format` is the only tool that does. It keeps the
     document's line endings, whatever `line-ending` says, and leaves alone a field that does not
