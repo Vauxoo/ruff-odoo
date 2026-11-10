@@ -414,6 +414,9 @@ pub(crate) fn statement(stmt: &Stmt, checker: &mut Checker) {
             if checker.is_rule_enabled(Rule::NoWizardInModels) {
                 odoo::rules::no_wizard_in_models(checker, class_def, checker.path);
             }
+            if checker.is_rule_enabled(Rule::CredentialFieldUnrestricted) {
+                odoo::rules::credential_field_unrestricted(checker, class_def);
+            }
             if checker.is_rule_enabled(Rule::DuplicateFieldDeclaration) {
                 odoo::rules::duplicate_field_declaration(checker, class_def);
             }
