@@ -31,11 +31,12 @@ use crate::rules::odoo::settings::OdooVersion;
 /// day and is correct.
 ///
 /// ## Why is this bad?
-/// The expression is evaluated when the domain is, and in the web client `time.strftime`,
-/// `context_today()` and `datetime.datetime.now()` read the clock in UTC, so for a user whose
-/// timezone is not UTC the "day" is the UTC one: a filter "created today" is hours off, and
-/// the day changes at the wrong time. The relative syntax is resolved by the server with
-/// the timezone of the user.
+/// The expression is evaluated when the domain is, in the web client for a view. There
+/// `time.strftime` and `datetime.datetime.now()` read the clock in UTC, and `context_today()`
+/// in the time zone of the browser, not the `tz` of the user. For a user whose zone is not the
+/// one read, the "day" is hours off: a filter "created today" shows the wrong records, and the day
+/// changes at the wrong time. The relative syntax is resolved by the server with the `tz` of the
+/// user.
 ///
 /// It is also easy to write wrongly. A condition `=` against a date on a `Datetime` field
 /// matches only the instant of midnight, and a range `>= 'today'`, `<= 'today'` is the instant
